@@ -68,6 +68,7 @@ transforms:
     type: remap
     inputs:
       - apps.postfix
+    # First we get the generic structure, and then we extract some fields for sent mails
     source: |
       if .container_name == "metricsexporter" {
         abort
@@ -78,6 +79,8 @@ transforms:
       }
       structured = parse_regex(.log, pattern: r'^(?<time>[^ ]+ [0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]) (?<host>[^ ]+) (?<process>[^:]+): (?<log>((?<key>[^ :]+)[ :])? ?((to|from)=<(?<address>[^>]+)>)?.*)$') ?? {}
       . = merge(., structured)
+      structured2 = parse_regex(.log, pattern: r'delay=(?<delay>[^, ]+)?.*dsn=(?<dsn>[^, ]+)?.*status=(?<status>[^, ]+)?') ?? {}
+      . = merge(., structured2)
       .timestamp = parse_timestamp(.timestamp, "%Y/%m/%d %H:%M:%S %z") ?? now()
   parse_unmatched:
     type: remap
