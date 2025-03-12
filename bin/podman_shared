@@ -284,6 +284,7 @@ podman__run_webapp() {
         -v ./$CONFIG/src:/src/overlay:ro \
         -e NOENVFILE=true \
         -e APP_SERVICES_ALLOWED_DOMAINS="webapp,localhost,127.0.0.1,services.$HOST" \
+        -e APP_THEME \
         -e KOLAB_ROLE=combined \
         -e PASSPORT_PRIVATE_KEY="$PASSPORT_PRIVATE_KEY" \
         -e PASSPORT_PUBLIC_KEY="$PASSPORT_PUBLIC_KEY" \

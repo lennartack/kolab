@@ -74,8 +74,11 @@ E5W47J/DrfrevJkzS1GV++MCAwEAAQ==
 -----END PUBLIC KEY-----"
 export HOST=kolab.local
 
+export CONFIG=config.prod
+
 export APP_WEBSITE_DOMAIN="$HOST"
 export APP_DOMAIN=$HOST
+export APP_THEME="default"
 export DES_KEY=kBxUM/53N9p9abusAoT0ZEAxwI2pxFz/
 export DB_HOST=127.0.0.1
 export KOLAB_SSL_CERTIFICATE=/etc/certs/kolab.local.cert
@@ -509,7 +512,6 @@ kolab__deploy() {
     podman__run_imap
     podman__healthcheck $POD-imap
 
-    export CONFIG=config.prod
     podman__run_webapp
     podman__healthcheck $POD-webapp
 
