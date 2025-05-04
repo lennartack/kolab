@@ -35,14 +35,22 @@ http {
         '' close;
     }
 
+EOF
+
+cat <<EOF >> /etc/nginx/nginx.conf
+    # FIXME this requires a resolver to resolve domainnames
+    resolver 192.168.1.1 valid=10s;
+
+    map \$dav_backend \$backend_url {
+        default $DAV_BACKEND$DAV_PATH;
+        alternative $DAV_ALTERNATIVE_BACKEND$DAV_ALTERNATIVE_PATH;
+    }
+
     # Load modular configuration files from the /etc/nginx/conf.d directory.
     # See http://nginx.org/en/docs/ngx_core_module.html#include
     # for more information.
     include /etc/nginx/conf.d/*.conf;
 
-EOF
-
-cat <<EOF >> /etc/nginx/nginx.conf
     server {
         listen 6080 default_server;
         listen 6443 default_server ssl;
@@ -180,7 +188,11 @@ cat <<EOF >> /etc/nginx/nginx.conf
         }
 
         location ~* ^/\.well-known/(caldav|carddav) {
-            proxy_pass       $DAV_BACKEND;
+            auth_request     /auth;
+            auth_request_set \$dav_backend \$upstream_http_davbackend;
+
+            # We can't dynamically set the proxy target with vanilla nginx. We can only select between a list of predefined options via map.
+            proxy_pass \$backend_url;
             proxy_redirect   http:// \$scheme://;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
@@ -188,7 +200,11 @@ cat <<EOF >> /etc/nginx/nginx.conf
         }
 
         location /dav {
-            proxy_pass       $DAV_BACKEND$DAV_PATH;
+            auth_request     /auth;
+            auth_request_set \$dav_backend \$upstream_http_davbackend;
+
+            # We can't dynamically set the proxy target with vanilla nginx. We can only select between a list of predefined options via map.
+            proxy_pass \$backend_url;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;

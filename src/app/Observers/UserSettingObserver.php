@@ -49,7 +49,7 @@ class UserSettingObserver
             UpdateJob::dispatch($userSetting->user_id);
         }
 
-        if ($userSetting->key === 'debug') {
+        if ($userSetting->key === 'debug' || $userSetting->key === 'kolabobjects_storage') {
             Roundcube::resetConfigCache($userSetting->user);
         }
     }

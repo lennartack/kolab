@@ -166,15 +166,15 @@ podman__run_proxy() {
         -e APP_WEBSITE_DOMAIN \
         -e SSL_CERTIFICATE=${KOLAB_SSL_CERTIFICATE} \
         -e SSL_CERTIFICATE_KEY=${KOLAB_SSL_CERTIFICATE_KEY} \
-        -e WEBAPP_BACKEND="http://localhost:8000" \
-        -e MEET_BACKEND="http://localhost:12080" \
-        -e ROUNDCUBE_BACKEND="http://localhost:8080" \
-        -e DAV_BACKEND="http://localhost:11080" \
-        -e DAV_PATH="/dav" \
-        -e FREEBUSY_BACKEND="http://localhost:11080" \
-        -e FREEBUSY_PATH="/freebusy" \
-        -e COLLABORA_BACKEND="http://localhost:9980" \
-        -e SIEVE_BACKEND="localhost:4190" \
+        -e WEBAPP_BACKEND="http://127.0.0.1:8000" \
+        -e MEET_BACKEND="http://127.0.0.1:12080" \
+        -e ROUNDCUBE_BACKEND="http://127.0.0.1:8080" \
+        -e DAV_BACKEND="http://127.0.0.1:11080" \
+        -e DAV_PATH="/dav/" \
+        -e DAV_ALTERNATIVE_BACKEND="http://127.0.0.1:8080" \
+        -e DAV_ALTERNATIVE_PATH="/dav/" \
+        -e COLLABORA_BACKEND="http://127.0.0.1:9980" \
+        -e SIEVE_BACKEND="127.0.0.1:4190" \
         kolab-proxy:latest $@
 }
 
@@ -283,7 +283,7 @@ podman__run_webapp() {
         -v ./src:/src/kolabsrc.orig:ro \
         -v ./$CONFIG/src:/src/overlay:ro \
         -e NOENVFILE=true \
-        -e APP_SERVICES_ALLOWED_DOMAINS="webapp,localhost,services.$HOST" \
+        -e APP_SERVICES_ALLOWED_DOMAINS="webapp,localhost,127.0.0.1,services.$HOST" \
         -e KOLAB_ROLE=combined \
         -e PASSPORT_PRIVATE_KEY="$PASSPORT_PRIVATE_KEY" \
         -e PASSPORT_PUBLIC_KEY="$PASSPORT_PUBLIC_KEY" \

@@ -30,8 +30,11 @@ class ConfigController extends Controller
 
         $skus = $user->skuTitles();
 
-        // TODO conditionally switch to kolabobjects
-        $config['kolab-configuration-overlays'][] = 'kolab4';
+        if ((bool) $user->getSetting('kolabobjects_storage')) {
+            $config['kolab-configuration-overlays'][] = 'kolabobjects';
+        } else {
+            $config['kolab-configuration-overlays'][] = 'kolab4';
+        }
 
         if (in_array('activesync', $skus)) {
             $config['kolab-configuration-overlays'][] = 'activesync';
