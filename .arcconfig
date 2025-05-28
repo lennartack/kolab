@@ -1,4 +1,3 @@
 {
-    "phabricator.uri": "https://git.kolab.org",
-    "load": ["src/vendor/diablomedia/arcanist-extensions/extensions/"]
+    "phabricator.uri": "https://git.kolab.org"
 }
