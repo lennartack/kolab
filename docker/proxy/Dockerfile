@@ -7,6 +7,10 @@ RUN dnf -y install \
         nginx-mod-stream && \
     dnf clean all
 
+# Workaround because we have a relatively old nginx
+# https://github.com/openssl/openssl/discussions/24810
+RUN echo "Options = IgnoreUnexpectedEOF" >> /etc/crypto-policies/back-ends/opensslcnf.config
+
 # ENV APP_WEBSITE_DOMAIN
 # ENV SSL_CERTIFICATE
 # ENV SSL_CERTIFICATE_KEY

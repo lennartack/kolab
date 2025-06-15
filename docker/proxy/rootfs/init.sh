@@ -282,7 +282,7 @@ mail {
     ssl_certificate $SSL_CERTIFICATE;
     ssl_certificate_key $SSL_CERTIFICATE_KEY;
 
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
     server {
