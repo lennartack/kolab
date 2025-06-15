@@ -77,7 +77,7 @@ RUN /opt/app-root/src/build.sh && \
 
 COPY /rootfs /
 RUN chmod 777 /opt/app-root/src
-RUN chmod -R 777 /etc/php.ini /etc/httpd /opt/app-root/src/*.sh
+RUN chmod -R 777 /etc/php.ini /etc/httpd /opt/app-root/src/*.sh /tmp /etc/
 
 VOLUME /data
 
@@ -129,6 +129,9 @@ ENV PRODUCT_NAME="Kolab Groupware"
 # ENV PASSPORT_WEBMAIL_SSO_CLIENT_SECRET=
 ENV CALDAV_WELLKNOWN_REDIRECT_PATH="/dav/calendars/user"
 ENV CARDDAV_WELLKNOWN_REDIRECT_PATH="/dav/addressbooks/user"
+ENV MAX_CONCURRENT_REQUESTS="100"
+ENV MAX_FILESIZE="50M"
+ENV MEMORY_LIMIT="320M"
 
 USER 1001
 

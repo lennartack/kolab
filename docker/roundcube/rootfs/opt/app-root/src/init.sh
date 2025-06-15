@@ -9,6 +9,11 @@ chmod 777 /data/pgp-home
 
 pushd /opt/app-root/src/
 
+# Set the maximum number of simultaneous requests in php-fpm
+sed -i "s/MAX_CONCURRENT_REQUESTS/$MAX_CONCURRENT_REQUESTS/" /etc/php-fpm.d/www.conf
+sed -i "s/MAX_FILESIZE/$MAX_FILESIZE/" /etc/php.ini
+sed -i "s/MEMORY_LIMIT/$MEMORY_LIMIT/" /etc/php.ini
+
 if [[ $1 == "" ]]; then
     if [ -d /src.orig/ ]; then
         echo "----> Updating source"
