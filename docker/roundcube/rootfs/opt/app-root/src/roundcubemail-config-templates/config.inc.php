@@ -43,6 +43,8 @@ if (!function_exists("getenvlist")) {
     // Caching and storage settings
     $config['imap_cache'] = 'redis';
     $config['imap_cache_ttl'] = '10d';
+    $config['dav_cache'] = 'redis';
+    $config['dav_cache_ttl'] = '10m';
     // no redis available, cache incompatible with ANNOTATION based tags, shouldn't be required at all.
     $config['messages_cache'] = null;
     $config['session_storage'] = 'redis';
