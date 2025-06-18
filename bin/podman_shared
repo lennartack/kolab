@@ -396,30 +396,30 @@ function pin_commit() {
 pin_git_refs() {
     echo "Pinning commits"
     # This are the pinned commits that are going to be used for the base images
-    export KOLAB_GIT_REMOTE=https://git.kolab.org/source/kolab
-    export KOLAB_GIT_REF=$(pin_commit "$KOLAB_GIT_REMOTE" "master")
+    [ -z $KOLAB_GIT_REMOTE ] && export KOLAB_GIT_REMOTE=https://git.kolab.org/source/kolab
+    [ -z $KOLAB_GIT_REF ] && export KOLAB_GIT_REF=$(pin_commit "$KOLAB_GIT_REMOTE" "master")
 
-    export GIT_REMOTE_ROUNDCUBEMAIL=https://git.kolab.org/source/roundcubemail.git
-    export GIT_REF_ROUNDCUBEMAIL=$(pin_commit "$GIT_REMOTE_ROUNDCUBEMAIL" "dev/kolab-1.6")
+    [ -z $GIT_REMOTE_ROUNDCUBEMAIL ] && export GIT_REMOTE_ROUNDCUBEMAIL=https://git.kolab.org/source/roundcubemail.git
+    [ -z $GIT_REF_ROUNDCUBEMAIL ] && export GIT_REF_ROUNDCUBEMAIL=$(pin_commit "$GIT_REMOTE_ROUNDCUBEMAIL" "dev/kolab-1.6")
 
-    export GIT_REMOTE_ROUNDCUBEMAIL_PLUGINS=https://git.kolab.org/diffusion/RPK/roundcubemail-plugins-kolab.git
-    export GIT_REF_ROUNDCUBEMAIL_PLUGINS=$(pin_commit "$GIT_REMOTE_ROUNDCUBEMAIL_PLUGINS" "master")
+    [ -z $GIT_REMOTE_ROUNDCUBEMAIL_PLUGINS ] && export GIT_REMOTE_ROUNDCUBEMAIL_PLUGINS=https://git.kolab.org/diffusion/RPK/roundcubemail-plugins-kolab.git
+    [ -z $GIT_REF_ROUNDCUBEMAIL_PLUGINS ] && export GIT_REF_ROUNDCUBEMAIL_PLUGINS=$(pin_commit "$GIT_REMOTE_ROUNDCUBEMAIL_PLUGINS" "master")
 
-    export GIT_REMOTE_CHWALA=https://git.kolab.org/diffusion/C/chwala.git
-    export GIT_REF_CHWALA=$(pin_commit "$GIT_REMOTE_CHWALA" "master")
+    [ -z $GIT_REMOTE_CHWALA ] && export GIT_REMOTE_CHWALA=https://git.kolab.org/diffusion/C/chwala.git
+    [ -z $GIT_REF_CHWALA ] && export GIT_REF_CHWALA=$(pin_commit "$GIT_REMOTE_CHWALA" "master")
 
-    export GIT_REMOTE_SYNCROTON=https://git.kolab.org/diffusion/S/syncroton.git
-    export GIT_REF_SYNCROTON=$(pin_commit "$GIT_REMOTE_SYNCROTON" "master")
+    [ -z $GIT_REMOTE_SYNCROTON ] && export GIT_REMOTE_SYNCROTON=https://git.kolab.org/diffusion/S/syncroton.git
+    [ -z $GIT_REF_SYNCROTON ] && export GIT_REF_SYNCROTON=$(pin_commit "$GIT_REMOTE_SYNCROTON" "master")
 
-    export GIT_REMOTE_AUTOCONF=https://git.kolab.org/diffusion/AC/autoconf.git
-    export GIT_REF_AUTOCONF=$(pin_commit "$GIT_REMOTE_AUTOCONF" "master")
+    [ -z $GIT_REMOTE_AUTOCONF ] && export GIT_REMOTE_AUTOCONF=https://git.kolab.org/diffusion/AC/autoconf.git
+    [ -z $GIT_REF_AUTOCONF ] && export GIT_REF_AUTOCONF=$(pin_commit "$GIT_REMOTE_AUTOCONF" "master")
 
-    export GIT_REMOTE_IRONY=https://git.kolab.org/source/iRony.git
-    export GIT_REF_IRONY=$(pin_commit "$GIT_REMOTE_IRONY" "master")
+    [ -z $GIT_REMOTE_IRONY ] && export GIT_REMOTE_IRONY=https://git.kolab.org/source/iRony.git
+    [ -z $GIT_REF_IRONY ] && export GIT_REF_IRONY=$(pin_commit "$GIT_REMOTE_IRONY" "master")
 
-    export GIT_REMOTE_FREEBUSY=https://git.kolab.org/diffusion/F/freebusy.git
-    export GIT_REF_FREEBUSY=$(pin_commit "$GIT_REMOTE_FREEBUSY" "master")
+    [ -z $GIT_REMOTE_FREEBUSY ] && export GIT_REMOTE_FREEBUSY=https://git.kolab.org/diffusion/F/freebusy.git
+    [ -z $GIT_REF_FREEBUSY ] && export GIT_REF_FREEBUSY=$(pin_commit "$GIT_REMOTE_FREEBUSY" "master")
 
-    export IMAP_GIT_REMOTE=https://git.kolab.org/source/cyrus-imapd
-    export IMAP_GIT_REF=$(pin_commit "$IMAP_GIT_REMOTE" "dev/kolab-3.6")
+    [ -z $IMAP_GIT_REMOTE ] && export IMAP_GIT_REMOTE=https://git.kolab.org/source/cyrus-imapd
+    [ -z $IMAP_GIT_REF ] && export IMAP_GIT_REF=$(pin_commit "$IMAP_GIT_REMOTE" "dev/kolab-3.6")
 }
