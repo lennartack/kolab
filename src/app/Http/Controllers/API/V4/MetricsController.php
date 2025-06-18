@@ -115,6 +115,51 @@ class MetricsController extends Controller
     }
 
     /**
+     * Expose swoole metrics
+     *
+     * @return Response The response
+     */
+    public function swooleMetrics()
+    {
+        $stats = app('Swoole\Http\Server')->stats();
+        // {"start_time":1750184075,"connection_num":8,"abort_count":0,"accept_count":13781,"close_count":13773,"worker_num":2,"task_worker_num":2,"user_worker_num":0,"idle_worker_num":0,"dispatch_count":13837,"request_count":13832,"response_count":13615,"total_recv_bytes":2898444,"total_send_bytes":30179791,"pipe_packet_msg_id":47769,"concurrency":2,"session_round":13781,"min_fd":22,"max_fd":32,"worker_request_count":646,"worker_response_count":635,"worker_dispatch_count":644,"worker_concurrency":1,"task_idle_worker_num":2,"tasking_num":0,"task_count":5505,"coroutine_num":0,"coroutine_peek_num":0}
+
+        $connectionCount = $stats['connection_num'];
+        $abortCount = $stats['abort_count'];
+        $acceptCount = $stats['accept_count'];
+        $closeCount = $stats['close_count'];
+        $concurrency = $stats['concurrency'];
+        $instance = gethostname();
+        $text = <<<EOF
+            # HELP swoole_connections Number of connections
+            # TYPE swoole_connections gauge
+            swoole_connections{instance="{$instance}"} {$connectionCount}
+            # HELP swoole_concurrency Concurrency level
+            # TYPE swoole_concurrency gauge
+            swoole_concurrency{instance="{$instance}"} {$concurrency}
+            # HELP swoole_accept_count Accept count
+            # TYPE swoole_accept_count gauge
+            swoole_accept_count{instance="{$instance}"} {$acceptCount}
+            # HELP swoole_abort_count Abort count
+            # TYPE swoole_abort_count gauge
+            swoole_abort_count{instance="{$instance}"} {$abortCount}
+            # HELP swoole_close_count Close count
+            # TYPE swoole_close_count gauge
+            swoole_close_count{instance="{$instance}"} {$closeCount}
+
+            EOF;
+
+        return response(
+            $text,
+            200,
+            [
+                'Content-Type' => "text/plain",
+            ]
+        );
+
+    }
+
+    /**
      * Expose kolab metrics
      *
      * @return Response The response

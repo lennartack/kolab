@@ -303,6 +303,7 @@ if (\config('app.with_services')) {
             Route::post('cyrus-sasl', [API\V4\NGINXController::class, 'cyrussasl']);
 
             Route::get('metrics', [API\V4\MetricsController::class, 'metrics']);
+            Route::get('metrics/swoole', [API\V4\MetricsController::class, 'swooleMetrics']);
 
             Route::post('policy/greylist', [API\V4\PolicyController::class, 'greylist']);
             Route::post('policy/ratelimit', [API\V4\PolicyController::class, 'ratelimit']);
