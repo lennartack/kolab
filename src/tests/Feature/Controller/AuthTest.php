@@ -199,6 +199,17 @@ class AuthTest extends TestCase
         );
         $this->assertSame('bearer', $json['token_type']);
 
+        // No user info in the response
+        $post['mode'] = 'fast';
+        $response = $this->post("api/auth/login", $post);
+        $json = $response->json();
+
+        $this->assertTrue(!empty($json['id']));
+        $this->assertTrue(!empty($json['access_token']));
+        $this->assertTrue(empty($json['settings']));
+        $this->assertTrue(empty($json['statusInfo']));
+        $this->assertTrue(empty($json['wallets']));
+
         // TODO: We have browser tests for 2FA but we should probably also test it here
 
         return $json['access_token'];

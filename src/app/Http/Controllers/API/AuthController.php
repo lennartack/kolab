@@ -45,6 +45,8 @@ class AuthController extends Controller
      */
     public static function logonResponse(User $user, string $password, ?string $secondFactor = null)
     {
+        $mode = request()->mode; // have to be before we make a request below
+
         $proxyRequest = Request::create('/oauth/token', 'POST', [
             'username' => $user->email,
             'password' => $password,
@@ -58,7 +60,7 @@ class AuthController extends Controller
 
         $tokenResponse = app()->handle($proxyRequest);
 
-        return self::respondWithToken($tokenResponse, $user);
+        return self::respondWithToken($tokenResponse, $user, $mode);
     }
 
     /**
@@ -210,10 +212,11 @@ class AuthController extends Controller
      *
      * @param Response $tokenResponse the response containing the token
      * @param ?User    $user          The user being authenticated
+     * @param ?bool    $mode          Response mode: 'fast' - return minimum set of user data
      *
      * @return JsonResponse
      */
-    protected static function respondWithToken($tokenResponse, $user = null)
+    protected static function respondWithToken($tokenResponse, $user = null, $mode = null)
     {
         $data = json_decode($tokenResponse->getContent());
 
@@ -227,10 +230,14 @@ class AuthController extends Controller
             return response()->json(['status' => 'error', 'message' => self::trans('auth.failed')], 401);
         }
 
+        $response = [];
+
         if ($user) {
-            $response = V4\UsersController::userResponse($user);
-        } else {
-            $response = [];
+            if ($mode == 'fast') {
+                $response['id'] = $user->id;
+            } else {
+                $response = V4\UsersController::userResponse($user);
+            }
         }
 
         $response['status'] = 'success';
