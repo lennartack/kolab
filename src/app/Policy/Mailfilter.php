@@ -18,6 +18,8 @@ class Mailfilter
     public const CODE_REJECT = 460;
     public const CODE_ERROR = 500;
 
+    protected static $debugid = '';
+
     /**
      * SMTP Content Filter
      *
@@ -47,9 +49,13 @@ class Mailfilter
         // then we'd send body in another request, but only if needed. For example, a text/plain
         // message from same domain sender does not include an iTip, nor needs a footer injection.
 
+        self::$debugid = dechex((int) str_replace('.', '', explode(' ', microtime())[0]));
+        self::debug("Processing message from {$request->sender} to {$request->recipient}...");
+
         // Email with multiple recipients, which we don't handle at the moment.
         // Likely an outgoing email, so we just accept.
         if (str_contains($request->recipient, ",")) {
+            self::debug('Multiple recipients', self::CODE_ACCEPT_EMPTY);
             return response('', self::CODE_ACCEPT_EMPTY);
         }
 
@@ -58,6 +64,7 @@ class Mailfilter
 
         // Not a local recipient, so e.g. an outgoing email
         if (empty($user)) {
+            self::debug('Unknown recipient', self::CODE_ACCEPT_EMPTY);
             return response('', self::CODE_ACCEPT_EMPTY);
         }
 
@@ -65,6 +72,7 @@ class Mailfilter
         $modules = self::getModulesConfig($user);
 
         if (empty($modules)) {
+            self::debug('All modules disabled', self::CODE_ACCEPT_EMPTY);
             return response('', self::CODE_ACCEPT_EMPTY);
         }
 
@@ -74,6 +82,7 @@ class Mailfilter
         if (count($files) == 1) {
             $file = $files[array_key_first($files)];
             if (!$file->isValid()) {
+                self::debug('Invalid file upload', self::CODE_ERROR);
                 return response('Invalid file upload', self::CODE_ERROR);
             }
 
@@ -85,23 +94,31 @@ class Mailfilter
         // Initialize mail parser
         $parser = new MailParser($stream);
         $parser->setRecipient($user);
+        $parser->setDebugPrefix('<' . self::$debugid . '> Mailfilter: ');
 
         if ($sender = $request->sender) {
             $parser->setSender($sender);
         }
 
+        self::debug("Message-ID: " . ($parser->getMessageId() ?? 'unset'));
+
         // Execute modules
         foreach ($modules as $module => $config) {
+            $module_name = str_replace('Module', '', \class_basename($module));
+            self::debug("Executing module {$module_name}...");
+
             $engine = new $module($config);
 
             $result = $engine->handle($parser);
 
             if ($result) {
                 if ($result->getStatus() == Result::STATUS_REJECT) {
+                    self::debug("Rejected by {$module_name}", self::CODE_REJECT);
                     // FIXME: Better code? Should we use custom header instead?
                     return response('', self::CODE_REJECT);
                 }
                 if ($result->getStatus() == Result::STATUS_DISCARD) {
+                    self::debug("Discarded by {$module_name}", self::CODE_DISCARD);
                     // FIXME: Better code? Should we use custom header instead?
                     return response('', self::CODE_DISCARD);
                 }
@@ -124,10 +141,36 @@ class Mailfilter
                 fclose($stream);
             });
 
+            self::debug('Message modified', self::CODE_ACCEPT);
+
             return $response;
         }
 
+        self::debug('Message intact', self::CODE_ACCEPT_EMPTY);
+
         return response('', self::CODE_ACCEPT_EMPTY);
+    }
+
+    /**
+     * Log a debug message
+     */
+    protected static function debug(string $message, $status = null): void
+    {
+        $debug = 'Mailfilter:';
+
+        if (self::$debugid !== '') {
+            $debug = '<' . self::$debugid . '> ' . $debug;
+        }
+
+        if ($message !== '') {
+            $debug .= ' ' . $message;
+        }
+
+        if ($status) {
+            $debug .= " [{$status}]";
+        }
+
+        \Log::debug($debug);
     }
 
     /**

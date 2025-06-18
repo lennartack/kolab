@@ -34,6 +34,8 @@ class ReplyHandler extends ItipModule
         // TODO: We might need to use DAV locking mechanism if multiple processes
         // are likely to attempt to update the same event at the same time.
 
+        $this->parser = $parser;
+
         // Check whether the event already exists
         $existing = $this->findObject($user, $this->uid, $this->type);
 
@@ -50,17 +52,20 @@ class ReplyHandler extends ItipModule
         $replyMaster = $this->extractMainComponent($this->itip);
 
         if (!$existingMaster || !$replyMaster) {
+            $parser->debug("Failed to get the main component. Ignored.");
             return null;
         }
 
         // SEQUENCE does not match, deliver the message, let the MUAs to deal with this
         // FIXME: Is this even a valid aproach regarding recurrence?
         if ((string) $existingMaster->SEQUENCE != (string) $replyMaster->SEQUENCE) {
+            $parser->debug("Sequence mismatch. Ignored.");
             return null;
         }
 
         // Per RFC 5546 there can be only one ATTENDEE in REPLY
         if (count($replyMaster->ATTENDEE) != 1) {
+            $parser->debug("Too many attendees in REPLY. Ignored.");
             return null;
         }
 
@@ -72,12 +77,14 @@ class ReplyHandler extends ItipModule
 
         // Supporting attendees w/o an email address could be considered in the future
         if (empty($email)) {
+            $parser->debug("Attendee without an email address. Ignored.");
             return null;
         }
 
         // Invalid/useless reply, let the MUA deal with it
         // FIXME: Or should we stop delivery?
         if (empty($partstat) || $partstat == 'NEEDS-ACTION') {
+            $parser->debug("Unexpected PARTSTAT in REPLY. Ignored.");
             return null;
         }
 
@@ -88,6 +95,7 @@ class ReplyHandler extends ItipModule
             // No such recurrence exception, let the MUA deal with it
             // FIXME: Or should we stop delivery?
             if (!$existingInstance) {
+                $parser->debug("No existing recurrence instance. Ignored.");
                 return null;
             }
         } else {
@@ -109,6 +117,8 @@ class ReplyHandler extends ItipModule
         }
 
         if ($updated) {
+            $parser->debug("Updating object at {$this->davLocation}");
+
             $dav = $this->getDAVClient($user);
             $dav->update($this->toOpaqueObject($existing, $this->davLocation));
 
@@ -118,7 +128,10 @@ class ReplyHandler extends ItipModule
             // Remove (not deliver) the message to the organizer's inbox
 
             // Send a notification to the organizer
+            $parser->debug("Sending notification to {$user->email}");
             $user->notify($this->notification($existingInstance, $sender, $replyMaster->COMMENT));
+        } else {
+            $parser->debug("Object unchanged");
         }
 
         return new Result(Result::STATUS_DISCARD);

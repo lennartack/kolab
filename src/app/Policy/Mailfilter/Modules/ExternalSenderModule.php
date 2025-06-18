@@ -18,6 +18,8 @@ class ExternalSenderModule extends Module
         $user = $parser->getUser();
 
         if ($this->isExternalSender($sender, $user)) {
+            $parser->debug("{$sender} is an external sender");
+
             $subject = $parser->getHeader('subject');
 
             // Update the subject with a prefix
@@ -28,6 +30,8 @@ class ExternalSenderModule extends Module
             }
 
             $parser->setHeader('Subject', $subject);
+        } else {
+            $parser->debug("{$sender} is an internal sender");
         }
 
         return null;

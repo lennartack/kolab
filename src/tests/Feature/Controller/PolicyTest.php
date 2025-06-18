@@ -272,7 +272,7 @@ class PolicyTest extends TestCase
             ->assertNoContent(204);
 
         // Test returning (modified) mail content
-        $john->setConfig(['externalsender_policy' => true]);
+        $john->setConfig(['externalsender_policy' => true, 'itip_policy' => true]);
         $url = '/api/webhooks/policy/mail/filter?recipient=john@kolab.org&sender=jack@external.tld';
         $content = $this->call('POST', $url, [], [], [], $headers, $post)
             ->assertStatus(200)

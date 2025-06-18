@@ -7,7 +7,7 @@ use App\User;
 class MailParser
 {
     protected $stream;
-
+    protected string $debug_prefix = '';
     protected int $start = 0;
     protected ?int $end;
     protected ?int $bodyPosition;
@@ -24,6 +24,7 @@ class MailParser
         'content-transfer-encoding',
         'content-type',
         'from',
+        'message-id',
         'subject',
     ];
 
@@ -41,6 +42,18 @@ class MailParser
         $this->end = $end;
 
         $this->parseHeaders();
+    }
+
+    /**
+     * Log a debug message
+     */
+    public function debug(string $message): void
+    {
+        if ($this->debug_prefix) {
+            $message = $this->debug_prefix . $message;
+        }
+
+        \Log::debug($message);
     }
 
     /**
@@ -108,6 +121,14 @@ class MailParser
     public function getBodyPosition(): int
     {
         return $this->bodyPosition;
+    }
+
+    /**
+     * Get mail Message-Id header
+     */
+    public function getMessageId(): ?string
+    {
+        return $this->getHeader('message-id');
     }
 
     /**
@@ -265,6 +286,14 @@ class MailParser
         // Reset structure information, the message will need to be re-parsed (in some cases)
         $this->parts = null;
         $this->modified = true;
+    }
+
+    /**
+     * Set debug line prefix for log entries
+     */
+    public function setDebugPrefix(string $prefix): void
+    {
+        $this->debug_prefix = $prefix;
     }
 
     /**

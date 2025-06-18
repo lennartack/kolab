@@ -41,6 +41,8 @@ class RequestHandler extends ItipModule
         // but CANCEL and REPLY could not, because we're potentially stopping mail delivery there,
         // so I suppose we'll do all of them synchronously for now. Still some parts of it can be async.
 
+        $this->parser = $parser;
+
         // Check whether the object already exists in the recipient's calendar
         $existing = $this->findObject($user, $this->uid, $this->type);
 
@@ -59,12 +61,17 @@ class RequestHandler extends ItipModule
         // The event does not exist yet in the recipient's calendar, create it
         if (!$existing) {
             if (!empty($recurrence_id)) {
+                $parser->debug("Object does not exist, but it's a recurring instance. Ignored.");
                 return null;
             }
 
             // Create the event in the recipient's calendar
             $dav = $this->getDAVClient($user);
-            $dav->create($this->toOpaqueObject($this->itip));
+            $object = $this->toOpaqueObject($this->itip);
+
+            $parser->debug("Object does not exist, saving into {$object->href}");
+
+            $dav->create($object);
 
             return null;
         }
@@ -80,8 +87,8 @@ class RequestHandler extends ItipModule
 
             // A new recurrence instance, just add it to the existing event
             if (!$existingInstance) {
+                // TODO: Bump LAST-MODIFIED on the master object
                 $existing->add($requestMaster);
-            // TODO: Bump LAST-MODIFIED on the master object
             } else {
                 // SEQUENCE does not match, deliver the message, let the MUAs deal with this
                 // TODO: A higher SEQUENCE indicates a re-scheduled object, we should update the existing event.
@@ -109,6 +116,8 @@ class RequestHandler extends ItipModule
             // FIXME: Merge all components included in the request?
             $this->mergeComponents($existingMaster, $requestMaster);
         }
+
+        $parser->debug("Updating object at {$this->davLocation}");
 
         $dav = $this->getDAVClient($user);
         $dav->update($this->toOpaqueObject($existing, $this->davLocation));

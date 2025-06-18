@@ -21,6 +21,9 @@ class ItipModule extends Module
     protected $davTokenExpiresOn;
     protected $davTTL = 10;
 
+    /** @var MailParser Mail parser instance for the current message */
+    protected $parser;
+
     /** @var string Processed object type ('VEVENT' or 'VTODO') */
     protected $type;
 
@@ -35,6 +38,7 @@ class ItipModule extends Module
         $itip = self::getItip($parser);
 
         if ($itip === null) {
+            $parser->debug("No iTip in the message");
             return null; // do nothing
         }
 
@@ -43,8 +47,11 @@ class ItipModule extends Module
         $vobject = $this->parseICal($itip);
 
         if ($vobject === null) {
+            $parser->debug("No supported iCalendar data in the iTip");
             return null; // do nothing
         }
+
+        $this->parser = $parser;
 
         // Note: Some iTip handling implementation can be find in vendor/sabre/vobject/lib/ITip/Broker.php,
         // however I think we need something more sophisticated that we can extend ourselves.
@@ -52,16 +59,22 @@ class ItipModule extends Module
         // FIXME: If $vobject->METHOD is empty fallback to 'method' param from the Content-Type header?
         // rfc5545#section-3.7.2 says if one is specified the other must be too
         // @phpstan-ignore-next-line
-        switch (\strtoupper((string) $vobject->METHOD)) {
+        $method = \strtoupper((string) $vobject->METHOD);
+        switch ($method) {
             case 'REQUEST':
+                $parser->debug("Parsing an iTip REQUEST...");
                 $handler = new ItipModule\RequestHandler($vobject, $this->type, $this->uid);
                 break;
             case 'CANCEL':
+                $parser->debug("Parsing an iTip CANCEL...");
                 $handler = new ItipModule\CancelHandler($vobject, $this->type, $this->uid);
                 break;
             case 'REPLY':
+                $parser->debug("Parsing an iTip REPLY...");
                 $handler = new ItipModule\ReplyHandler($vobject, $this->type, $this->uid);
                 break;
+            default:
+                $parser->debug("Unsupported iTip method: {$method}. iTip ignored.");
         }
 
         // FIXME: Should we handle (any?) errors silently and just deliver the message to Inbox as a fallback?
@@ -120,6 +133,8 @@ class ItipModule extends Module
             return null;
         }
 
+        $this->parser->debug("Searching for DAV object (UID={$uid}, User={$user->email})...");
+
         $dav = $this->getDAVClient($user);
         $filters = [new DAV\SearchPropFilter('UID', DAV\SearchPropFilter::MATCH_EQUALS, $uid)];
         $search = new DAV\Search($dav_type, true, $filters);
@@ -140,15 +155,21 @@ class ItipModule extends Module
                 $this->davFolder = $folder;
             }
 
+            $this->parser->debug("Searching in {$folder->href}...");
+
             foreach ($dav->search($folder->href, $search, null, true) as $event) {
                 if ($vobject = $this->parseICal((string) $event)) {
                     $this->davLocation = $event->href;
                     $this->davFolder = $folder;
 
+                    $this->parser->debug("Object found: {$this->davLocation}");
+
                     return $vobject;
                 }
             }
         }
+
+        $this->parser->debug("Object not found");
 
         return null;
     }

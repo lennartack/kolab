@@ -27,6 +27,8 @@ class CancelHandler extends ItipModule
     {
         $user = $parser->getUser();
 
+        $this->parser = $parser;
+
         // Check whether the event already exists
         $existing = $this->findObject($user, $this->uid, $this->type);
 
@@ -44,12 +46,14 @@ class CancelHandler extends ItipModule
 
         if (!$existingMaster || !$cancelMaster) {
             // FIXME: Should we stop message delivery?
+            $parser->debug("Failed to get the main component. Ignored.");
             return null;
         }
 
         // SEQUENCE does not match, deliver the message, let the MUAs to deal with this
         // FIXME: Is this even a valid aproach regarding recurrence?
         if ((string) $existingMaster->SEQUENCE != (string) $cancelMaster->SEQUENCE) {
+            $parser->debug("Sequence mismatch. Ignored.");
             return null;
         }
 
@@ -70,10 +74,14 @@ class CancelHandler extends ItipModule
             $exdate = $cancelMaster->{'RECURRENCE-ID'}->getDateTime();
             $existingMaster->add('EXDATE', $exdate, ['VALUE' => 'DATE'], 'DATE');
 
+            $parser->debug("Updating object at {$this->davLocation}");
+
             $dav = $this->getDAVClient($user);
             $dav->update($this->toOpaqueObject($existing, $this->davLocation));
         } else {
             $existingInstance = $existingMaster;
+
+            $parser->debug("Deleting object at {$this->davLocation}");
 
             // Remove the event from attendee's calendar
             // Note: We make this the default case because Outlook does not like events with cancelled status
@@ -83,9 +91,10 @@ class CancelHandler extends ItipModule
         }
 
         // Send a notification to the recipient (attendee)
+        $parser->debug("Sending notification to {$user->email}");
         $user->notify($this->notification($existingInstance, $cancelMaster->COMMENT));
 
-        // Remove (not deliver) the message to the attendee's inbox
+        // Stop message delivery to the attendee's Inbox
         return new Result(Result::STATUS_DISCARD);
     }
 
