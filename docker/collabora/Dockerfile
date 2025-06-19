@@ -36,8 +36,6 @@ RUN rpm --import "$REPOSITORY/repodata/repomd.xml.key" && \
 
 RUN sed -i -r -e 's/^SELINUX=.*$/SELINUX=permissive/g' /etc/selinux/config 2>/dev/null || :
 
-RUN setcap cap_fowner,cap_chown,cap_mknod,cap_sys_chroot=ep /usr/bin/coolforkit && \
-    setcap cap_sys_admin=ep /usr/bin/coolmount
 
 WORKDIR /opt/cool/
 

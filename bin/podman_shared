@@ -71,7 +71,7 @@ podman__build_proxy() {
 }
 
 podman__build_collabora() {
-    podman build docker/collabora -t kolab-collabora --build-arg=REPOSITORY="https://www.collaboraoffice.com/repos/CollaboraOnline/23.05-CODE/CODE-rpm/"
+    podman build docker/collabora -t kolab-collabora --build-arg=REPOSITORY="https://www.collaboraoffice.com/repos/CollaboraOnline/25.04-CODE/CODE-rpm/"
 }
 
 podman__build_coturn() {
