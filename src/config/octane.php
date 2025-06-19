@@ -235,11 +235,11 @@ return [
             // 'daemonize' => env('OCTANE_DAEMONIZE', true),
             // FIXME accessing app()->environment in here renders artisan disfunctional. I suppose it's too early.
             // 'log_level' => app()->environment('local') ? SWOOLE_LOG_INFO : SWOOLE_LOG_ERROR,
-            // 'reactor_num' => , // number of available cpus by default
+            'reactor_num' => env('SWOOLE_CONCURRENCY', null), // number of available cpus by default
+            'worker_num' => env('SWOOLE_CONCURRENCY', null), // number of available cpus by default
+            'task_worker_num' => env('SWOOLE_CONCURRENCY', null), // number of available cpus by default
             'send_yield' => true,
             'socket_buffer_size' => 10 * 1024 * 1024,
-            // 'task_worker_num' => // number of available cpus by default
-            // 'worker_num' => // number of available cpus by default
         ],
     ],
 ];
