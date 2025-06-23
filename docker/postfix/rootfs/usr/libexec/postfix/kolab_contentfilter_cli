@@ -48,7 +48,7 @@ if __name__ == "__main__":
     (cli_from, cli_to) = get_args()
 
     logging.root.handlers = []
-    logging.basicConfig(level=logging.ERROR,
+    logging.basicConfig(level=logging.WARNING,
                         format='%(asctime)s %(levelname)s %(message)s',
                         filename='/var/log/kolab/postfix-content-filter.log',
                         filemode='a')
@@ -86,9 +86,9 @@ if __name__ == "__main__":
             sys.exit(EX_TEMPFAIL)
 
     # pylint: disable=broad-except
-    except Exception:
-        logging.warning("Request failed.")
-        print("Request failed")
+    except Exception as e:
+        logging.warning(f"Request failed: {request_url}, {str(e)}")
+        print(f"Request failed: {request_url}, {str(e)}")
         sys.exit(EX_TEMPFAIL)
 
     sys.exit(reinject(content, cli_from, cli_to))
