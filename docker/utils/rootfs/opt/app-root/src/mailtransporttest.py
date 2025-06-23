@@ -26,6 +26,52 @@ Content-Type: text/plain; charset=US-ASCII
 {body}
 '''.strip()
 
+mailtemplateWithAttachment = '''
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="=_291b8e96564265636432c6d494e02322"
+Date: {date}
+From: {sender}
+To: {to}
+Subject: {subject}
+Message-ID: {messageid}
+
+--=_291b8e96564265636432c6d494e02322
+Content-Type: multipart/alternative;
+ boundary="=_ceff0fd19756f45ed1295ee2069ff8e0"
+
+--=_ceff0fd19756f45ed1295ee2069ff8e0
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=US-ASCII
+
+sdlkjsdjf
+--=_ceff0fd19756f45ed1295ee2069ff8e0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset=UTF-8
+
+<html><head><meta http-equiv=3D"Content-Type" content=3D"text/html; charset=
+=3DUTF-8" /></head><body style=3D'font-size: 10pt; font-family: Verdana,Gen=
+eva,sans-serif'>
+<p>sdlkjsdjf</p>
+
+</body></html>
+
+--=_ceff0fd19756f45ed1295ee2069ff8e0--
+
+--=_291b8e96564265636432c6d494e02322
+Content-Transfer-Encoding: base64
+Content-Type: text/plain;
+ name=xorg.conf
+Content-Disposition: attachment;
+ filename=xorg.conf;
+ size=211
+
+U2VjdGlvbiAiRGV2aWNlIgogICAgSWRlbnRpZmllciAgICAgIkRldmljZTAiCiAgICBEcml2ZXIg
+{attachment}ICAgIEJvYXJkTmFtZSAgICAgICJOVlMgNDIwME0iCiAgICBPcHRpb24gIk5vTG9nbyIgInRydWUi
+CiAgICBPcHRpb24gIlVzZUVESUQiICJ0cnVlIgpFbmRTZWN0aW9uCg==
+--=_291b8e96564265636432c6d494e02322--
+'''.strip()
+
 
 RED='\033[31m'
 GREEN='\033[32m'
@@ -58,6 +104,7 @@ class SendTest:
         self.verbose = options.verbose
         self.validate = options.validate
         self.bulk_send = options.bulk_send
+        self.attachmentSize = options.attachmentSize
 
         self.uuid = None
         self.subject = None
@@ -151,6 +198,19 @@ class SendTest:
         self.uuid = str(uuid.uuid4())
         self.subject = f"Delivery Check {self.uuid}"
         dtstamp = datetime.utcnow()
+        if self.attachmentSize:
+            # 13158 is roughly 1 MB
+            attachmentMultiplier = 13158 * self.attachmentSize
+            return mailtemplateWithAttachment.format(
+                messageid="<{}@deliverycheck.org>".format(self.uuid),
+                subject=self.subject,
+                sender=from_address,
+                to=to,
+                date=dtstamp.strftime("%a, %d %b %Y %H:%M:%S %z"),
+                body=self.body,
+                attachment='ICAgIEJvYXJkTmFtZSAgICAgICJOVlMgNDIwME0iCiAgICBPcHRpb24gIk5vTG9nbyIgInRydWUi\n' * attachmentMultiplier
+            )
+
         return mailtemplate.format(
             messageid="<{}@deliverycheck.org>".format(self.uuid),
             subject=self.subject,
@@ -159,6 +219,8 @@ class SendTest:
             date=dtstamp.strftime("%a, %d %b %Y %H:%M:%S %z"),
             body=self.body,
         )
+
+
 
     def send_mail(self, starttls, smtp):
         if self.target_address:
@@ -219,6 +281,7 @@ parser.add_argument("--target-address", help="Target address instead of the reci
 parser.add_argument("--body", help="Body text to include")
 parser.add_argument("--validate", action='store_true', help="Validate the received message")
 parser.add_argument('--bulk-send', help='Bulk send email, then exit', type=int, default=0)
+parser.add_argument('--attachmentSize', help='in MB', type=int, default=0)
 
 args = parser.parse_args()
 
