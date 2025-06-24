@@ -21,15 +21,10 @@ ARG OVERLAY_GIT_REF=master
 ARG RELEASE_MODE=prod
 COPY build.sh /build.sh
 RUN /build.sh && \
-    chgrp -R 0 /opt/app-root /tmp /etc/pki/ca-trust/extracted/ && \
-    chown -R 1001:0 /opt/app-root /tmp /etc/pki/ca-trust/extracted/ && \
-    chmod -R g=u /opt/app-root /tmp /etc/pki/ca-trust/extracted/ && \
-    chmod -R 777 /etc/pki/ca-trust/extracted/
-
-RUN chgrp -R 0 /etc/ && \
-    chown -R 1001:0 /etc/ && \
-    chmod -R g=u /etc/ && \
-    chmod -R 777 /etc/
+    chgrp -R 0 /opt/app-root /tmp /etc/pki/ca-trust/extracted/ /etc/ && \
+    chown -R 1001:0 /opt/app-root /tmp /etc/pki/ca-trust/extracted/ /etc/ && \
+    chmod -R g=u /opt/app-root /tmp /etc/pki/ca-trust/extracted/ /etc/ && \
+    chmod -R 777 /etc/pki/ca-trust/extracted/ /etc/
 
 COPY init.sh /init.sh
 COPY reload.sh /reload.sh
