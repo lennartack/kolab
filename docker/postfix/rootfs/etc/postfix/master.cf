@@ -9,12 +9,13 @@
 postlog             unix-dgram  n       -       n       -       1       postlogd
 # Inbound, port 25, no tls
 10025               inet        n       -       n       -       -       smtpd
+    -o smtpd_upstream_proxy_protocol=
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13024
     -o cleanup_service_name=cleanup_inbound
 
 # Internal Submission, no tls, no starttls
 10587          inet        n       -       -       -       -       smtpd
-    -o syslog_name=postfix/submission
+    -o syslog_name=postfix/submission-int
     -o cleanup_service_name=cleanup_submission
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13026
     -o smtpd_sasl_auth_enable=yes
@@ -30,8 +31,9 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
 
 # External submission, starttls
 0.0.0.0:11587     inet        n       -       n       -       -       smtpd
-    -o cleanup_service_name=cleanup_submission
     -o syslog_name=postfix/submission
+    -o smtpd_upstream_proxy_protocol=
+    -o cleanup_service_name=cleanup_submission
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13026
     #-o smtpd_tls_security_level=encrypt
     -o smtpd_sasl_auth_enable=yes
@@ -44,9 +46,10 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
 
 # External submission, ssl
 0.0.0.0:11465     inet        n       -       n       -       -       smtpd
+    -o syslog_name=postfix/smtps
+    -o smtpd_upstream_proxy_protocol=
     -o cleanup_service_name=cleanup_submission
     -o rewrite_service_name=rewrite_submission
-    -o syslog_name=postfix/smtps
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13026
     -o mydestination=
     -o local_recipient_maps=
@@ -106,6 +109,7 @@ smtp-amavis         unix        -       -       n       -       3       smtp
 
 # Listener to re-inject email from Amavisd into Postfix
 0.0.0.0:13025     inet        n       -       n       -       100     smtpd
+    -o syslog_name=postfix/amavis
     -o cleanup_service_name=cleanup_internal
     -o local_recipient_maps=
     -o relay_recipient_maps=
@@ -117,7 +121,6 @@ smtp-amavis         unix        -       -       n       -       3       smtp
     -o smtpd_recipient_restrictions=permit_mynetworks,reject
     -o mynetworks=MYNETWORKS
     -o smtpd_authorized_xforward_hosts=MYNETWORKS
-    -o syslog_name=postfix/amavis
 
 # Outbound
 policy_submission    unix        -       n       n       -       -       spawn

@@ -55,6 +55,12 @@ if [ "$WITH_CONTENTFILTER" != "true" ]; then
         /etc/postfix/master.cf
 fi
 
+if [ "$WITH_PROXY_PROTOCOL" == "true" ]; then
+    sed -i -r \
+        -e "s|smtpd_upstream_proxy_protocol=|smtpd_upstream_proxy_protocol=haproxy|g" \
+        /etc/postfix/master.cf
+fi
+
 sed -i -r \
     -e "s|SERVICES_HOST|http://$APP_SERVICES_DOMAIN:$SERVICES_PORT|g" \
     /usr/libexec/postfix/kolab_policy*
