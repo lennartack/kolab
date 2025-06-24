@@ -8,6 +8,15 @@ chown postfix:mail /etc/pki/tls/private/postfix.pem
 chmod 655 /etc/pki/tls/private/postfix.pem
 fi
 
+
+sed -i -r \
+    -e "s|LMTP_DESTINATION|${LMTP_DESTINATION:?"env required"}|g" \
+    -e "s|APP_DOMAIN|${APP_DOMAIN:?"env required"}|g" \
+    -e "s|MYNETWORKS|${MYNETWORKS:?"env required"}|g" \
+    -e "s|AMAVIS_HOST|${AMAVIS_HOST:?"env required"}|g" \
+    -e "s|MESSAGE_SIZE_LIMIT|${MESSAGE_SIZE_LIMIT:?"env required"}|g" \
+    /etc/postfix/main.cf
+
 mkdir /var/log/kolab
 touch /var/log/kolab/postfix-policy-submission.log
 touch /var/log/kolab/postfix-policy-spf.log
@@ -32,13 +41,6 @@ rm -f /var/spool/postfix/pid/master.pid
 
 /usr/libexec/postfix/aliasesdb
 /usr/libexec/postfix/chroot-update
-
-sed -i -r \
-    -e "s|LMTP_DESTINATION|${LMTP_DESTINATION:?"env required"}|g" \
-    -e "s|APP_DOMAIN|${APP_DOMAIN:?"env required"}|g" \
-    -e "s|MYNETWORKS|${MYNETWORKS:?"env required"}|g" \
-    -e "s|AMAVIS_HOST|${AMAVIS_HOST:?"env required"}|g" \
-    /etc/postfix/main.cf
 
 sed -i -r \
     -e "s|MYNETWORKS|${MYNETWORKS:?"env requried"}|g" \

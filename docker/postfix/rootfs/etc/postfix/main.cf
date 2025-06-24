@@ -601,3 +601,5 @@ smtpd_discard_ehlo_keywords = chunking, silent-discard
 content_filter = smtp-amavis:[AMAVIS_HOST]:13024
 
 maillog_file = /dev/stdout
+
+message_size_limit = MESSAGE_SIZE_LIMIT
