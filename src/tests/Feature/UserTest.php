@@ -1693,20 +1693,24 @@ class UserTest extends TestCase
     }
 
     /**
-     * Tests for User::wallets()
+     * Tests for User::wallet() and User::wallets()
      */
     public function testWallets(): void
     {
         $john = $this->getTestUser('john@kolab.org');
         $ned = $this->getTestUser('ned@kolab.org');
+        $account_wallet = $john->wallets->first();
 
         $this->assertSame(1, $john->wallets()->count());
         $this->assertCount(1, $john->wallets);
-        $this->assertInstanceOf(Wallet::class, $john->wallets->first());
+        $this->assertInstanceOf(Wallet::class, $account_wallet);
 
         $this->assertSame(1, $ned->wallets()->count());
         $this->assertCount(1, $ned->wallets);
         $this->assertInstanceOf(Wallet::class, $ned->wallets->first());
+
+        $this->assertSame($account_wallet->id, $john->wallet()->id);
+        $this->assertSame($account_wallet->id, $ned->wallet()->id);
     }
 
     /**

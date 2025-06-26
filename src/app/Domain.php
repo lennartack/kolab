@@ -318,7 +318,6 @@ class Domain extends Model
 
     /**
      * List the users of a domain, so long as the domain is not a public registration domain.
-     * Note: It returns only users with a mailbox.
      *
      * @return Collection<User> A collection of users
      */
@@ -334,22 +333,13 @@ class Domain extends Model
             return collect([]);
         }
 
-        $mailboxSKU = Sku::withObjectTenantContext($this)->where('title', 'mailbox')->first();
-
-        if (!$mailboxSKU) {
-            \Log::error("No mailbox SKU available.");
-            return collect([]);
-        }
-
-        return User::select()
-            ->whereExists(static function ($query) use ($wallet, $mailboxSKU) {
-                $query->select(DB::raw(1))
-                    ->from('entitlements')
-                    ->whereColumn('entitleable_id', 'users.id')
-                    ->where('entitlements.wallet_id', $wallet->id)
-                    ->where('entitlements.entitleable_type', User::class)
-                    ->where('entitlements.sku_id', $mailboxSKU->id);
-            })
+        return User::whereIn('id', static function ($query) use ($wallet) {
+            $query->from('entitlements')
+                ->select('entitleable_id')
+                ->where('wallet_id', $wallet->id)
+                ->where('entitleable_type', User::class)
+                ->whereNull('deleted_at');
+        })
             ->get();
     }
 

@@ -11,6 +11,7 @@ use App\Wallet;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Str;
 
 /**
@@ -321,19 +322,30 @@ trait EntitleableTrait
      */
     public function wallet(): ?Wallet
     {
-        $entitlement = $this->entitlements()->withTrashed()->orderBy('created_at', 'desc')->first();
+        // Note: Using $this->entitlements() here results in more complicated query
+        $entitlement = Entitlement::withTrashed()
+            ->where('entitleable_id', $this->id)
+            ->where('entitleable_type', self::class)
+            ->orderByDesc('created_at')
+            ->limit(1);
 
-        if ($entitlement) {
-            return $entitlement->wallet;
+        // Note: We use joinSub() because whereIn() does not allow LIMIT in the subquery
+        // @phpstan-ignore-next-line
+        $wallet = Wallet::select('wallets.*')
+            ->joinSub($entitlement, 'e', static function (JoinClause $join) {
+                $join->on('wallets.id', '=', 'e.wallet_id');
+            })
+            ->first();
+
+        // A new user account does not have entitlements. Without this fallback to
+        // the user wallet e.g. assignSku() will fail. It is not a problem for
+        // assignPackage() so typical account creation works w/o this. Some tests fail, though.
+        // TODO: In future we should throw an exception here instead.
+        if (!$wallet && $this instanceof User) {
+            $wallet = $this->wallets()->first();
         }
 
-        // TODO: No entitlement should not happen, but in tests we have
-        //       such cases, so we fallback to the user's wallet in this case
-        if ($this instanceof User) {
-            return $this->wallets()->first();
-        }
-
-        return null;
+        return $wallet;
     }
 
     /**
