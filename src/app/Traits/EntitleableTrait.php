@@ -9,11 +9,25 @@ use App\Transaction;
 use App\User;
 use App\Wallet;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+/**
+ * @property ?User $account Account (wallet) owner
+ */
 trait EntitleableTrait
 {
+    /**
+     * Get the account (wallet) owner. Mutated walletOwner() result.
+     */
+    protected function account(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->walletOwner(),
+        );
+    }
+
     /**
      * Assign a package to an entitleable object. It should not have any existing entitlements.
      *

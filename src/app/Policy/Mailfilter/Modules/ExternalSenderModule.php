@@ -59,10 +59,8 @@ class ExternalSenderModule extends Module
             return false;
         }
 
-        $account = $user->walletOwner();
-
         // Check against the account domains list
-        if ($account && $account->domains(false, false)->where('namespace', $sender_domain)->exists()) {
+        if ($user->account && $user->account->domains(false, false)->where('namespace', $sender_domain)->exists()) {
             return false;
         }
 

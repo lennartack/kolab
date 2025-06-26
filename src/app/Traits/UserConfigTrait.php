@@ -59,9 +59,8 @@ trait UserConfigTrait
 
         // If user is not an account owner read the policy from the owner config
         if ($include_account_policies) {
-            $owner = $this->walletOwner();
-            if ($owner && $owner->id != $this->id) {
-                foreach ($owner->getConfig() as $name => $value) {
+            if ($this->account && $this->account->id != $this->id) {
+                foreach ($this->account->getConfig() as $name => $value) {
                     if (str_contains($name, '_policy')) {
                         $config[$name] = $value;
                     }
