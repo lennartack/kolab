@@ -18,18 +18,22 @@ class SharedFolderSeeder extends Seeder
         $john = User::where('email', 'john@kolab.org')->first();
         $wallet = $john->wallets()->first();
 
-        $folder = SharedFolder::create([
-                'name' => 'Calendar',
-                'email' => 'folder-event@kolab.org',
-                'type' => 'event',
-        ]);
-        $folder->assignToWallet($wallet);
+        if (in_array("event", \config('app.shared_folder_types'))) {
+            $folder = SharedFolder::create([
+                    'name' => 'Calendar',
+                    'email' => 'folder-event@kolab.org',
+                    'type' => 'event',
+            ]);
+            $folder->assignToWallet($wallet);
+        }
 
-        $folder = SharedFolder::create([
-                'name' => 'Contacts',
-                'email' => 'folder-contact@kolab.org',
-                'type' => 'contact',
-        ]);
-        $folder->assignToWallet($wallet);
+        if (in_array("contact", \config('app.shared_folder_types'))) {
+            $folder = SharedFolder::create([
+                    'name' => 'Contacts',
+                    'email' => 'folder-contact@kolab.org',
+                    'type' => 'contact',
+            ]);
+            $folder->assignToWallet($wallet);
+        }
     }
 }
