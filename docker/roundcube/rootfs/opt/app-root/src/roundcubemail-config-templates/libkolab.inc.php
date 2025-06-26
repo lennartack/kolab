@@ -13,4 +13,5 @@
 
     $config['kolab_use_subscriptions'] = true;
 
+    $config['activesync_force_subscriptions'] = ['windowsoutlook15' => ['INBOX' => 1, 'Sent' => 1, 'Trash' => 1, 'Spam' => 1, 'Junk Email' => 1, 'Calendar' => 1, 'Contacts' => 1, 'Addressbook' => 1, 'Tasks' => 1, '/dav/calendars/user/.*/Default' => 1, '/dav/addressbooks/user/.*/Default' => 1]];
 ?>

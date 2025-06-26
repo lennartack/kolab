@@ -115,8 +115,6 @@ $config['activesync_multifolder_blacklist_contact'] = array('windowsoutlook');
 $config['activesync_multifolder_blacklist_note'] = null;
 $config['activesync_multifolder_blacklist_task'] = null;
 
-$config['activesync_protected_folders'] = array('windowsoutlook' => array('INBOX', 'Sent', 'Trash'));
-
 // Enables adding sender name in the From: header of send email
 // when a device uses email address only (e.g. iOS devices)
 $config['activesync_fix_from'] = false;
