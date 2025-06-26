@@ -9,8 +9,10 @@ return [
     | The following language lines are used in the application.
     */
 
+    'chart-all' => 'All',
     'chart-created' => 'Created',
     'chart-deleted' => 'Deleted',
+    'chart-suspended' => 'Suspended',
     'chart-average' => 'average',
     'chart-allusers' => 'All Users - last year',
     'chart-discounts' => 'Discounts',

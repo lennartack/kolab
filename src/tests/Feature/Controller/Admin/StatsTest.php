@@ -92,7 +92,11 @@ class StatsTest extends TestCase
 
         $this->assertSame('All Users - last year', $json['title']);
         $this->assertCount(54, $json['data']['labels']);
-        $this->assertCount(1, $json['data']['datasets']);
+        $this->assertCount(2, $json['data']['datasets']);
+        $this->assertSame('All', $json['data']['datasets'][0]['name']);
+        $this->assertSame('Suspended', $json['data']['datasets'][1]['name']);
+        $this->assertCount(54, $json['data']['datasets'][0]['values']);
+        $this->assertCount(54, $json['data']['datasets'][1]['values']);
 
         // 'users-per-country' chart
         $response = $this->actingAs($admin)->get("api/v4/stats/chart/users-per-country");

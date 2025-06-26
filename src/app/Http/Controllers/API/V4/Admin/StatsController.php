@@ -313,7 +313,6 @@ class StatsController extends Controller
             }
         }
 
-        $labels = array_reverse($labels);
         $start->startOfWeek(Carbon::MONDAY);
 
         $created = DB::table('users')
@@ -326,21 +325,43 @@ class StatsController extends Controller
             ->where('deleted_at', '>=', $start->toDateString())
             ->groupByRaw('1');
 
+        $sus_created = DB::table('users')
+            ->selectRaw("date_format(created_at, '%x-%v') as period, count(*) as cnt")
+            ->where('status', '&', User::STATUS_SUSPENDED)
+            ->where('created_at', '>=', $start->toDateString())
+            ->groupByRaw('1');
+
+        $sus_deleted = DB::table('users')
+            ->selectRaw("date_format(deleted_at, '%x-%v') as period, count(*) as cnt")
+            ->where('status', '&', User::STATUS_SUSPENDED)
+            ->where('deleted_at', '>=', $start->toDateString())
+            ->groupByRaw('1');
+
         $created = $this->applyTenantScope($created)->get();
         $deleted = $this->applyTenantScope($deleted)->get();
+        $sus_created = $this->applyTenantScope($sus_created)->get();
+        $sus_deleted = $this->applyTenantScope($sus_deleted)->get();
         $count = $this->applyTenantScope(DB::table('users')->whereNull('deleted_at'))->count();
+        $sus_count = $this->applyTenantScope(DB::table('users')->whereNull('deleted_at')
+            ->where('status', '&', User::STATUS_SUSPENDED))->count();
 
-        $empty = array_fill_keys($labels, 0);
+        $empty = array_fill_keys(array_reverse($labels), 0);
         $created = array_merge($empty, $created->pluck('cnt', 'period')->all());
         $deleted = array_merge($empty, $deleted->pluck('cnt', 'period')->all());
+        $sus_created = array_merge($empty, $sus_created->pluck('cnt', 'period')->all());
+        $sus_deleted = array_merge($empty, $sus_deleted->pluck('cnt', 'period')->all());
         $all = [];
+        $suspended = [];
 
-        foreach (array_reverse($labels) as $label) {
+        foreach ($labels as $label) {
             $all[] = $count;
+            $suspended[] = $sus_count;
             $count -= $created[$label] - $deleted[$label];
+            $sus_count -= $sus_created[$label] - $sus_deleted[$label];
         }
 
         $all = array_reverse($all);
+        $suspended = array_reverse($suspended);
 
         // $start = 3000;
         // for ($i = 0; $i < count($labels); $i++) {
@@ -352,7 +373,7 @@ class StatsController extends Controller
         return [
             'title' => self::trans('app.chart-allusers'),
             'type' => 'line',
-            'colors' => [self::COLOR_GREEN],
+            'colors' => [self::COLOR_GREEN, self::COLOR_ORANGE],
             'axisOptions' => [
                 'xIsSeries' => true,
                 'xAxisMode' => 'tick',
@@ -365,8 +386,12 @@ class StatsController extends Controller
                 'labels' => $labels,
                 'datasets' => [
                     [
-                        // 'name' => 'Existing',
+                        'name' => self::trans('app.chart-all'),
                         'values' => $all,
+                    ],
+                    [
+                        'name' => self::trans('app.chart-suspended'),
+                        'values' => $suspended,
                     ],
                 ],
             ],
