@@ -107,6 +107,19 @@ if [ "$1" == "syncroton" ]; then
     sed -i -r -e "s/config\['activesync_multifolder_blacklist_contact'\] =.*$/config['activesync_multifolder_blacklist_contact'] = array('windowsoutlook');/g" roundcubemail/config/kolab_syncroton.inc.php
     sed -i -r -e "s/config\['activesync_multifolder_blacklist_note'\] =.*$/config['activesync_multifolder_blacklist_note'] = array('windowsoutlook');/g" roundcubemail/config/kolab_syncroton.inc.php
 
+    cat <<'EOF' >> roundcubemail/config/kolab_syncroton.inc.php;
+
+    $config['activesync_storage'] = 'kolab4';
+    $config['activesync_dav_server'] = getenv('CALENDAR_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav";
+    $config['calendar_driver'] = 'caldav';
+    $config['calendar_caldav_server'] = getenv('CALENDAR_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav";
+    $config['tasklist_driver'] = 'caldav';
+    $config['tasklist_caldav_server'] = getenv('CALENDAR_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav";
+    $config['kolab_tags_driver'] = 'annotate';
+    $config['kolab_dav_sharing'] = 'sharing';
+
+EOF
+
     pushd syncroton
 
     for user in $DEBUG_USERS; do
