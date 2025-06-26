@@ -10,6 +10,8 @@ RUN dnf -y install \
 
 EXPOSE 8000
 
+ENV MAX_FILESIZE="8M"
+ENV MEMORY_LIMIT="128M"
 ARG GIT_REF=master
 ARG GIT_REMOTE=https://git.kolab.org/source/kolab.git
 ARG CONFIG=config.prod
@@ -33,9 +35,6 @@ COPY init.sh /init.sh
 COPY reload.sh /reload.sh
 COPY update.sh /update.sh
 COPY update-source.sh /update-source.sh
-
-ENV MAX_FILESIZE="8M"
-ENV MEMORY_LIMIT="128M"
 
 USER 1001
 

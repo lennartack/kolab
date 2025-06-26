@@ -6,8 +6,8 @@ cd /opt/app-root/src/
 
 /update.sh
 
-sed -i "s/MAX_FILESIZE/$MAX_FILESIZE/" /etc/php.ini
-sed -i "s/MEMORY_LIMIT/$MEMORY_LIMIT/" /etc/php.ini
+sed -i "s/MAX_FILESIZE/${MAX_FILESIZE}/" /etc/php.ini
+sed -i "s/MEMORY_LIMIT/${MEMORY_LIMIT}/" /etc/php.ini
 
 if [ ! -f 'resources/countries.php' ]; then
     echo "----> Importing countries"

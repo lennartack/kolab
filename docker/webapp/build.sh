@@ -5,6 +5,9 @@ set -x
 echo -e "Building with the following ulimit: limit: $(ulimit -n)\n"
 echo -e "If you run into EMFILE errors, this is the reason"
 
+sed -i "s/MAX_FILESIZE/8M/" /etc/php.ini
+sed -i "s/MEMORY_LIMIT/128M/" /etc/php.ini
+
 mkdir /src
 cd /src
 
