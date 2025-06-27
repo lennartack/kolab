@@ -12,6 +12,20 @@ use Tests\TestCase;
 
 class HealthTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->deleteTestUser('user@health-test.com');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->deleteTestUser('user@health-test.com');
+
+        parent::tearDown();
+    }
+
     /**
      * Test the command
      */
