@@ -362,6 +362,7 @@ class StatsController extends Controller
 
         $all = array_reverse($all);
         $suspended = array_reverse($suspended);
+        $labels = array_reverse($labels);
 
         // $start = 3000;
         // for ($i = 0; $i < count($labels); $i++) {
