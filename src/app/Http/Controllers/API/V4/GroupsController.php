@@ -30,6 +30,14 @@ class GroupsController extends RelationController
     protected $objectProps = ['email', 'name'];
 
     /**
+     * On group create it is filled with a user or group object to force-delete
+     * before the creation of a new group record is possible.
+     *
+     * @var User|Group|null
+     */
+    protected $deleteBeforeCreate;
+
+    /**
      * Group status (extended) information
      *
      * @param Group $group Group object
@@ -70,8 +78,10 @@ class GroupsController extends RelationController
             'name' => 'required|string|max:191',
         ];
 
+        $this->deleteBeforeCreate = null;
+
         // Validate group address
-        if ($error = self::validateGroupEmail($email, $owner)) {
+        if ($error = self::validateGroupEmail($email, $owner, $this->deleteBeforeCreate)) {
             $errors['email'] = $error;
         } else {
             [, $domainName] = explode('@', $email);
@@ -107,6 +117,10 @@ class GroupsController extends RelationController
         }
 
         DB::beginTransaction();
+
+        if ($this->deleteBeforeCreate) {
+            $this->deleteBeforeCreate->forceDelete();
+        }
 
         // Create the group
         $group = new Group();
@@ -230,12 +244,14 @@ class GroupsController extends RelationController
     /**
      * Validate an email address for use as a group email
      *
-     * @param string $email Email address
-     * @param User   $user  The group owner
+     * @param string $email   Email address
+     * @param User   $user    The group owner
+     * @param mixed  $deleted Filled with an instance of a deleted model object
+     *                        with the specified email address, if exists
      *
      * @return ?string Error message on validation error
      */
-    public static function validateGroupEmail($email, User $user): ?string
+    public static function validateGroupEmail($email, User $user, &$deleted = null): ?string
     {
         if (empty($email)) {
             return self::trans('validation.required', ['attribute' => 'email']);
@@ -275,18 +291,15 @@ class GroupsController extends RelationController
             return $v->errors()->toArray()['email'][0];
         }
 
-        // Check if a user with specified address already exists
-        if (User::emailExists($email)) {
-            return self::trans('validation.entryexists', ['attribute' => 'email']);
-        }
-
-        // Check if an alias with specified address already exists.
-        if (User::aliasExists($email)) {
-            return self::trans('validation.entryexists', ['attribute' => 'email']);
-        }
-
-        if (Group::emailExists($email)) {
-            return self::trans('validation.entryexists', ['attribute' => 'email']);
+        // Check if the address is already taken
+        if ($existing = self::findEmail($email)) {
+            // If this is a deleted user/group/resource/folder in the same custom domain
+            // we'll force delete it before creating the target group
+            if (is_object($existing) && !$domain->isPublic() && $existing->trashed()) {
+                $deleted = $existing;
+            } else {
+                return self::trans('validation.entryexists', ['attribute' => 'email']);
+            }
         }
 
         return null;

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Group;
+use App\Resource;
+use App\SharedFolder;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -48,6 +52,28 @@ class RelationController extends ResourceController
             'status' => 'success',
             'message' => \trans("app.{$this->label}-delete-success"),
         ]);
+    }
+
+    /**
+     * Find object or alias by specified email address
+     *
+     * @param string $email Email address
+     *
+     * @return bool|object False if not found, True or object if found
+     */
+    protected static function findEmail($email)
+    {
+        if (
+            ($existing = User::emailExists($email, true))
+            || ($existing = Group::emailExists($email, true))
+            || ($existing = Resource::emailExists($email, true))
+            || ($existing = SharedFolder::emailExists($email, true))
+        ) {
+            return $existing;
+        }
+
+        // Check if an alias with specified address already exists.
+        return User::aliasExists($email) || SharedFolder::aliasExists($email);
     }
 
     /**

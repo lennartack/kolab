@@ -696,25 +696,15 @@ class UsersController extends RelationController
             return self::trans('validation.entryexists', ['attribute' => 'domain']);
         }
 
-        // Check if a user/group/resource/shared folder with specified address already exists
-        if (
-            ($existing = User::emailExists($email, true))
-            || ($existing = Group::emailExists($email, true))
-            || ($existing = Resource::emailExists($email, true))
-            || ($existing = SharedFolder::emailExists($email, true))
-        ) {
+        // Check if the address is already taken
+        if ($existing = self::findEmail($email)) {
             // If this is a deleted user/group/resource/folder in the same custom domain
             // we'll force delete it before creating the target user
-            if (!$domain->isPublic() && $existing->trashed()) {
+            if (is_object($existing) && !$domain->isPublic() && $existing->trashed()) {
                 $deleted = $existing;
             } else {
                 return self::trans('validation.entryexists', ['attribute' => 'email']);
             }
-        }
-
-        // Check if an alias with specified address already exists.
-        if (User::aliasExists($email) || SharedFolder::aliasExists($email)) {
-            return self::trans('validation.entryexists', ['attribute' => 'email']);
         }
 
         return null;

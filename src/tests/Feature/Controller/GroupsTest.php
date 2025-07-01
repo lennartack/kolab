@@ -5,6 +5,7 @@ namespace Tests\Feature\Controller;
 use App\Domain;
 use App\Group;
 use App\Http\Controllers\API\V4\GroupsController;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -17,12 +18,16 @@ class GroupsTest extends TestCase
 
         $this->deleteTestGroup('group-test@kolab.org');
         $this->deleteTestGroup('group-test2@kolab.org');
+        $this->deleteTestGroup('deleted@kolab.org');
+        $this->deleteTestUser('deleted@kolab.org');
     }
 
     protected function tearDown(): void
     {
         $this->deleteTestGroup('group-test@kolab.org');
         $this->deleteTestGroup('group-test2@kolab.org');
+        $this->deleteTestGroup('deleted@kolab.org');
+        $this->deleteTestUser('deleted@kolab.org');
 
         parent::tearDown();
     }
@@ -517,6 +522,30 @@ class GroupsTest extends TestCase
         $this->assertCount(2, $json);
         $this->assertCount(1, $json['errors']);
         $this->assertSame("The specified name is not available.", $json['errors']['name'][0]);
+
+        // Test a group email that belongs to a deleted user
+        $user = $this->getTestUser('deleted@kolab.org');
+        $user->delete();
+
+        $post = [
+            'name' => 'Test Group 2',
+            'email' => $user->email,
+            'members' => ['test3@domain.tld'],
+        ];
+
+        $response = $this->actingAs($john)->post("/api/v4/groups", $post);
+        $response->assertStatus(200);
+
+        $this->assertCount(0, User::withTrashed()->where('email', $post['email'])->get());
+
+        // Test a group email that belongs to a deleted group
+        $group = Group::where('email', $post['email'])->first();
+        $group->delete();
+
+        $response = $this->actingAs($john)->post("/api/v4/groups", $post);
+        $response->assertStatus(200);
+
+        $this->assertCount(1, Group::where('email', $post['email'])->get());
     }
 
     /**
