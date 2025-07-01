@@ -4,7 +4,7 @@
 
     ./mailtransporttest.py --sender-username test1@kolab.org --sender-password foobar --sender-host smtp.kolabnow.com --recipient-username test2@kolab.org --recipient-password foobar --recipient-host imap.kolabnow.com --validate
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 import argparse
 import sys
 import imaplib
@@ -72,6 +72,89 @@ CiAgICBPcHRpb24gIlVzZUVESUQiICJ0cnVlIgpFbmRTZWN0aW9uCg==
 --=_291b8e96564265636432c6d494e02322--
 '''.strip()
 
+mailtemplateWithInvitation = '''
+MIME-Version: 1.0
+Date: {date}
+From: {sender}
+To: {to}
+Subject: {subject}
+Message-ID: {messageid}
+Content-Type: multipart/alternative;
+ boundary="=_e826fa0b51105002516c94e15d877816"
+
+--=_e826fa0b51105002516c94e15d877816
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+
+*{subject}*
+
+When: 2025-07-02 3:30 - 4:00 (Europe/Zurich)
+
+Invitees: {sender},
+  {to}
+
+foo
+
+Please find attached an iCalendar file with all the event details which you=
+=20
+can import to your calendar application.
+
+In case your email client doesn't support iTip requests you can use the=20
+following link to either accept or decline this invitation:
+https://kolabnow.com/apps/V0LNO8LkN2ZZwZTs/?_task=3Dcalendar&_action=3Datte=
+nd&_t=3D187b0097af83e44fe178df0a5dd9b61568b2ae7c.YWRtaW5AbmVzdGxlLmtvbGFiLm=
+lv.1a6264
+--=_e826fa0b51105002516c94e15d877816
+Content-Transfer-Encoding: 8bit
+Content-Type: text/calendar; charset=UTF-8; method=REQUEST;
+ name=event.ics
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Roundcube 1.6-git//Sabre VObject 4.5.7//EN
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VTIMEZONE
+TZID:Europe/Zurich
+BEGIN:STANDARD
+DTSTART:20241027T010000
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+END:STANDARD
+BEGIN:STANDARD
+DTSTART:20251026T010000
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:20250330T010000
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:{dtstamp}
+CREATED:{dtstamp}
+LAST-MODIFIED:{dtstamp}
+DTSTART;TZID=Europe/Zurich:{dtstart}
+DTEND;TZID=Europe/Zurich:{dtend}
+SUMMARY:{subject}
+DESCRIPTION:test
+SEQUENCE:0
+TRANSP:OPAQUE
+ATTENDEE;CN={to};PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;CUTYPE=INDIVID
+ UAL;RSVP=TRUE:mailto:{to}
+ORGANIZER;CN={sender}:mailto:{sender}
+END:VEVENT
+END:VCALENDAR
+
+--=_e826fa0b51105002516c94e15d877816--
+'''.strip()
 
 RED='\033[31m'
 GREEN='\033[32m'
@@ -105,6 +188,7 @@ class SendTest:
         self.validate = options.validate
         self.bulk_send = options.bulk_send
         self.attachmentSize = options.attachmentSize
+        self.invitation = options.invitation
 
         self.uuid = None
         self.subject = None
@@ -198,6 +282,22 @@ class SendTest:
         self.uuid = str(uuid.uuid4())
         self.subject = f"Delivery Check {self.uuid}"
         dtstamp = datetime.utcnow()
+        if self.invitation:
+            start = dtstamp
+            end = start + timedelta(seconds=3600)
+            return mailtemplateWithInvitation.format(
+                messageid="<{}@deliverycheck.org>".format(self.uuid),
+                subject=self.subject,
+                sender=from_address,
+                to=to,
+                date=dtstamp.strftime("%a, %d %b %Y %H:%M:%S %z"),
+                dtstamp=dtstamp.strftime("%Y%b%dT%H%M%SZ"),
+                dtstart=start.strftime("%Y%b%dT%H%M%S"),
+                dtend=end.strftime("%Y%b%dT%H%M%S"),
+                uid=self.uuid,
+                body=self.body,
+            )
+
         if self.attachmentSize:
             # 13158 is roughly 1 MB
             attachmentMultiplier = 13158 * self.attachmentSize
@@ -220,9 +320,7 @@ class SendTest:
             body=self.body,
         )
 
-
-
-    def send_mail(self, starttls, smtp):
+    def send_mail_loop(self, smtp):
         if self.target_address:
             to = self.target_address
         else:
@@ -235,15 +333,19 @@ class SendTest:
 
         count = 1 if not self.bulk_send else self.bulk_send
         print(f"Sending {count} email to {to}")
+
+        for _ in range(count):
+            smtp.sendmail(from_address, to, self.get_message(from_address, to))
+            print(f"Email with uuid {self.uuid} sent")
+
+    def send_mail(self, starttls, smtp):
         if smtp:
             with smtplib.SMTP(host=self.sender_host, port=self.sender_port or 25) as smtp:
                 if self.verbose:
                     smtp.set_debuglevel(2)
                 smtp.ehlo()
                 smtp.noop()
-                for _ in range(count):
-                    smtp.sendmail(from_address, to, self.get_message(from_address, to))
-                    print(f"Email with uuid {self.uuid} sent")
+                self.send_mail_loop(smtp)
 
         elif starttls:
             with smtplib.SMTP(host=self.sender_host, port=self.sender_port or 587) as smtp:
@@ -251,16 +353,12 @@ class SendTest:
                 smtp.ehlo()
                 smtp.login(self.sender_username, self.sender_password)
                 smtp.noop()
-                for _ in range(count):
-                    smtp.sendmail(from_address, to, self.get_message(from_address, to))
-                    print(f"Email with uuid {self.uuid} sent")
+                self.send_mail_loop(smtp)
         else:
             with smtplib.SMTP_SSL(host=self.sender_host, port=self.sender_port or 465) as smtp:
                 smtp.login(self.sender_username, self.sender_password)
                 smtp.noop()
-                for _ in range(count):
-                    smtp.sendmail(from_address, to, self.get_message(from_address, to))
-                    print(f"Email with uuid {self.uuid} sent")
+                self.send_mail_loop(smtp)
 
 
 parser = argparse.ArgumentParser(description='Mail transport tests.')
@@ -281,6 +379,7 @@ parser.add_argument("--target-address", help="Target address instead of the reci
 parser.add_argument("--body", help="Body text to include")
 parser.add_argument("--validate", action='store_true', help="Validate the received message")
 parser.add_argument('--bulk-send', help='Bulk send email, then exit', type=int, default=0)
+parser.add_argument('--invitation', action='store_true', help='Send an invitation')
 parser.add_argument('--attachmentSize', help='in MB', type=int, default=0)
 
 args = parser.parse_args()
