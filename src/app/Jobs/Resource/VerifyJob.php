@@ -19,8 +19,7 @@ class VerifyJob extends ResourceJob
             return;
         }
 
-        // the resource was already verified
-        if ($resource->isImapReady()) {
+        if ($resource->trashed() || $resource->isImapReady()) {
             return;
         }
 

@@ -19,8 +19,7 @@ class UpdateJob extends GroupJob
         }
 
         // Cancel the update if the group is deleted or not yet in LDAP
-        if (!\config('app.with_ldap') || !$group->isLdapReady() || $group->isDeleted()) {
-            $this->delete();
+        if (!\config('app.with_ldap') || !$group->isLdapReady() || $group->trashed()) {
             return;
         }
 

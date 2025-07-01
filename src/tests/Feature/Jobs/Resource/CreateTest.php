@@ -66,21 +66,12 @@ class CreateTest extends TestCase
 
         // TODO: Test case when IMAP or LDAP method fails
 
-        // Test job failures
-        $resource->status |= Resource::STATUS_DELETED;
-        $resource->save();
-
-        $job = (new CreateJob($resource->id))->withFakeQueueInteractions();
-        $job->handle();
-        $job->assertFailedWith("Resource {$resource->id} is marked as deleted.");
-
-        $resource->status ^= Resource::STATUS_DELETED;
-        $resource->save();
+        // Test a resource actually deleted
         $resource->delete();
 
         $job = (new CreateJob($resource->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("Resource {$resource->id} is actually deleted.");
+        $job->assertNotFailed();
 
         // TODO: Test failures on domain sanity checks
         // TODO: Test partial execution, i.e. only IMAP or only LDAP

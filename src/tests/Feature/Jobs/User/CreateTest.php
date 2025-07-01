@@ -64,22 +64,12 @@ class CreateTest extends TestCase
         $this->assertTrue($user->isImapReady());
         $this->assertTrue($user->isActive());
 
-        // Test job failure (user deleted)
-        $user->status |= User::STATUS_DELETED;
-        $user->save();
-
-        $job = (new CreateJob($user->id))->withFakeQueueInteractions();
-        $job->handle();
-        $job->assertFailedWith("User {$user->id} is marked as deleted.");
-
-        // Test job failure (user removed)
-        $user->status ^= User::STATUS_DELETED;
-        $user->save();
+        // Test deleted user
         $user->delete();
 
         $job = (new CreateJob($user->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("User {$user->id} is actually deleted.");
+        $job->assertNotFailed();
 
         // Test job failure (user unknown), the job will be released
         $job = (new CreateJob(123))->withFakeQueueInteractions();

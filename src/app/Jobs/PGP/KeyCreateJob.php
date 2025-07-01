@@ -42,14 +42,8 @@ class KeyCreateJob extends UserJob
             return;
         }
 
-        // sanity checks
-        if ($user->isDeleted()) {
-            $this->fail("User {$this->userId} is marked as deleted.");
-            return;
-        }
-
         if ($user->trashed()) {
-            $this->fail("User {$this->userId} is actually deleted.");
+            $this->fail("User {$user->email} is actually deleted.");
             return;
         }
 

@@ -20,14 +20,7 @@ class CreateJob extends SharedFolderJob
             return;
         }
 
-        // sanity checks
-        if ($folder->isDeleted()) {
-            $this->fail("Shared folder {$this->folderId} is marked as deleted.");
-            return;
-        }
-
         if ($folder->trashed()) {
-            $this->fail("Shared folder {$this->folderId} is actually deleted.");
             return;
         }
 

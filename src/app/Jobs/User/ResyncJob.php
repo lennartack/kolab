@@ -25,7 +25,6 @@ class ResyncJob extends UserJob
         }
 
         if ($user->role == User::ROLE_SERVICE) {
-            // Admins/resellers don't reside in LDAP (for now)
             return;
         }
 

@@ -18,8 +18,11 @@ class UpdateJob extends DomainJob
             return;
         }
 
+        if ($domain->trashed()) {
+            return;
+        }
+
         if (!\config('app.with_ldap') || !$domain->isLdapReady()) {
-            $this->delete();
             return;
         }
 

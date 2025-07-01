@@ -73,6 +73,6 @@ class DeleteTest extends TestCase
         // Test deleting already deleted folder
         $job = (new DeleteJob($folder->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("Shared folder {$folder->id} is already marked as deleted.");
+        $job->assertNotFailed();
     }
 }

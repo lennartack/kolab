@@ -19,9 +19,7 @@ class UpdateJob extends ResourceJob
             return;
         }
 
-        // Cancel the update if the resource is deleted
-        if ($resource->isDeleted()) {
-            $this->delete();
+        if ($resource->trashed()) {
             return;
         }
 

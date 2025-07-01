@@ -43,7 +43,7 @@ class DeleteTest extends TestCase
         // Test group that is not deleted yet
         $job = (new DeleteJob($group->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("Group {$group->id} is not deleted.");
+        $job->assertFailedWith("Group {$group->email} is not deleted.");
 
         $group->deleted_at = \now();
         $group->saveQuietly();

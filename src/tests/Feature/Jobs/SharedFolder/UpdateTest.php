@@ -55,11 +55,10 @@ class UpdateTest extends TestCase
         $job->assertNotFailed();
 
         // Test handling deleted folder
-        $folder->status |= SharedFolder::STATUS_DELETED;
-        $folder->save();
+        $folder->delete();
 
         $job = (new UpdateJob($folder->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertDeleted();
+        $job->assertNotFailed();
     }
 }

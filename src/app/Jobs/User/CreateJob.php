@@ -49,14 +49,7 @@ class CreateJob extends UserJob
             return;
         }
 
-        // sanity checks
-        if ($user->isDeleted()) {
-            $this->fail("User {$this->userId} is marked as deleted.");
-            return;
-        }
-
         if ($user->trashed()) {
-            $this->fail("User {$this->userId} is actually deleted.");
             return;
         }
 
@@ -70,12 +63,12 @@ class CreateJob extends UserJob
         $domain = $user->domain();
 
         if (!$domain) {
-            $this->fail("The domain for {$this->userId} does not exist.");
+            $this->fail("The domain for {$user->email} does not exist.");
             return;
         }
 
         if ($domain->isDeleted()) {
-            $this->fail("The domain for {$this->userId} is marked as deleted.");
+            $this->fail("The domain for {$user->email} is marked as deleted.");
             return;
         }
 
@@ -105,7 +98,7 @@ class CreateJob extends UserJob
         if (!$user->isImapReady()) {
             if (\config('app.with_imap')) {
                 if (!IMAP::createUser($user)) {
-                    throw new \Exception("Failed to create mailbox for user {$this->userId}.");
+                    throw new \Exception("Failed to create mailbox for user {$user->email}.");
                 }
             } else {
                 if (!IMAP::verifyAccount($user->email)) {

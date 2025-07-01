@@ -19,8 +19,7 @@ class VerifyJob extends SharedFolderJob
             return;
         }
 
-        // the user has a mailbox (or is marked as such)
-        if ($folder->isImapReady()) {
+        if ($folder->trashed() || $folder->isImapReady()) {
             return;
         }
 

@@ -19,6 +19,10 @@ class CreateJob extends DomainJob
             return;
         }
 
+        if ($domain->trashed()) {
+            return;
+        }
+
         if (\config('app.with_ldap') && !$domain->isLdapReady()) {
             LDAP::createDomain($domain);
 

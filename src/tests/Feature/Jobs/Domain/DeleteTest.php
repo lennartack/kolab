@@ -60,9 +60,9 @@ class DeleteTest extends TestCase
         $this->assertFalse($domain->isLdapReady());
         $this->assertTrue($domain->isDeleted());
 
-        // Test job failure (domain marked as deleted)
+        // Test domain marked as deleted
         $job = (new DeleteJob($domain->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("Domain {$domain->namespace} is already marked as deleted.");
+        $job->assertNotFailed();
     }
 }

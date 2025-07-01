@@ -48,16 +48,16 @@ class DeleteTest extends TestCase
         // Test job failure (user not yet deleted)
         $job = (new DeleteJob($user->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("User {$user->id} is not deleted.");
+        $job->assertFailedWith("User {$user->email} is not deleted.");
 
-        // Test job failure (user already deleted)
+        // Test user already deleted
         $user->status |= User::STATUS_DELETED;
         $user->deleted_at = \now();
         $user->saveQuietly();
 
         $job = (new DeleteJob($user->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("User {$user->id} is already marked as deleted.");
+        $job->assertNotFailed();
 
         // Test success delete from LDAP, IMAP and Roundcube
         $user->status ^= User::STATUS_DELETED;

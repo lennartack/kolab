@@ -19,9 +19,7 @@ class UpdateJob extends SharedFolderJob
             return;
         }
 
-        // Cancel the update if the folder is deleted
-        if ($folder->isDeleted()) {
-            $this->delete();
+        if ($folder->trashed()) {
             return;
         }
 

@@ -19,6 +19,10 @@ class CreateJob extends GroupJob
             return;
         }
 
+        if ($group->trashed()) {
+            return;
+        }
+
         if (\config('app.with_ldap') && !$group->isLdapReady()) {
             LDAP::createGroup($group);
 

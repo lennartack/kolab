@@ -19,14 +19,12 @@ class DeleteJob extends DomainJob
             return;
         }
 
-        // sanity checks
         if (!$domain->trashed()) {
             $this->fail("Domain {$domain->namespace} is not deleted.");
             return;
         }
 
         if ($domain->isDeleted()) {
-            $this->fail("Domain {$domain->namespace} is already marked as deleted.");
             return;
         }
 

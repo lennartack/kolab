@@ -44,14 +44,15 @@ class UpdateTest extends TestCase
         LDAP::shouldReceive('updateUser')->once()->with($user)->andReturn(true);
 
         // Test normal update
-        $job = new UpdateJob($user->id);
+        $job = (new UpdateJob($user->id))->withFakeQueueInteractions();
         $job->handle();
+        $job->assertNotFailed();
 
         // Test deleted user
         $user->delete();
         $job = (new UpdateJob($user->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertDeleted();
+        $job->assertNotFailed();
 
         // Test job failure (user unknown), the job will be released
         $job = (new UpdateJob(123))->withFakeQueueInteractions();

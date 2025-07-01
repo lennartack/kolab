@@ -20,14 +20,7 @@ class CreateJob extends ResourceJob
             return;
         }
 
-        // sanity checks
-        if ($resource->isDeleted()) {
-            $this->fail("Resource {$this->resourceId} is marked as deleted.");
-            return;
-        }
-
         if ($resource->trashed()) {
-            $this->fail("Resource {$this->resourceId} is actually deleted.");
             return;
         }
 

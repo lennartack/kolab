@@ -77,6 +77,6 @@ class DeleteTest extends TestCase
         // Test deleting already deleted resource
         $job = (new DeleteJob($resource->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("Resource {$resource->id} is already marked as deleted.");
+        $job->assertNotFailed();
     }
 }

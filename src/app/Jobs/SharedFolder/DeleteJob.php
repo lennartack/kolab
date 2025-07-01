@@ -20,14 +20,12 @@ class DeleteJob extends SharedFolderJob
             return;
         }
 
-        // sanity checks
         if (!$folder->trashed()) {
-            $this->fail("Shared folder {$this->folderId} is not deleted.");
+            $this->fail("Shared folder {$folder->id} is not deleted.");
             return;
         }
 
         if ($folder->isDeleted()) {
-            $this->fail("Shared folder {$this->folderId} is already marked as deleted.");
             return;
         }
 

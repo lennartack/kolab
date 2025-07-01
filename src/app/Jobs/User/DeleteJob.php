@@ -28,13 +28,11 @@ class DeleteJob extends UserJob
         }
 
         if (!$user->trashed()) {
-            $this->fail("User {$this->userId} is not deleted.");
+            $this->fail("User {$user->email} is not deleted.");
             return;
         }
 
-        // sanity checks
         if ($user->isDeleted()) {
-            $this->fail("User {$this->userId} is already marked as deleted.");
             return;
         }
 
@@ -48,7 +46,7 @@ class DeleteJob extends UserJob
         if ($user->isImapReady()) {
             if (\config('app.with_imap')) {
                 if (!IMAP::deleteUser($user)) {
-                    throw new \Exception("Failed to delete mailbox for user {$this->userId}.");
+                    throw new \Exception("Failed to delete mailbox for user {$user->email}.");
                 }
             }
 

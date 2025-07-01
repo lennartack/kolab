@@ -44,7 +44,7 @@ class UpdateTest extends TestCase
         // Group not LDAP_READY
         $job = (new UpdateJob($group->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertDeleted();
+        $job->assertNotFailed();
 
         // Group is LDAP_READY
         $group->status |= Group::STATUS_LDAP_READY;

@@ -19,14 +19,12 @@ class DeleteJob extends GroupJob
             return;
         }
 
-        // sanity checks
         if (!$group->trashed()) {
-            $this->fail("Group {$this->groupId} is not deleted.");
+            $this->fail("Group {$group->email} is not deleted.");
             return;
         }
 
         if ($group->isDeleted()) {
-            $this->fail("Group {$this->groupId} is already marked as deleted.");
             return;
         }
 

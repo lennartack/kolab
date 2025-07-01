@@ -17,6 +17,10 @@ class VerifyJob extends DomainJob
             return;
         }
 
+        if ($domain->trashed()) {
+            return;
+        }
+
         $domain->verify();
     }
 }

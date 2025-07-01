@@ -55,13 +55,11 @@ class UpdateTest extends TestCase
         $job = new UpdateJob($resource->id);
         $job->handle();
 
-        // Test that the job is being deleted if the resource is not ldap ready or is deleted
-        $resource->refresh();
-        $resource->status |= Resource::STATUS_DELETED;
-        $resource->save();
+        // Test deleted resource
+        $resource->delete();
 
         $job = (new UpdateJob($resource->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertDeleted();
+        $job->assertNotFailed();
     }
 }

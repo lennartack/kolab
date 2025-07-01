@@ -35,7 +35,6 @@ class UpdateJob extends UserJob implements ShouldBeUniqueUntilProcessing
         }
 
         if ($user->trashed()) {
-            $this->delete();
             return;
         }
 
@@ -45,7 +44,7 @@ class UpdateJob extends UserJob implements ShouldBeUniqueUntilProcessing
 
         if (\config('app.with_imap') && $user->isImapReady()) {
             if (!IMAP::updateUser($user)) {
-                throw new \Exception("Failed to update mailbox for user {$this->userId}.");
+                throw new \Exception("Failed to update mailbox for user {$user->email}.");
             }
         }
     }

@@ -63,21 +63,12 @@ class CreateTest extends TestCase
         $this->assertTrue($folder->isImapReady());
         $this->assertTrue($folder->isActive());
 
-        // Test job failures
-        $folder->status |= SharedFolder::STATUS_DELETED;
-        $folder->save();
-
-        $job = (new CreateJob($folder->id))->withFakeQueueInteractions();
-        $job->handle();
-        $job->assertFailedWith("Shared folder {$folder->id} is marked as deleted.");
-
-        $folder->status ^= SharedFolder::STATUS_DELETED;
-        $folder->save();
+        // Test folder deleted
         $folder->delete();
 
         $job = (new CreateJob($folder->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith("Shared folder {$folder->id} is actually deleted.");
+        $job->assertNotFailed();
 
         // TODO: Test failures on domain sanity checks
         // TODO: Test partial execution, i.e. only IMAP or only LDAP
