@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Utils;
+
 /**
  * This abstract class provides a means to treat objects in our model using CRUD.
  */
@@ -19,6 +21,10 @@ abstract class ObjectReadCommand extends ObjectCommand
         );
 
         $this->signature .= " {--attr=* : Attributes other than the primary unique key to include}";
+
+        if (Utils::isSoftDeletable($this->objectClass)) {
+            $this->signature .= " {--with-deleted : Consider deleted {$this->objectName}s}";
+        }
 
         parent::__construct();
     }

@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Utils;
+
 /**
  * This abstract class provides a means to treat objects in our model using CRUD.
  */
@@ -34,7 +36,7 @@ abstract class ObjectUpdateCommand extends ObjectCommand
             $this->signature .= " {--{$property}=}";
         }
 
-        if (method_exists($class, 'restore')) {
+        if (Utils::isSoftDeletable($class)) {
             $this->signature .= " {--with-deleted : Include deleted {$this->objectName}s}";
         }
 
@@ -72,7 +74,7 @@ abstract class ObjectUpdateCommand extends ObjectCommand
             if ($class->timestamps && !in_array('updated_at', $list)) {
                 $list[] = 'updated_at';
             }
-            if (method_exists($class, 'restore') && !in_array('deleted_at', $list)) {
+            if (Utils::isSoftDeletable($class) && !in_array('deleted_at', $list)) {
                 $list[] = 'deleted_at';
             }
         }
