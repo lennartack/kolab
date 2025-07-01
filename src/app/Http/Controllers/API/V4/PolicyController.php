@@ -24,7 +24,6 @@ class PolicyController extends Controller
     public function checkPassword(Request $request)
     {
         $userId = $request->input('user');
-
         $user = !empty($userId) ? User::find($userId) : null;
 
         // Check the password

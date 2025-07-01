@@ -27,6 +27,7 @@
                                 <span class="form-control-plaintext" id="status">
                                     <span :class="$root.statusClass(user)">{{ $root.statusText(user) }}</span>
                                     <span v-if="user.isRestricted" class="badge bg-primary rounded-pill ms-1">{{ $t('status.restricted') }}</span>
+                                    <small v-if="user.settings.password_expired" class="d-block text-danger">{{ $t('password.expired-on', { date: user.settings.password_expired }) }}</small>
                                 </span>
                             </div>
                         </div>
@@ -388,6 +389,7 @@
                     aliases: [],
                     config: {},
                     wallet: {},
+                    settings: {},
                     skus: {},
                 }
             }

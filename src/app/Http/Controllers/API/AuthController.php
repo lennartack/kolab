@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Auth\OAuth;
+use App\AuthAttempt;
 use App\Http\Controllers\Controller;
 use App\User;
 use App\Utils;
@@ -226,8 +227,21 @@ class AuthController extends Controller
                 return response()->json(['status' => 'error', 'errors' => $errors], 422);
             }
 
-            \Log::warning("Failed to request a token: " . (string) $tokenResponse);
-            return response()->json(['status' => 'error', 'message' => self::trans('auth.failed')], 401);
+            $response = ['status' => 'error', 'message' => self::trans('auth.failed')];
+
+            if (isset($data->error) && $data->error == AuthAttempt::REASON_PASSWORD_EXPIRED) {
+                $response['message'] = $data->error_description;
+                $response['password_expired'] = true;
+
+                if ($user) {
+                    // At this point we know the password is correct, but expired.
+                    // So, it should be safe to send the user ID back. It will be used
+                    // for the new password policy checks.
+                    $response['id'] = $user->id;
+                }
+            }
+
+            return response()->json($response, 401);
         }
 
         $response = [];

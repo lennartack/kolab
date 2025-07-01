@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Auth\Utils as AuthUtils;
+use App\AuthAttempt;
 use App\Delegation;
 use App\Domain;
 use App\Entitlement;
@@ -463,7 +464,10 @@ class UserTest extends TestCase
         );
 
         // Update the user, test the password change
-        $user->setSetting('password_expiration_warning', '2020-10-10 10:10:10');
+        $user->setSettings([
+            'password_expiration_warning' => '2020-10-10 10:10:10',
+            'password_expired' => '2020-10-20 10:10:10',
+        ]);
         $oldPassword = $user->password;
         $user->password = 'test123';
         $user->save();
@@ -471,6 +475,7 @@ class UserTest extends TestCase
         $this->assertNotSame($oldPassword, $user->password);
         $this->assertSame(0, $user->passwords()->count());
         $this->assertNull($user->getSetting('password_expiration_warning'));
+        $this->assertNull($user->getSetting('password_expired'));
         $this->assertMatchesRegularExpression(
             '/^' . now()->format('Y-m-d') . ' [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
             $user->getSetting('password_update')
@@ -1729,7 +1734,7 @@ class UserTest extends TestCase
 
         // Wrong password
         $user->setRawAttributes(array_merge($attrs, ['password_ldap' => null]));
-        $this->assertFalse($user->validatePassword('wrong'));
+        $this->assertSame(AuthAttempt::REASON_PASSWORD, $user->validatePassword('wrong'));
         $this->assertTrue($user->password_ldap === null);
 
         // Valid password (in 'password_ldap' only)
@@ -1757,6 +1762,10 @@ class UserTest extends TestCase
         $this->assertTrue(strlen($user->password) == strlen($hash)); // @phpstan-ignore-line
 
         // Note: We test other password algorithms in the Password policy tests
+
+        // Expired password
+        $user->setSetting('password_expired', Carbon::now()->toDateTimeString());
+        $this->assertSame(AuthAttempt::REASON_PASSWORD_EXPIRED, $user->validatePassword('test'));
     }
 
     /**

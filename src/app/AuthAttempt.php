@@ -19,6 +19,7 @@ class AuthAttempt extends Model
 
     public const REASON_NONE = '';
     public const REASON_PASSWORD = 'password';
+    public const REASON_PASSWORD_EXPIRED = 'password-expired';
     public const REASON_GEOLOCATION = 'geolocation';
     public const REASON_NOTFOUND = 'notfound';
     public const REASON_2FA = '2fa';

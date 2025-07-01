@@ -12,6 +12,20 @@ use Tests\TestCaseDusk;
 
 class LogonTest extends TestCaseDusk
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->deleteTestUser('test@logon.test');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->deleteTestUser('test@logon.test');
+
+        parent::tearDown();
+    }
+
     /**
      * Test menu on logon page
      */
@@ -177,7 +191,8 @@ class LogonTest extends TestCaseDusk
     public function testLogout(): void
     {
         $this->browse(static function (Browser $browser) {
-            $browser->on(new Dashboard());
+            $browser->on(new Dashboard())
+                ->clearToasts();
 
             // Click the Logout button
             $browser->within(new Menu(), static function ($browser) {
@@ -196,6 +211,38 @@ class LogonTest extends TestCaseDusk
             // Success toast message
             $browser->assertToast(Toast::TYPE_SUCCESS, 'Successfully logged out');
         });
+    }
+
+    /**
+     * Test logon with an expired password (with password update)
+     */
+    public function testLogonExpiredPassword(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $cur_pass = 'simple123';
+            $new_pass = 'ABC123456789';
+            $user = $this->getTestUser('test@logon.test', ['password' => $cur_pass]);
+            $user->setSetting('password_expired', now()->toDateTimeString());
+
+            $browser->visit(new Home())
+                ->submitLogon($user->email, $cur_pass, false)
+                ->waitFor('@new-password-input')
+                ->assertVisible('p.alert')
+                ->waitFor('#new_password_policy > li:first-child > span.text-secondary')
+                ->type('@new-password-input', $new_pass)
+                ->type('@new-password-confirmation-input', $new_pass)
+                ->waitFor('#new_password_policy > li:first-child > svg.text-success')
+                ->click('@logon-button')
+                ->assertToast(Toast::TYPE_SUCCESS, 'Password updated successfully.')
+                ->on(new Dashboard())
+                ->assertUser($user->email);
+
+            $user->refresh();
+            $this->assertTrue($user->validatePassword($new_pass));
+        });
+
+        // TODO: Test error handling
+        // TODO: Test 2FA handling
     }
 
     /**

@@ -58,7 +58,10 @@
                                     </div>
                                 </div>
                                 <div class="row mb-3">
-                                    <label for="password" class="col-sm-4 col-form-label">{{ $t('form.password') }}</label>
+                                    <label for="password" class="col-sm-4 col-form-label">
+                                        {{ $t('form.password') }}
+                                        <btn v-if="user.password_expired" class="btn-link btn-lg text-warning p-0" icon="circle-exclamation" v-tooltip="$t('password.expired-on', { date: user.password_expired})"></btn>
+                                    </label>
                                     <div class="col-sm-8">
                                         <div v-if="!isSelf" class="btn-group w-100" role="group">
                                             <input type="checkbox" id="pass-mode-input" value="input" class="btn-check" @change="setPasswordMode" :checked="passwordMode == 'input'">

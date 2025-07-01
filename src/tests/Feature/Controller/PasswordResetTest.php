@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Controller;
 
+use App\Auth\SecondFactor;
 use App\IP4Net;
 use App\Jobs\Mail\PasswordResetJob;
 use App\Jobs\User\UpdateJob;
@@ -18,12 +19,23 @@ class PasswordResetTest extends TestCase
 
         $this->deleteTestUser('passwordresettest@' . \config('app.domain'));
 
+        $user = $this->getTestUser('ned@kolab.org');
+        $user->removeSetting('password_expired');
+        $user->password = \config('app.passphrase');
+        $user->save();
+
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
     }
 
     protected function tearDown(): void
     {
         $this->deleteTestUser('passwordresettest@' . \config('app.domain'));
+
+        $user = $this->getTestUser('ned@kolab.org');
+        $user->removeSetting('password_expired');
+        $user->password = \config('app.passphrase');
+        $user->save();
+        $user->verificationcodes()->delete();
 
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
 
@@ -341,6 +353,7 @@ class PasswordResetTest extends TestCase
     {
         $user = $this->getTestUser('passwordresettest@' . \config('app.domain'));
         $code = new VerificationCode(['mode' => 'password-reset']);
+        $user->verificationcodes()->delete();
         $user->verificationcodes()->save($code);
 
         Queue::fake();
@@ -376,12 +389,179 @@ class PasswordResetTest extends TestCase
             }
         );
 
+        $user->refresh();
+        $this->assertTrue($user->validatePassword('testtest'));
+
         // Check if the code has been removed
-        $this->assertNull(VerificationCode::find($code->code));
+        $this->assertCount(0, $user->verificationcodes()->get());
 
-        // TODO: Check password before and after (?)
+        // Test 2FA handling
+        $user = $this->getTestUser('ned@kolab.org');
+        $code = new VerificationCode(['mode' => 'password-reset']);
+        $user->verificationcodes()->delete();
+        $user->verificationcodes()->save($code);
+        $user->removeSetting('password_expired');
 
-        // TODO: Check if the access token works
+        $data = [
+            'password' => 'ABC123456789',
+            'password_confirmation' => 'ABC123456789',
+            'code' => $code->code,
+            'short_code' => $code->short_code,
+        ];
+
+        $response = $this->post('/api/auth/password-reset', $data);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertCount(1, $json['errors']);
+        $this->assertArrayHasKey('secondfactor', $json['errors']);
+
+        // Make sure password didn't change if 2FA wasn't provided
+        $user->refresh();
+        $this->assertTrue($user->validatePassword(\config('app.passphrase')));
+        $this->assertCount(1, $user->verificationcodes()->get());
+
+        $data['secondfactor'] = SecondFactor::code('ned@kolab.org');
+        $response = $this->post('/api/auth/password-reset', $data);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertNotEmpty($json['access_token']);
+        $this->assertSame($user->email, $json['email']);
+        $this->assertSame($user->id, $json['id']);
+
+        $user->refresh();
+        $this->assertTrue($user->validatePassword('ABC123456789'));
+        $this->assertCount(0, $user->verificationcodes()->get());
+    }
+
+    /**
+     * Test password-reset-expired
+     */
+    public function testPasswordResetExpired()
+    {
+        $cur_pass = 'testtest';
+        $new_pass = 'Test123456789';
+        $user = $this->getTestUser('passwordresettest@' . \config('app.domain'), ['password' => $cur_pass]);
+        $user->setSetting('password_expired', now()->toDateTimeString());
+
+        $this->assertTrue($user->validatePassword($cur_pass, true));
+
+        // Empty data
+        $data = [];
+
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertCount(1, $json['errors']);
+        $this->assertSame(['password' => 'Invalid username or password.'], $json['errors']);
+
+        // Data with invalid user email
+        $data = [
+            'email' => 'test@unknown.com',
+            'password' => $cur_pass,
+            'new_password' => $new_pass,
+            'new_password_confirmation' => $new_pass,
+        ];
+
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertCount(1, $json['errors']);
+        $this->assertSame(['password' => 'Invalid username or password.'], $json['errors']);
+
+        // Data with invalid password
+        $data['email'] = $user->email;
+        $data['password'] = 'test';
+
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertCount(1, $json['errors']);
+        $this->assertSame(['password' => 'Invalid username or password.'], $json['errors']);
+
+        // Data with a weak new password
+        $data['password'] = $cur_pass;
+        $data['new_password'] = '1';
+        $data['new_password_confirmation'] = '1';
+
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertCount(1, $json['errors']);
+        $this->assertArrayHasKey('new_password', $json['errors']);
+
+        // Valid data
+        $data['new_password'] = $new_pass;
+        $data['new_password_confirmation'] = $new_pass;
+
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('bearer', $json['token_type']);
+        $this->assertTrue(!empty($json['expires_in']) && is_int($json['expires_in']) && $json['expires_in'] > 0);
+        $this->assertNotEmpty($json['access_token']);
+        $this->assertSame($user->email, $json['email']);
+        $this->assertSame($user->id, $json['id']);
+
+        $user->refresh();
+        $this->assertTrue($user->validatePassword($new_pass));
+
+        // Test 2FA handling
+        $user = $this->getTestUser('ned@kolab.org');
+        $user->setSetting('password_expired', now()->toDateTimeString());
+
+        $data = [
+            'email' => $user->email,
+            'password' => \config('app.passphrase'),
+            'new_password' => $new_pass,
+            'new_password_confirmation' => $new_pass,
+        ];
+
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertCount(1, $json['errors']);
+        $this->assertArrayHasKey('secondfactor', $json['errors']);
+
+        // Make sure password didn't change if 2FA wasn't provided
+        $user->refresh();
+        $this->assertNotNull($user->getSetting('password_expired'));
+        $this->assertTrue($user->validatePassword(\config('app.passphrase'), true));
+
+        $data['secondfactor'] = SecondFactor::code('ned@kolab.org');
+        $response = $this->post('/api/auth/password-reset-expired', $data);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertNotEmpty($json['access_token']);
+        $this->assertSame($user->email, $json['email']);
+        $this->assertSame($user->id, $json['id']);
+
+        $user->refresh();
+        $this->assertTrue($user->validatePassword($new_pass));
     }
 
     /**

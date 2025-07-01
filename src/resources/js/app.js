@@ -156,6 +156,10 @@ const app = new Vue({
 
             routerState.afterLogin = null
 
+            if (response.message) {
+                this.$toast.success(response.message)
+            }
+
             // Refresh the token before it expires
             let timeout = response.expires_in || 0
 

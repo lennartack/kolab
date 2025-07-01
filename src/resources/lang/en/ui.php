@@ -367,7 +367,11 @@ return [
     ],
 
     'password' => [
+        'current' => "Current password",
+        'expired-text' => "Your password expired. To log into your account you have to set a new password.",
+        'expired-on' => "Password expired on {date}",
         'link-invalid' => "The password reset code is expired or invalid.",
+        'new' => "New password",
         'reset' => "Password Reset",
         'reset-step1' => "Enter your email address to reset your password.",
         'reset-step1-hint' => "You may need to check your spam folder or unblock {email}.",

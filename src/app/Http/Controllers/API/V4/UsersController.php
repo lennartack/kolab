@@ -460,10 +460,8 @@ class UsersController extends RelationController
         $response['isLocked'] = (!$user->isActive() && ($plan = $wallet->plan()) && $plan->mode == Plan::MODE_MANDATE);
 
         // Settings
-        $response['settings'] = [];
-        foreach ($user->settings()->whereIn('key', self::USER_SETTINGS)->get() as $item) {
-            $response['settings'][$item->key] = $item->value;
-        }
+        $keys = array_merge(self::USER_SETTINGS, ['password_expired']);
+        $response['settings'] = $user->settings()->whereIn('key', $keys)->pluck('value', 'key')->all();
 
         // Status info
         $response['statusInfo'] = self::statusInfo($user);

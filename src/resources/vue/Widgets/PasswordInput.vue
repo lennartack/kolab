@@ -5,7 +5,7 @@
                    class="form-control"
                    autocomplete="new-password"
                    :id="prefix + 'password'"
-                   :placeholder="$t('form.password')"
+                   :placeholder="$t(placeholder ? placeholder : 'form.password')"
                    v-model="password"
                    @input="onInput"
             >
@@ -33,6 +33,8 @@
         props: {
             focus: { type: Boolean, default: false },
             value: { type: Object, default: () => {} },
+            placeholder: { type: String, default: '' },
+            prefix: { type: String, default: '' },
             user: { type: [String, Number], default: '' }
         },
         data() {
@@ -40,7 +42,6 @@
                 password: '',
                 password_confirmation: '',
                 policy: [],
-                prefix: ''
             }
         },
         mounted() {
@@ -48,7 +49,9 @@
 
             const input = $('#password')[0]
 
-            this.prefix = $(input.form).data('validation-prefix') || ''
+            if (this.prefix == '') {
+                this.prefix = $(input.form).data('validation-prefix') || ''
+            }
 
             $(input.form).on('reset', () => { this.checkPolicy('') })
 

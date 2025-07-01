@@ -39,10 +39,13 @@ class Home extends Page
     {
         return [
             '@app' => '#app',
-            '@email-input' => '#inputEmail',
-            '@password-input' => '#inputPassword',
+            '@email-input' => '#email',
+            '@password-input' => '#password',
             '@second-factor-input' => '#secondfactor',
+            '@logon-form' => '#logon-form',
             '@logon-button' => '#logon-form button.btn-primary',
+            '@new-password-input' => '#new_password',
+            '@new-password-confirmation-input' => '#new_password_confirmation',
         ];
     }
 
@@ -63,6 +66,9 @@ class Home extends Page
         $config = []
     ) {
         $browser->clearToasts()
+            ->assertMissing('@new-password-input')
+            ->assertMissing('@new-password-confirmation-input')
+            ->assertMissing('@logon-form p.alert')
             ->type('@email-input', $username)
             ->type('@password-input', $password);
 
@@ -77,7 +83,7 @@ class Home extends Page
             );
         }
 
-        $browser->press('form button');
+        $browser->press('@logon-button');
 
         if ($wait_for_dashboard) {
             $browser->waitForLocation('/dashboard');

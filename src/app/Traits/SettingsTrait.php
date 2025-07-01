@@ -69,6 +69,16 @@ trait SettingsTrait
     }
 
     /**
+     * Remove settings without invoking events.
+     *
+     * @param array $keys Setting names
+     */
+    public function removeSettingsQuietly(array $keys): void
+    {
+        $this->settings()->whereIn('key', $keys)->delete();
+    }
+
+    /**
      * Create or update a setting.
      *
      * Example Usage:
@@ -129,9 +139,12 @@ trait SettingsTrait
                 $setting->delete();
             }
         } else {
-            $this->settings()->updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
+            // Note: upsert() is a single query (INSERT ... ON DUPLICATE KEY UPDATE),
+            // updateOrCreate() is a few queries (BEGIN + INSERT [+ UPDATE] + COMMIT).
+            $this->settings()->upsert(
+                ['key' => $key, 'value' => $value],
+                uniqueBy: ['user_id', 'key', 'value'],
+                update: ['key', 'value']
             );
         }
     }

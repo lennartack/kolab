@@ -28,6 +28,7 @@ class UserTest extends TestCaseDusk
         $john->setSettings([
             'phone' => '+48123123123',
             'external_email' => 'john.doe.external@gmail.com',
+            'password_expired' => '2020-01-01 10:10:10',
         ]);
         if ($john->isSuspended()) {
             User::where('email', $john->email)->update(['status' => $john->status - User::STATUS_SUSPENDED]);
@@ -49,6 +50,7 @@ class UserTest extends TestCaseDusk
         $john->setSettings([
             'phone' => null,
             'external_email' => 'john.doe.external@gmail.com',
+            'password_expired' => '2020-01-01 10:10:10',
         ]);
         if ($john->isSuspended()) {
             User::where('email', $john->email)->update(['status' => $john->status - User::STATUS_SUSPENDED]);
@@ -263,6 +265,7 @@ class UserTest extends TestCaseDusk
             $group = $this->getTestGroup('group-test@kolab.org', ['name' => 'Test Group']);
             $group->assignToWallet($john->wallets->first());
             $john->setSetting('greylist_enabled', null);
+            $john->setSetting('password_expired', '2020-01-01 10:10:10');
 
             // Click the managed-by link on Jack's page
             $browser->click('@user-info #manager a')
@@ -278,6 +281,7 @@ class UserTest extends TestCaseDusk
                         ->assertSeeIn('.row:nth-child(1) #userid', "{$john->id} ({$john->created_at})")
                         ->assertSeeIn('.row:nth-child(2) label', 'Status')
                         ->assertSeeIn('.row:nth-child(2) #status span.text-success', 'Active')
+                        ->assertSeeIn('.row:nth-child(2) #status small.text-danger', 'Password expired on 2020-01-01 10:10:10')
                         ->assertSeeIn('.row:nth-child(3) label', 'First Name')
                         ->assertSeeIn('.row:nth-child(3) #first_name', 'John')
                         ->assertSeeIn('.row:nth-child(4) label', 'Last Name')

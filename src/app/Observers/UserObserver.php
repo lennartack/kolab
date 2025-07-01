@@ -243,9 +243,13 @@ class UserObserver
                 });
         }
 
-        // Save the old password in the password history
+        // Password change
         $oldPassword = $user->getOriginal('password');
         if ($oldPassword && $user->password != $oldPassword) {
+            // Reset the password expiration settings
+            $user->removeSettingsQuietly(['password_expired', 'password_expiration_warning']);
+
+            // Save the old password in the password history
             self::saveOldPassword($user, $oldPassword);
         }
     }
@@ -311,13 +315,10 @@ class UserObserver
      */
     private static function saveOldPassword(User $user, string $password): void
     {
-        // Remember the timestamp of the last password change and unset the last warning date
-        $user->setSettings([
-            'password_expiration_warning' => null,
-            // Note: We could get this from user_passwords table, but only if the policy
-            // enables storing of old passwords there.
-            'password_update' => now()->format('Y-m-d H:i:s'),
-        ]);
+        // Remember the timestamp of the last password change
+        // Note: We could get this from user_passwords table, but only if the policy
+        // enables storing of old passwords there.
+        $user->setSetting('password_update', now()->format('Y-m-d H:i:s'));
 
         Password::saveHash($user, $password);
     }

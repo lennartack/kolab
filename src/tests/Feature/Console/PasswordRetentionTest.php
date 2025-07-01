@@ -73,17 +73,29 @@ class PasswordRetentionTest extends TestCase
         $this->assertSame("", $output);
 
         Queue::assertNothingPushed();
+        $this->assertNotNull($user->getSetting('password_expired'));
+        $this->assertNotNull($owner->getSetting('password_expired'));
 
         // $user's password is about to expire in 14 days
         $user->setSetting('password_update', now()->copy()->subMonthsWithoutOverflow(2)->addDays(14));
+
         // $owner's password is about to expire in 7 days
         $owner->created_at = now()->copy()->subMonthsWithoutOverflow(2)->addDays(7);
         $owner->save();
 
+        // Test no warning for users with expired passwords
+        $code = \Artisan::call("password:retention");
+        $this->assertSame(0, $code);
+
+        Queue::assertNothingPushed();
+
+        $user->removeSetting('password_expired');
+        $owner->removeSetting('password_expired');
+
+        // Test notifications
         $code = \Artisan::call("password:retention");
         $output = trim(\Artisan::output());
         $this->assertSame(0, $code);
-        $this->assertSame("", $output);
 
         Queue::assertPushed(PasswordRetentionJob::class, 2);
         Queue::assertPushed(PasswordRetentionJob::class, static function ($job) use ($user) {

@@ -6,6 +6,7 @@ use App\Console\Command;
 use App\Jobs\Mail\PasswordRetentionJob;
 use App\User;
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class PasswordRetentionCommand extends Command
@@ -22,7 +23,7 @@ class PasswordRetentionCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Notifies users about expected expiration of their password.';
+    protected $description = 'Handles password expiration and sends related email notification.';
 
     /**
      * Execute the console command.
@@ -45,14 +46,19 @@ class PasswordRetentionCommand extends Command
                         . " where users.id = user_settings.user_id and user_settings.key = 'password_update'"
                         . ") as password_update")
                 )
+                // skip users with expired password
+                ->whereNotExists(function (Builder $query) {
+                    $query->select(DB::raw(1))
+                        ->from('user_settings')
+                        ->where('key', 'password_expired')
+                        ->whereColumn('user_settings.user_id', 'users.id');
+                })
+                // Skip incomplete or suspended users
+                ->where('status', '&', User::STATUS_IMAP_READY)
+                ->whereNot('status', '&', User::STATUS_SUSPENDED)
                 ->get()
                 ->each(static function ($user) use ($account) {
                     /** @var User $user */
-                    // Skip incomplete or suspended users
-                    if (!$user->isImapReady() || $user->isSuspended()) {
-                        return;
-                    }
-
                     // If the password was never updated use the user creation time
                     if (!empty($user->password_update)) {
                         $lastUpdate = new Carbon($user->password_update);
@@ -64,8 +70,10 @@ class PasswordRetentionCommand extends Command
                     $nextUpdate = $lastUpdate->copy()->addMonthsWithoutOverflow((int) $account->max_age);
                     $diff = Carbon::now()->diffInDays($nextUpdate, false);
 
-                    // The password already expired, do nothing
+                    // The password already expired
                     if ($diff <= 0) {
+                        // TODO: Invalidate all existing "session" tokens if possible?
+                        $user->setSetting('password_expired', Carbon::now()->toDateTimeString());
                         return;
                     }
 

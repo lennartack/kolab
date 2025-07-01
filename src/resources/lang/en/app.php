@@ -165,6 +165,7 @@ return [
     'wallet-update-success' => 'User wallet updated successfully.',
 
     'password-reset-code-delete-success' => 'Password reset code deleted successfully.',
+    'password-reset-success' => 'Password updated successfully.',
     'password-rule-min' => 'Minimum password length: :param characters',
     'password-rule-max' => 'Maximum password length: :param characters',
     'password-rule-lower' => 'Password contains a lower-case character',

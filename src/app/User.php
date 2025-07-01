@@ -781,9 +781,12 @@ class User extends Authenticatable
     /**
      * Validate the user credentials
      *
-     * @param string $password the password in plain text
+     * @param string $password      The password in plain text
+     * @param bool   $allow_expired Allow expired password
+     *
+     * @return true|string True on success, Error reason otherwise
      */
-    public function validatePassword(string $password): bool
+    public function validatePassword(string $password, bool $allow_expired = false)
     {
         if (!empty($this->password)) {
             $authenticated = Hash::check($password, $this->password);
@@ -794,11 +797,18 @@ class User extends Authenticatable
             $authenticated = false;
         }
 
-        if ($authenticated) {
+        // Note: We intentionally check if password is expired when we know it's valid
+        if ($authenticated === true && !$allow_expired && $this->getSetting('password_expired')) {
+            $authenticated = AuthAttempt::REASON_PASSWORD_EXPIRED;
+        }
+
+        if ($authenticated === true) {
             if (empty($this->password) || empty($this->password_ldap)) {
                 $this->password = $password;
                 $this->save();
             }
+        } elseif ($authenticated === false) {
+            $authenticated = AuthAttempt::REASON_PASSWORD;
         }
 
         return $authenticated;
@@ -860,8 +870,8 @@ class User extends Authenticatable
                     }
                 }
 
-                if (!$user->validatePassword($password)) {
-                    $error = AuthAttempt::REASON_PASSWORD;
+                if (($vresult = $user->validatePassword($password)) !== true) {
+                    $error = $vresult;
                 }
             }
         }
@@ -934,17 +944,21 @@ class User extends Authenticatable
             // If we didn't do this, we couldn't pair backup devices.
             $verifyMFA = false;
         }
+
         $result = self::findAndAuthenticate($username, $password, null, $verifyMFA);
 
         if (isset($result['reason'])) {
-            if ($result['reason'] == AuthAttempt::REASON_2FA_GENERIC) {
-                // This results in a json response of {'error': 'secondfactor', 'error_description': '$errorMessage'}
-                throw new OAuthServerException($result['errorMessage'], 6, 'secondfactor', 401);
+            switch ($result['reason']) {
+                case AuthAttempt::REASON_2FA_GENERIC:
+                    $errorType = 'secondfactor'; // TODO: Can we just use $result['reason'] instead?
+                    // no break
+                case AuthAttempt::REASON_PASSWORD_EXPIRED:
+                    // This results in a json response of {'error': $errorType, 'error_description': $errorMessage}
+                    throw new OAuthServerException($result['errorMessage'], 6, $errorType ?? $result['reason'], 401);
+                default:
+                    // TODO: Display specific error message if 2FA via Companion App was expected?
+                    throw OAuthServerException::invalidCredentials();
             }
-
-            // TODO: Display specific error message if 2FA via Companion App was expected?
-
-            throw OAuthServerException::invalidCredentials();
         }
 
         return $result['user'];

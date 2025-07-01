@@ -21,6 +21,7 @@ Route::group(
         Route::post('password-reset/init', [API\PasswordResetController::class, 'init']);
         Route::post('password-reset/verify', [API\PasswordResetController::class, 'verify']);
         Route::post('password-reset', [API\PasswordResetController::class, 'reset']);
+        Route::post('password-reset-expired', [API\PasswordResetController::class, 'resetExpired']);
 
         if (\config('app.with_signup')) {
             Route::get('signup/domains', [API\SignupController::class, 'domains']);

@@ -22,6 +22,7 @@ return [
     'claim.auth.token' => "Have read and write access to all your data",
 
     'error.password' => "Invalid password",
+    'error.password-expired' => "Expired password",
     'error.invalidrequest' => "Invalid authorization request.",
     'error.geolocation' => "Country code mismatch",
     'error.notfound' => "User not found",

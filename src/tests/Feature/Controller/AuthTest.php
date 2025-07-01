@@ -33,7 +33,10 @@ class AuthTest extends TestCase
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
 
         $user = $this->getTestUser('john@kolab.org');
-        $user->setSetting('limit_geo', null);
+        $user->setSettings([
+            'limit_geo' => null,
+            'password_expired' => null,
+        ]);
     }
 
     protected function tearDown(): void

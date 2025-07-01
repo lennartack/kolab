@@ -21,6 +21,7 @@ class NGINXTest extends TestCase
         $john->setSettings([
             'limit_geo' => null,
             'guam_enabled' => null,
+            'password_expired' => null,
         ]);
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
 

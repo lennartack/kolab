@@ -38,6 +38,7 @@ class UsersTest extends TestCaseDusk
         'itip_config' => null,
         'externalsender_config' => null,
         'greylist_policy' => null,
+        'password_expired' => null,
     ];
 
     protected function setUp(): void
@@ -127,6 +128,7 @@ class UsersTest extends TestCaseDusk
                                 ->assertValue('@input', '');
                         })
                         ->assertSeeIn('div.row:nth-child(4) label', 'Password')
+                        ->assertMissing('div.row:nth-child(4) label > button') // expired password tooltip button
                         ->assertValue('div.row:nth-child(4) input#password', '')
                         ->assertValue('div.row:nth-child(4) input#password_confirmation', '')
                         ->assertAttribute('#password', 'placeholder', 'Password')
@@ -181,6 +183,18 @@ class UsersTest extends TestCaseDusk
 
             $alias = $john->aliases()->where('alias', 'john.test@kolab.org')->first();
             $this->assertTrue(!empty($alias));
+
+            // Test expired password indication
+            $john->setSetting('password_expired', '2020-01-01 10:10:10');
+
+            $browser->refresh()
+                ->on(new UserInfo())
+                ->with('@general', static function (Browser $browser) {
+                    $browser->assertTip(
+                        'div.row:nth-child(4) label > button',
+                        'Password expired on 2020-01-01 10:10:10'
+                    );
+                });
 
             // Test subscriptions
             $browser->with('@general', static function (Browser $browser) {
@@ -593,7 +607,7 @@ class UsersTest extends TestCaseDusk
                     ->click('button[type=submit]');
             })
                 ->assertToast(Toast::TYPE_SUCCESS, 'User created successfully.')
-            // check redirection to users list
+                // check redirection to users list
                 ->on(new UserList())
                 ->whenAvailable('@table', static function (Browser $browser) {
                     $browser->assertElementsCount('tbody tr', 5)
