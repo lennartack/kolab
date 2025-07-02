@@ -583,7 +583,7 @@ class IMAP
 
         // FIXME: should we unshare all or only default folders (ones that we auto-share on delegation)?
         foreach ($imap->listMailboxes('', '*') as $mailbox) {
-            if (!str_starts_with($mailbox, 'Other Users/')) {
+            if (!str_starts_with($mailbox, 'Other Users/') && !str_starts_with($mailbox, 'Shared Folders/')) {
                 if (!$imap->deleteACL($mailbox, $email)) {
                     \Log::error("Failed to unshare {$mailbox} with {$email}");
                     $imap->closeConnection();
