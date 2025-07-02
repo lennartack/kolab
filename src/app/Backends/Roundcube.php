@@ -88,14 +88,20 @@ class Roundcube
             }
         }
 
-        // Create the identity
-        $db->table(self::IDENTITIES_TABLE)->insert([
-            'user_id' => $delegatee_id,
-            'email' => $delegator->email,
-            'name' => (string) $delegator_name,
-            'organization' => (string) $org_name,
-            'changed' => now()->toDateTimeString(),
-        ]);
+        $exists = $db->table(self::IDENTITIES_TABLE)->where('user_id', $delegatee_id)
+            ->where('email', $delegator->email)
+            ->exists();
+
+        // Create the identity (if does not exist yet)
+        if (!$exists) {
+            $db->table(self::IDENTITIES_TABLE)->insert([
+                'user_id' => $delegatee_id,
+                'email' => $delegator->email,
+                'name' => (string) $delegator_name,
+                'organization' => (string) $org_name,
+                'changed' => now()->toDateTimeString(),
+            ]);
+        }
     }
 
     /**

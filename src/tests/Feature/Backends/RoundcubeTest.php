@@ -116,6 +116,13 @@ class RoundcubeTest extends TestCase
         $this->assertSame('Test', $idents[0]->name);
         $this->assertNull($idents[0]->signature);
 
+        // Test that executing again does not create a deplicate identity
+        Roundcube::createDelegatedIdentities($delegatee, $user);
+
+        $idents = $db->table('identities')->where('user_id', $delegatee_id)
+            ->where('email', $user->email)->get();
+        $this->assertCount(1, $idents);
+
         // TODO: signatures copying?
     }
 
