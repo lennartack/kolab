@@ -1,6 +1,9 @@
 FROM apheleia/almalinux9
 
-RUN dnf -y install \
+RUN dnf -y module install \
+        --setopt 'tsflags=nodocs' \
+        nodejs:20 && \
+    dnf -y install \
         --setopt 'tsflags=nodocs' \
         npm nodejs python3 python3-pip meson ninja-build make gcc g++ git rsync && \
     dnf clean all
