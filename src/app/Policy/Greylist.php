@@ -243,7 +243,7 @@ class Greylist
 
     protected function recipientFromRequest()
     {
-        $recipients = Utils::findObjectsByRecipientAddress($this->request['recipient']);
+        $recipients = PolicyUtils::findObjectsByRecipientAddress($this->request['recipient']);
 
         if (count($recipients) > 1) {
             \Log::warning(
@@ -253,11 +253,9 @@ class Greylist
 
         if (count($recipients) >= 1) {
             foreach ($recipients as $recipient) {
-                if ($recipient) {
-                    $this->recipientID = $recipient->id;
-                    $this->recipientType = $recipient::class;
-                    break;
-                }
+                $this->recipientID = $recipient->id;
+                $this->recipientType = $recipient::class;
+                break;
             }
         } else {
             $recipient = null;

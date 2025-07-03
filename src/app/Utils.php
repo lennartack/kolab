@@ -205,58 +205,6 @@ class Utils
     }
 
     /**
-     * Find an object that is the recipient for the specified address.
-     *
-     * @param string $address
-     *
-     * @return array
-     */
-    public static function findObjectsByRecipientAddress($address)
-    {
-        $address = self::normalizeAddress($address);
-
-        [$local, $domainName] = explode('@', $address);
-
-        $domain = Domain::where('namespace', $domainName)->first();
-
-        if (!$domain) {
-            return [];
-        }
-
-        $user = User::where('email', $address)->first();
-
-        if ($user) {
-            return [$user];
-        }
-
-        $userAliases = UserAlias::where('alias', $address)->get();
-
-        if (count($userAliases) > 0) {
-            $users = [];
-
-            foreach ($userAliases as $userAlias) {
-                $users[] = $userAlias->user;
-            }
-
-            return $users;
-        }
-
-        $userAliases = UserAlias::where('alias', "catchall@{$domain->namespace}")->get();
-
-        if (count($userAliases) > 0) {
-            $users = [];
-
-            foreach ($userAliases as $userAlias) {
-                $users[] = $userAlias->user;
-            }
-
-            return $users;
-        }
-
-        return [];
-    }
-
-    /**
      * Retrieve the network ID and Type from a client address
      *
      * @param string $clientAddress the IPv4 or IPv6 address

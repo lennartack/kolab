@@ -3,6 +3,7 @@
 namespace App\Policy;
 
 use App\Policy\SPF\Cache;
+use App\Policy\Utils as PolicyUtils;
 use App\Utils;
 use SPFLib\Check\Environment;
 use SPFLib\Check\Result;
@@ -109,23 +110,21 @@ class SPF
         if ($fail) {
             // TODO: check the recipient's policy, such as using barracuda for anti-spam and anti-virus as a relay for
             // inbound mail to a local recipient address.
-            $objects = null;
+            $objects = [];
             if (array_key_exists('recipient', $data)) {
-                $objects = Utils::findObjectsByRecipientAddress($data['recipient']);
+                $objects = PolicyUtils::findObjectsByRecipientAddress($data['recipient']);
             }
 
-            if (!empty($objects)) {
-                // check if any of the recipient objects have whitelisted the helo, first one wins.
-                foreach ($objects as $object) {
-                    if (method_exists($object, 'senderPolicyFrameworkWhitelist')) {
-                        $result = $object->senderPolicyFrameworkWhitelist($data['client_name']);
+            // check if any of the recipient objects have whitelisted the helo, first one wins.
+            foreach ($objects as $object) {
+                if (method_exists($object, 'senderPolicyFrameworkWhitelist')) {
+                    $result = $object->senderPolicyFrameworkWhitelist($data['client_name']);
 
-                        if ($result) {
-                            $response = new Response(Response::ACTION_DUNNO, 'HELO name whitelisted');
-                            $response->prepends[] = "Received-SPF: Pass Check skipped at recipient's discretion";
+                    if ($result) {
+                        $response = new Response(Response::ACTION_DUNNO, 'HELO name whitelisted');
+                        $response->prepends[] = "Received-SPF: Pass Check skipped at recipient's discretion";
 
-                            return $response;
-                        }
+                        return $response;
                     }
                 }
             }

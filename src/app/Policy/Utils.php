@@ -2,10 +2,102 @@
 
 namespace App\Policy;
 
+use App\Domain;
+use App\Resource;
+use App\SharedFolder;
 use App\User;
+use App\Utils as AppUtils;
 
 class Utils
 {
+    /**
+     * Find objects that are the recipient for the specified email address.
+     *
+     * @param string $address Email address
+     */
+    public static function findObjectsByRecipientAddress($address): array
+    {
+        [$local, $domainName] = AppUtils::normalizeAddress($address, true);
+
+        if (empty($domainName)) {
+            return [];
+        }
+
+        $address = $local . '@' . $domainName;
+
+        $domain = Domain::where('namespace', $domainName)->first();
+
+        if (!$domain) {
+            return [];
+        }
+
+        // Find user/shared-folder/resource with specified address
+        // FIXME: Groups (distribution lists) also have an email address,
+        // but they aren't mailrecipients, or are they?
+
+        $user = User::where('email', $address)->first();
+
+        if ($user) {
+            return [$user];
+        }
+
+        $folder = SharedFolder::where('email', $address)->first();
+
+        if ($folder) {
+            return [$folder];
+        }
+
+        $resource = Resource::where('email', $address)->first();
+
+        if ($resource) {
+            return [$resource];
+        }
+
+        // Find aliases with specified address
+        // FIXME: Folders and users can share aliases, should we merge the result (and return both)?
+
+        $users = User::select('users.*')->distinct()
+            ->join('user_aliases', 'user_aliases.user_id', '=', 'users.id')
+            ->where('alias', $address)
+            ->get();
+
+        if (count($users) > 0) {
+            return $users->all();
+        }
+
+        $folders = SharedFolder::select('shared_folders.*')->distinct()
+            ->join('shared_folder_aliases', 'shared_folder_aliases.shared_folder_id', '=', 'shared_folders.id')
+            ->where('alias', $address)
+            ->get();
+
+        if (count($folders) > 0) {
+            return $folders->all();
+        }
+
+        // Use catchall@ alias if exists
+        // FIXME: Folders and users can share aliases, should we merge the result (and return both)?
+
+        $users = User::select('users.*')->distinct()
+            ->join('user_aliases', 'user_aliases.user_id', '=', 'users.id')
+            ->where('alias', "catchall@{$domain->namespace}")
+            ->get();
+
+        if (count($users) > 0) {
+            return $users->all();
+        }
+
+        $folders = SharedFolder::select('shared_folders.*')->distinct()
+            ->join('shared_folder_aliases', 'shared_folder_aliases.shared_folder_id', '=', 'shared_folders.id')
+            ->where('alias', "catchall@{$domain->namespace}")
+            ->get();
+
+        if (count($folders) > 0) {
+            return $folders->all();
+        }
+
+        return [];
+    }
+
     /**
      * Get user setting with a fallback to account policy
      *
