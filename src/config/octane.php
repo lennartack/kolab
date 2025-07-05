@@ -242,4 +242,8 @@ return [
             'socket_buffer_size' => 10 * 1024 * 1024,
         ],
     ],
+
+    'workers' => env('OCTANE_WORKERS', 20),
+    'task_workers' => env('OCTANE_TASK_WORKERS', 1),
+    'max_requests' => env('OCTANE_MAX_REQUESTS', 2000),
 ];
