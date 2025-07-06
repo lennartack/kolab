@@ -385,7 +385,8 @@ kolab__shell() {
 # Run the roundcube testsuite
 kolab__rctest() {
     export POD=tests
-    DEBUG_ARGS="-ti --rm --pod tests --name debug-$1 -e KOLABOBJECTS_COMPAT_MODE=true -e DEBUG_USERS=john@kolab.org -e ACTIVESYNC_DEBUG=true -e PER_USER_LOGGING=false"
+    DEBUG_USERS="john@kolab.org,jack@kolab.org"
+    DEBUG_ARGS="-ti --rm --pod tests --name debug-$1 -e KOLABOBJECTS_COMPAT_MODE=true -e DEBUG_USERS=$DEBUG_USERS -e ACTIVESYNC_DEBUG=true -e PER_USER_LOGGING=false"
     podman__run_roundcube ./init.sh $@
 }
 
@@ -410,7 +411,7 @@ kolab__rcwebservertest() {
 # Get a shell inside the roundcube test container to run/debug tests
 kolab__rcshell() {
     export POD=tests
-    DEBUG_ARGS="-ti --rm --pod tests --name debug-$1 -e KOLABOBJECTS_COMPAT_MODE=true -e DEBUG_USERS=john@kolab.org"
+    DEBUG_ARGS="-ti --rm --pod tests --name debug-$1 -e KOLABOBJECTS_COMPAT_MODE=true -e DEBUG_USERS='john@kolab.org jack@kolab.org'"
     podman__run_roundcube ./init.sh $@
 }
 

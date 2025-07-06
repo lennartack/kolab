@@ -100,6 +100,8 @@ if [ "$1" == "syncroton" ]; then
 
     sed -i "s/?>/\$config['activesync_test_username'] = 'john@kolab.org';\n?>/" roundcubemail/config/config.inc.php
     sed -i "s/?>/\$config['activesync_test_password'] = 'simple123';\n?>/" roundcubemail/config/config.inc.php
+    sed -i "s/?>/\$config['activesync_test_secondary_username'] = 'jack@kolab.org';\n?>/" roundcubemail/config/config.inc.php
+    sed -i "s/?>/\$config['activesync_test_secondary_password'] = 'simple123';\n?>/" roundcubemail/config/config.inc.php
     sed -i "s/?>/\$config['activesync_test_host'] = 'http:\/\/localhost:8001';\n?>/" roundcubemail/config/config.inc.php
     sed -i -r -e "s/config\['activesync_init_subscriptions'\] =.*$/config['activesync_init_subscriptions'] = 0;/g" roundcubemail/config/kolab_syncroton.inc.php
     sed -i -r -e "s/config\['activesync_multifolder_blacklist_event'\] =.*$/config['activesync_multifolder_blacklist_event'] = array('windowsoutlook');/g" roundcubemail/config/kolab_syncroton.inc.php
@@ -122,10 +124,12 @@ EOF
 
     pushd syncroton
 
+    export IFS=","
     for user in $DEBUG_USERS; do
         mkdir logs/$user
         chmod 777 logs/$user
     done
+    export IFS=" "
 
     php -S localhost:8001 &
     pushd tests
