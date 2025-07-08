@@ -1,10 +1,10 @@
 <template>
     <div class="password-input">
-        <div :id="prefix + 'password_input'">
+        <div :id="prefixed('password_input')">
             <input type="password"
                    class="form-control"
                    autocomplete="new-password"
-                   :id="prefix + 'password'"
+                   :id="prefixed('password')"
                    :placeholder="$t(placeholder ? placeholder : 'form.password')"
                    v-model="password"
                    @input="onInput"
@@ -12,13 +12,13 @@
             <input type="password"
                    class="form-control mt-2"
                    autocomplete="new-password"
-                   :id="prefix + 'password_confirmation'"
+                   :id="prefixed('password_confirmation')"
                    :placeholder="$t('form.password-confirm')"
                    v-model="password_confirmation"
                    @input="onInputConfirm"
             >
         </div>
-        <ul v-if="policy.length" :id="prefix + 'password_policy'" class="list-group pt-2">
+        <ul v-if="policy.length" :id="prefixed('password_policy')" class="list-group pt-2">
             <li v-for="rule in policy" :key="rule.label" class="list-group-item border-0 p-0">
                 <svg-icon v-if="rule.status" icon="check" class="text-success"></svg-icon>
                 <span v-else class="text-secondary">&bullet;</span>
@@ -49,9 +49,7 @@
 
             const input = $('#password')[0]
 
-            if (this.prefix == '') {
-                this.prefix = $(input.form).data('validation-prefix') || ''
-            }
+            this.formPrefix = $(input.form).data('validation-prefix')
 
             $(input.form).on('reset', () => { this.checkPolicy('') })
 
@@ -88,6 +86,9 @@
             },
             onInputConfirm(event) {
                 this.update()
+            },
+            prefixed(label) {
+                return (this.prefix != '' ? this.prefix : (this.formPrefix || '')) + label
             },
             update() {
                 const update = { password: this.password, password_confirmation: this.password_confirmation }

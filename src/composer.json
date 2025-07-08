@@ -44,7 +44,7 @@
         "diablomedia/arcanist-extensions": "^1.1",
         "friendsofphp/php-cs-fixer": "^3.0",
         "larastan/larastan": "^3.4",
-        "laravel/dusk": "~8.2.2",
+        "laravel/dusk": "~8.3.0",
         "mockery/mockery": "^1.5",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^10.5.32"
