@@ -118,3 +118,6 @@ $config['activesync_multifolder_blacklist_task'] = null;
 // Enables adding sender name in the From: header of send email
 // when a device uses email address only (e.g. iOS devices)
 $config['activesync_fix_from'] = false;
+
+// Immediately fail requests from devices marked as broken
+$config['activesync_block_broken_devices'] = true;
