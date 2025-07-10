@@ -182,23 +182,24 @@ class LdifCommand extends Command
                     $entry[$lastAttr] .= ltrim($line);
                 }
             } else {
-                [$attr, $remainder] = explode(':', $line, 2);
-                $attr = strtolower($attr);
+                [$attr, $line] = explode(':', $line, 2);
 
-                if (isset($remainder[0]) && $remainder[0] === ':') {
-                    $remainder = base64_decode(substr($remainder, 2));
+                if (isset($line[0]) && $line[0] === ':') {
+                    $line = '^B64^' . substr($line, 2);
                 } else {
-                    $remainder = ltrim((string) $remainder);
+                    $line = ltrim((string) $line);
                 }
+
+                $attr = strtolower($attr);
 
                 if (array_key_exists($attr, $entry)) {
                     if (!is_array($entry[$attr])) {
                         $entry[$attr] = [$entry[$attr]];
                     }
 
-                    $entry[$attr][] = $remainder;
+                    $entry[$attr][] = $line;
                 } else {
-                    $entry[$attr] = $remainder;
+                    $entry[$attr] = $line;
                 }
 
                 $lastAttr = $attr;
@@ -695,6 +696,19 @@ class LdifCommand extends Command
         // Ignore LDIF header
         if (!empty($entry['version'])) {
             return null;
+        }
+
+        // Decode base64 encoded values
+        foreach ($entry as $key => &$value) {
+            if (is_array($value)) {
+                foreach ($value as $k => &$v) {
+                    if (str_starts_with((string) $v, '^B64^')) {
+                        $v = base64_decode(substr($v, 5));
+                    }
+                }
+            } elseif (str_starts_with((string) $value, '^B64^')) {
+                $value = base64_decode(substr($value, 5));
+            }
         }
 
         if (!isset($entry['objectclass'])) {

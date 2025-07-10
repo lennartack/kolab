@@ -43,7 +43,8 @@ mailAlternateAddress: external@gmail.com
 mailHost: imap.hosted.com
 mailQuota: 8388608
 uid: owner@kolab3.com
-userPassword:: e1NTSEE1MTJ9Zzc0K1NFQ1RMc00xeDBhWWtTclRHOXNPRnpFcDh3akNmbGhzaHIyRGpFN21pMUczaU5iNENsSDNsam9yUFJsVGdaMTA1UHNRR0VwTnROcitYUmppZ2c9PQ==
+userPassword:: e1NTSEE1MTJ9Zzc0K1NFQ1RMc00xeDBhWWtTclRHOXNPRnpFcDh3akNmbGhzaHI
+ yRGpFN21pMUczaU5iNENsSDNsam9yUFJsVGdaMTA1UHNRR0VwTnROcitYUmppZ2c9PQ==
 nsUniqueID: 229dc10c-1b6a11f7-b7c1edc1-0e0f46c4
 createtimestamp: 20170407081419Z
 modifytimestamp: 20200915082359Z
