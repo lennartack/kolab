@@ -58,7 +58,7 @@ class LdifTest extends TestCase
         $this->assertStringContainsString("Importing groups... DONE", $output);
         $this->assertStringNotContainsString("ERROR", $output);
         $this->assertStringContainsString(
-            "WARNING cn=unknowndomain,ou=groups,ou=kolab3.org,dc=hosted,dc=com: Domain not found",
+            "WARNING cn=unknowndomain,ou=groups,ou=kolab3.org,dc=hosted,dc=com: Domain 'kolab3.org' not found",
             $output
         );
 

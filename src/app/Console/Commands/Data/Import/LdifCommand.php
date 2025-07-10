@@ -230,7 +230,7 @@ class LdifCommand extends Command
             $contact = $this->wallet->owner->contacts()->where('email', $data->email)->first();
 
             if ($contact) {
-                $this->setImportWarning($_contact->id, "Contact already exists");
+                $this->setImportWarning($_contact->id, "Contact '{$data->email}' already exists");
                 continue;
             }
 
@@ -288,7 +288,13 @@ class LdifCommand extends Command
             $domain = Domain::withTrashed()->where('namespace', $data->namespace)->first();
 
             if ($domain) {
-                $this->setImportWarning($_domain->id, "Domain already exists");
+                if ($domain->wallet()?->id == $this->wallet?->id) {
+                    $this->domains[] = $domain->namespace;
+                    $this->setImportWarning($_domain->id, "Domain '{$data->namespace}' already exists");
+                } else {
+                    $this->setImportWarning($_domain->id, "Domain '{$data->namespace}' already exists (different owner)");
+                }
+
                 continue;
             }
 
@@ -309,7 +315,7 @@ class LdifCommand extends Command
                     $domain = Domain::withTrashed()->where('namespace', $alias)->first();
 
                     if ($domain) {
-                        $this->setImportWarning($_domain->id, "Domain already exists");
+                        $this->setImportWarning($_domain->id, "Domain '{$alias}' already exists");
                         continue;
                     }
 
@@ -357,13 +363,13 @@ class LdifCommand extends Command
             $group = Group::withTrashed()->where('email', $data->email)->first();
 
             if ($group) {
-                $this->setImportWarning($_group->id, "Group already exists");
+                $this->setImportWarning($_group->id, "Group '{$data->email}' already exists");
                 continue;
             }
 
             // Make sure the domain exists
             if (!$this->domainExists($data->domain)) {
-                $this->setImportWarning($_group->id, "Domain not found");
+                $this->setImportWarning($_group->id, "Domain '{$data->domain}' not found");
                 continue;
             }
 
@@ -425,7 +431,7 @@ class LdifCommand extends Command
 
             // Make sure the domain exists
             if (!$this->domainExists($data->domain)) {
-                $this->setImportWarning($_resource->id, "Domain not found");
+                $this->setImportWarning($_resource->id, "Domain '{$data->domain}' not found");
                 continue;
             }
 
@@ -479,7 +485,7 @@ class LdifCommand extends Command
 
             // Make sure the domain exists
             if (!$this->domainExists($data->domain)) {
-                $this->setImportWarning($_folder->id, "Domain not found");
+                $this->setImportWarning($_folder->id, "Domain '{$data->domain}' not found");
                 continue;
             }
 
@@ -591,7 +597,7 @@ class LdifCommand extends Command
 
         // Make sure the domain exists
         if ($this->wallet && !$this->domainExists($data->domain)) {
-            $this->setImportWarning($ldap_user->id, "Domain not found");
+            $this->setImportWarning($ldap_user->id, "Domain '{$data->domain}' not found");
             return;
         }
 
@@ -1191,6 +1197,15 @@ class LdifCommand extends Command
             'user' => Package::where('title', 'kolab')->where('tenant_id', $this->tenantId)->first(),
             'domain' => Package::where('title', 'domain-hosting')->where('tenant_id', $this->tenantId)->first(),
         ];
+
+        if (empty($this->packages['domain'])) {
+            $this->error("Package 'domain-hosting' not found.");
+            exit;
+        }
+        if (empty($this->packages['user'])) {
+            $this->error("Package 'kolab' not found.");
+            exit;
+        }
 
         // Count storage skus
         $sku = $this->packages['user']->skus()->where('title', 'storage')->first();

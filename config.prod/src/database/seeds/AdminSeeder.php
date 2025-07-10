@@ -212,7 +212,7 @@ class AdminSeeder extends Seeder
 
         $domainPackage = Package::create(
             [
-                'title' => 'domain',
+                'title' => 'domain-hosting',
                 'name' => 'Domain',
                 'description' => 'Domain.',
                 'discount_rate' => 0,
