@@ -38,14 +38,14 @@
     <child_root_path desc="Path to the directory under which the chroot jails for the child processes will be created. Should be on the same file system as systemplate and lotemplate. Must be an empty directory." type="path" relative="true" default="jails"></child_root_path>
     <mount_jail_tree desc="Controls whether the systemplate and lotemplate contents are mounted or not, which is much faster than the default of linking/copying each file." type="bool" default="true">true</mount_jail_tree>
 
-    <server_name desc="External hostname:port of the server running coolwsd. If empty, it's derived from the request (please set it if this doesn't work). May be specified when behind a reverse-proxy or when the hostname is not reachable directly." type="string" default=""></server_name>
+    SERVER_NAME
     <file_server_root_path desc="Path to the directory that should be considered root for the file server. This should be the directory containing cool." type="path" relative="true" default="browser/../"></file_server_root_path>
     <hexify_embedded_urls desc="Enable to protect encoded URLs from getting decoded by intermediate hops. Particularly useful on Azure deployments" type="bool" default="false">false</hexify_embedded_urls>
     <experimental_features desc="Enable/Disable experimental features" type="bool" default="true">true</experimental_features>
 
     <memproportion desc="The maximum percentage of available memory consumed by all of the Collabora Online Development Edition processes, after which we start cleaning up idle documents. If cgroup memory limits are set, this is the maximum percentage of that limit to consume." type="double" default="80.0"></memproportion>
     <num_prespawn_children desc="Number of child processes to keep started in advance and waiting for new clients." type="uint" default="4">4</num_prespawn_children>
-    <fetch_update_check desc="Every number of hours will fetch latest version data. Defaults to 10 hours." type="uint" default="10">10</fetch_update_check>
+    <!--fetch_update_check desc="Every number of hours will fetch latest version data. Defaults to 10 hours." type="uint" default="10">10</fetch_update_check-->
     <allow_update_popup desc="Allows notification about an update in the editor" type="bool" default="true">true</allow_update_popup>
     <per_document desc="Document-specific settings, including LO Core settings.">
         <max_concurrency desc="The maximum number of threads to use while processing a document." type="uint" default="4">4</max_concurrency>
@@ -208,9 +208,9 @@
 
     <ssl desc="SSL settings">
         <!-- switches from https:// + wss:// to http:// + ws:// -->
-        <enable type="bool" desc="Controls whether SSL encryption between coolwsd and the network is enabled (do not disable for production deployment). If default is false, must first be compiled with SSL support to enable." default="true">true</enable>
+        <enable type="bool" desc="Controls whether SSL encryption between coolwsd and the network is enabled (do not disable for production deployment). If default is false, must first be compiled with SSL support to enable." default="true">false</enable>
         <!-- SSL off-load can be done in a proxy, if so disable SSL, and enable termination below in production -->
-        <termination desc="Connection via proxy where coolwsd acts as working via https, but actually uses http." type="bool" default="false">false</termination>
+        <termination desc="Connection via proxy where coolwsd acts as working via https, but actually uses http." type="bool" default="false">true</termination>
         <cert_file_path desc="Path to the cert file" type="path" relative="false">/etc/coolwsd/cert.pem</cert_file_path>
         <key_file_path desc="Path to the key file" type="path" relative="false">/etc/coolwsd/key.pem</key_file_path>
         <ca_file_path desc="Path to the ca file" type="path" relative="false">/etc/coolwsd/ca-chain.cert.pem</ca_file_path>
@@ -272,7 +272,8 @@
                 <refresh desc="How frequently we should re-acquire a lock with the storage server, in seconds (default 15 mins) or 0 for no refresh" type="int" default="900">900</refresh>
             </locking>
 
-            <alias_groups desc="default mode is 'first' it allows only the first host when groups are not defined. set mode to 'groups' and define group to allow multiple host and its aliases" mode="first">
+            <alias_groups desc="default mode is 'first' it allows only the first host when groups are not defined. set mode to 'groups' and define group to allow multiple host and its aliases" mode="groups">
+            ALLOWED_HOSTS_GROUPS
             <!-- If you need to use multiple wopi hosts, please change the mode to "groups" and
                     add the hosts below.  If one host is accessible under multiple ip addresses
                     or names, add them as aliases. -->
@@ -298,7 +299,7 @@
     </storage>
 
     <admin_console desc="Web admin console settings.">
-        <enable desc="Enable the admin console functionality" type="bool" default="true">true</enable>
+        <enable desc="Enable the admin console functionality" type="bool" default="true">false</enable>
         <enable_pam desc="Enable admin user authentication with PAM" type="bool" default="false">false</enable_pam>
         <username desc="The username of the admin console. Ignored if PAM is enabled."></username>
         <password desc="The password of the admin console. Deprecated on most platforms. Instead, use PAM or coolconfig to set up a secure password."></password>
