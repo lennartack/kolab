@@ -291,9 +291,9 @@ class SendTest:
                 sender=from_address,
                 to=to,
                 date=dtstamp.strftime("%a, %d %b %Y %H:%M:%S %z"),
-                dtstamp=dtstamp.strftime("%Y%b%dT%H%M%SZ"),
-                dtstart=start.strftime("%Y%b%dT%H%M%S"),
-                dtend=end.strftime("%Y%b%dT%H%M%S"),
+                dtstamp=dtstamp.strftime("%Y%m%dT%H%M%SZ"),
+                dtstart=start.strftime("%Y%m%dT%H%M%S"),
+                dtend=end.strftime("%Y%m%dT%H%M%S"),
                 uid=self.uuid,
                 body=self.body,
             )
@@ -349,6 +349,8 @@ class SendTest:
 
         elif starttls:
             with smtplib.SMTP(host=self.sender_host, port=self.sender_port or 587) as smtp:
+                if self.verbose:
+                    smtp.set_debuglevel(2)
                 smtp.starttls()
                 smtp.ehlo()
                 smtp.login(self.sender_username, self.sender_password)
@@ -356,6 +358,8 @@ class SendTest:
                 self.send_mail_loop(smtp)
         else:
             with smtplib.SMTP_SSL(host=self.sender_host, port=self.sender_port or 465) as smtp:
+                if self.verbose:
+                    smtp.set_debuglevel(2)
                 smtp.login(self.sender_username, self.sender_password)
                 smtp.noop()
                 self.send_mail_loop(smtp)
