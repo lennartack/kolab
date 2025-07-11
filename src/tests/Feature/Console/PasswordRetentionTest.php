@@ -17,7 +17,7 @@ class PasswordRetentionTest extends TestCase
 
         $this->deleteTestUser('user1@retention.com');
         $this->deleteTestUser('user2@retention.com');
-        $keys = ['password_update', 'max_password_age', 'password_expiration_warning'];
+        $keys = ['password_update', 'max_password_age', 'password_expiration_warning', 'password_expired'];
         UserSetting::whereIn('key', $keys)->delete();
     }
 
@@ -25,7 +25,7 @@ class PasswordRetentionTest extends TestCase
     {
         $this->deleteTestUser('user1@retention.com');
         $this->deleteTestUser('user2@retention.com');
-        $keys = ['password_update', 'max_password_age', 'password_expiration_warning'];
+        $keys = ['password_update', 'max_password_age', 'password_expiration_warning', 'password_expired'];
         UserSetting::whereIn('key', $keys)->delete();
 
         parent::tearDown();

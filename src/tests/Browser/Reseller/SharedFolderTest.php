@@ -33,7 +33,7 @@ class SharedFolderTest extends TestCaseDusk
         // Test that the page requires authentication
         $this->browse(function (Browser $browser) {
             $user = $this->getTestUser('john@kolab.org');
-            $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+            $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
 
             $browser->visit('/shared-folder/' . $folder->id)->on(new Home());
         });
@@ -48,7 +48,7 @@ class SharedFolderTest extends TestCaseDusk
 
         $this->browse(function (Browser $browser) {
             $user = $this->getTestUser('john@kolab.org');
-            $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+            $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
             $folder->setConfig(['acl' => ['anyone, read-only', 'jack@kolab.org, read-write']]);
             $folder->setAliases(['folder-alias1@kolab.org', 'folder-alias2@kolab.org']);
             $folder->status = SharedFolder::STATUS_NEW | SharedFolder::STATUS_ACTIVE
@@ -57,6 +57,7 @@ class SharedFolderTest extends TestCaseDusk
 
             $folder_page = new SharedFolderPage($folder->id);
             $user_page = new UserPage($user->id);
+            $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
 
             // Goto the folder page
             $browser->visit(new Home())
@@ -66,7 +67,7 @@ class SharedFolderTest extends TestCaseDusk
                 ->on($user_page)
                 ->click('@nav #tab-folders')
                 ->pause(1000)
-                ->click('@user-folders table tbody tr:first-child td:first-child a')
+                ->click("@user-folders table tbody tr:nth-child({$count}) td:first-child a")
                 ->on($folder_page)
                 ->assertSeeIn('@folder-info .card-title', $folder->email)
                 ->with('@folder-info form', static function (Browser $browser) use ($folder) {
@@ -78,7 +79,7 @@ class SharedFolderTest extends TestCaseDusk
                         ->assertSeeIn('.row:nth-child(3) label', 'Name')
                         ->assertSeeIn('.row:nth-child(3) #name', $folder->name)
                         ->assertSeeIn('.row:nth-child(4) label', 'Type')
-                        ->assertSeeIn('.row:nth-child(4) #type', 'Calendar');
+                        ->assertSeeIn('.row:nth-child(4) #type', 'Mail');
                 })
                 ->assertElementsCount('ul.nav-tabs .nav-item', 2)
                 ->assertSeeIn('ul.nav-tabs .nav-item:nth-child(1) .nav-link', 'Settings')

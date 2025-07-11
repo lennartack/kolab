@@ -50,12 +50,6 @@ class CreateTest extends TestCase
         $this->assertSame(1, $code);
         $this->assertSame("Domain kolabnow.com is public.", $output);
 
-        // Existing folder
-        $code = \Artisan::call("sharedfolder:create kolab.org Calendar");
-        $output = trim(\Artisan::output());
-        $this->assertSame(1, $code);
-        $this->assertSame("The specified name is not available.", $output);
-
         // Invalid type
         $code = \Artisan::call("sharedfolder:create kolab.org Test --type=unknown");
         $output = trim(\Artisan::output());
@@ -84,5 +78,11 @@ class CreateTest extends TestCase
         $this->assertSame('task', $folder->type);
         $this->assertSame($user->wallets->first()->id, $folder->wallet()->id);
         $this->assertSame(['anyone, read-only', 'jack@kolab.org, full'], $folder->getConfig()['acl']);
+
+        // Existing folder
+        $code = \Artisan::call("sharedfolder:create kolab.org Tasks");
+        $output = trim(\Artisan::output());
+        $this->assertSame(1, $code);
+        $this->assertSame("The specified name is not available.", $output);
     }
 }

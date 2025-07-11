@@ -71,13 +71,21 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
 
                 // Search by an email of a group, resource, shared folder, etc.
                 if ($group = Group::withTrashed()->where('email', $search)->first()) {
-                    $user_ids = $user_ids->merge([$group->wallet()->user_id])->unique();
+                    if ($wallet = $group->wallet()) {
+                        $user_ids = $user_ids->merge([$wallet->user_id])->unique();
+                    }
                 } elseif ($resource = Resource::withTrashed()->where('email', $search)->first()) {
-                    $user_ids = $user_ids->merge([$resource->wallet()->user_id])->unique();
+                    if ($wallet = $resource->wallet()) {
+                        $user_ids = $user_ids->merge([$wallet->user_id])->unique();
+                    }
                 } elseif ($folder = SharedFolder::withTrashed()->where('email', $search)->first()) {
-                    $user_ids = $user_ids->merge([$folder->wallet()->user_id])->unique();
+                    if ($wallet = $folder->wallet()) {
+                        $user_ids = $user_ids->merge([$wallet->user_id])->unique();
+                    }
                 } elseif ($alias = SharedFolderAlias::where('alias', $search)->first()) {
-                    $user_ids = $user_ids->merge([$alias->sharedFolder->wallet()->user_id])->unique();
+                    if ($wallet = $alias->sharedFolder->wallet()) {
+                        $user_ids = $user_ids->merge([$wallet->user_id])->unique();
+                    }
                 }
 
                 if (!$user_ids->isEmpty()) {

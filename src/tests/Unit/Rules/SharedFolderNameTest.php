@@ -38,7 +38,7 @@ class SharedFolderNameTest extends TestCase
         $this->assertSame(['name' => ["The name may not be greater than 191 characters."]], $v->errors()->toArray());
 
         // Existing resource
-        $v = Validator::make(['name' => 'Calendar'], $rules);
+        $v = Validator::make(['name' => 'Library'], $rules);
         $this->assertSame(['name' => ["The specified name is not available."]], $v->errors()->toArray());
 
         // Valid name

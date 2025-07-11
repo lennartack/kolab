@@ -112,11 +112,12 @@ class SkusController extends ResourceController
         $response['skus'] = Entitlement::objectEntitlementsSummary($object);
 
         // Some basic information about the object's wallet
-        $wallet = $object->wallet();
-        $response['wallet'] = $wallet->toArray();
-        if ($wallet->discount) {
-            $response['wallet']['discount'] = $wallet->discount->discount;
-            $response['wallet']['discount_description'] = $wallet->discount->description;
+        if ($wallet = $object->wallet()) {
+            $response['wallet'] = $wallet->toArray();
+            if ($wallet->discount) {
+                $response['wallet']['discount'] = $wallet->discount->discount;
+                $response['wallet']['discount_description'] = $wallet->discount->description;
+            }
         }
     }
 

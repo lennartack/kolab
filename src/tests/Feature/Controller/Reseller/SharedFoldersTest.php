@@ -27,7 +27,7 @@ class SharedFoldersTest extends TestCase
         $admin = $this->getTestUser('jeroen@jeroen.jeroen');
         $reseller1 = $this->getTestUser('reseller@' . \config('app.domain'));
         $reseller2 = $this->getTestUser('reseller@sample-tenant.dev-local');
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
 
         // Non-admin user
         $response = $this->actingAs($user)->get("api/v4/shared-folders");
@@ -55,14 +55,16 @@ class SharedFoldersTest extends TestCase
         $this->assertSame(0, $json['count']);
         $this->assertSame([], $json['list']);
 
+        $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
+
         // Search by email
         $response = $this->actingAs($reseller1)->get("api/v4/shared-folders?search={$folder->email}");
         $response->assertStatus(200);
 
         $json = $response->json();
 
-        $this->assertSame(1, $json['count']);
-        $this->assertCount(1, $json['list']);
+        $this->assertSame($count, $json['count']);
+        $this->assertCount($count, $json['list']);
         $this->assertSame($folder->email, $json['list'][0]['email']);
 
         // Search by owner
@@ -71,8 +73,8 @@ class SharedFoldersTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertSame(2, $json['count']);
-        $this->assertCount(2, $json['list']);
+        $this->assertSame($count, $json['count']);
+        $this->assertCount($count, $json['list']);
         $this->assertSame($folder->email, $json['list'][0]['email']);
         $this->assertSame($folder->name, $json['list'][0]['name']);
 
@@ -113,7 +115,7 @@ class SharedFoldersTest extends TestCase
         $user = $this->getTestUser('john@kolab.org');
         $reseller1 = $this->getTestUser('reseller@' . \config('app.domain'));
         $reseller2 = $this->getTestUser('reseller@sample-tenant.dev-local');
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
 
         // Only resellers can access it
         $response = $this->actingAs($user)->get("api/v4/shared-folders/{$folder->id}");
@@ -143,7 +145,7 @@ class SharedFoldersTest extends TestCase
         Queue::fake(); // disable jobs
 
         $reseller1 = $this->getTestUser('reseller@' . \config('app.domain'));
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
 
         // This end-point does not exist for folders
         $response = $this->actingAs($reseller1)->get("/api/v4/shared-folders/{$folder->id}/status");

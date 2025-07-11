@@ -217,8 +217,11 @@ class UsersTest extends TestCase
         $this->assertSame($user->id, $json['list'][0]['id']);
         $this->assertSame($user->email, $json['list'][0]['email']);
 
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
+        $folder->setAliases(['folder-alias@kolab.org']);
+
         // Search by shared folder email
-        $response = $this->actingAs($admin)->get("api/v4/users?search=folder-event@kolab.org");
+        $response = $this->actingAs($admin)->get("api/v4/users?search={$folder->email}");
         $response->assertStatus(200);
 
         $json = $response->json();
@@ -229,8 +232,6 @@ class UsersTest extends TestCase
         $this->assertSame($user->email, $json['list'][0]['email']);
 
         // Search by shared folder alias
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
-        $folder->setAliases(['folder-alias@kolab.org']);
         $response = $this->actingAs($admin)->get("api/v4/users?search=folder-alias@kolab.org");
         $response->assertStatus(200);
 

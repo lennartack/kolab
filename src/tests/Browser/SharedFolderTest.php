@@ -20,12 +20,12 @@ class SharedFolderTest extends TestCaseDusk
     {
         parent::setUp();
 
-        SharedFolder::whereNotIn('email', ['folder-event@kolab.org', 'folder-contact@kolab.org'])->delete();
+        SharedFolder::whereNotIn('name', ['Contacts', 'Calendar', 'Library'])->delete();
     }
 
     protected function tearDown(): void
     {
-        SharedFolder::whereNotIn('email', ['folder-event@kolab.org', 'folder-contact@kolab.org'])->delete();
+        SharedFolder::whereNotIn('name', ['Contacts', 'Calendar', 'Library'])->delete();
 
         parent::tearDown();
     }
@@ -58,7 +58,7 @@ class SharedFolderTest extends TestCaseDusk
     public function testList(): void
     {
         // Make sure the first folder is active
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->status = SharedFolder::STATUS_NEW | SharedFolder::STATUS_ACTIVE
             | SharedFolder::STATUS_LDAP_READY | SharedFolder::STATUS_IMAP_READY;
         $folder->save();
@@ -72,17 +72,28 @@ class SharedFolderTest extends TestCaseDusk
                 ->click('@links .link-shared-folders')
                 ->on(new SharedFolderList())
                 ->whenAvailable('@table', static function (Browser $browser) {
+                    $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
+
                     $browser->waitFor('tbody tr')
                         ->assertElementsCount('thead th', 2)
                         ->assertSeeIn('thead tr th:nth-child(1)', 'Name')
                         ->assertSeeIn('thead tr th:nth-child(2)', 'Type')
-                        ->assertElementsCount('tbody tr', 2)
-                        ->assertSeeIn('tbody tr:nth-child(1) td:nth-child(1) a', 'Calendar')
-                        ->assertSeeIn('tbody tr:nth-child(1) td:nth-child(2)', 'Calendar')
-                        ->assertText('tbody tr:nth-child(1) td:nth-child(1) svg.text-success title', 'Active')
-                        ->assertSeeIn('tbody tr:nth-child(2) td:nth-child(1) a', 'Contacts')
-                        ->assertSeeIn('tbody tr:nth-child(2) td:nth-child(2)', 'Address Book')
+                        ->assertElementsCount('tbody tr', $count)
                         ->assertMissing('tfoot');
+
+                    if ($count == 1) {
+                        $browser->assertSeeIn('tbody tr:nth-child(1) td:nth-child(1) a', 'Library')
+                            ->assertSeeIn('tbody tr:nth-child(1) td:nth-child(2)', 'Mail')
+                            ->assertText('tbody tr:nth-child(1) td:nth-child(1) svg.text-success title', 'Active');
+                    } else {
+                        $browser->assertSeeIn('tbody tr:nth-child(1) td:nth-child(1) a', 'Calendar')
+                            ->assertSeeIn('tbody tr:nth-child(1) td:nth-child(2)', 'Calendar')
+                            ->assertSeeIn('tbody tr:nth-child(2) td:nth-child(1) a', 'Contacts')
+                            ->assertSeeIn('tbody tr:nth-child(2) td:nth-child(2)', 'Address Book')
+                            ->assertSeeIn('tbody tr:nth-child(3) td:nth-child(1) a', 'Library')
+                            ->assertSeeIn('tbody tr:nth-child(3) td:nth-child(2)', 'Mail')
+                            ->assertText('tbody tr:nth-child(3) td:nth-child(1) svg.text-success title', 'Active');
+                    }
                 });
         });
     }
@@ -94,7 +105,9 @@ class SharedFolderTest extends TestCaseDusk
      */
     public function testCreateUpdateDelete(): void
     {
-        $this->browse(function (Browser $browser) {
+        $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
+
+        $this->browse(function (Browser $browser) use ($count) {
             $cfg = ['app.shared_folder_types' => ['mail', 'event', 'task', 'contact']];
 
             // Create a folder
@@ -164,13 +177,13 @@ class SharedFolderTest extends TestCaseDusk
                 ->click('@general button[type=submit]')
                 ->assertToast(Toast::TYPE_SUCCESS, 'Shared folder created successfully.')
                 ->on(new SharedFolderList())
-                ->assertElementsCount('@table tbody tr', 3);
+                ->assertElementsCount('@table tbody tr', $count + 1);
 
             $this->assertSame(1, SharedFolder::where('name', 'Test Folder')->count());
             $this->assertSame(0, SharedFolder::where('name', 'Test Folder')->first()->aliases()->count());
 
             // Test folder update
-            $browser->click('@table tr:nth-child(3) td:first-child a')
+            $browser->click('@table tr:nth-child(' . ($count + 1) . ') td:first-child a')
                 ->on(new SharedFolderInfo())
                 ->assertSeeIn('#folder-info .card-title', 'Shared folder')
                 ->with('@general', static function (Browser $browser) {
@@ -198,25 +211,25 @@ class SharedFolderTest extends TestCaseDusk
                 ->click('@general button[type=submit]')
                 ->assertToast(Toast::TYPE_SUCCESS, 'Shared folder updated successfully.')
                 ->on(new SharedFolderList())
-                ->assertElementsCount('@table tbody tr', 3)
-                ->assertSeeIn('@table tr:nth-child(3) td:first-child a', 'Test Folder Update');
+                ->assertElementsCount('@table tbody tr', $count + 1)
+                ->assertSeeIn('@table tr:nth-child(' . ($count + 1) . ') td:first-child a', 'Test Folder Update');
 
             $this->assertSame(1, SharedFolder::where('name', 'Test Folder Update')->count());
 
             // Test folder deletion
-            $browser->click('@table tr:nth-child(3) td:first-child a')
+            $browser->click('@table tr:nth-child(' . ($count + 1) . ') td:first-child a')
                 ->on(new SharedFolderInfo())
                 ->assertSeeIn('button.button-delete', 'Delete folder')
                 ->click('button.button-delete')
                 ->assertToast(Toast::TYPE_SUCCESS, 'Shared folder deleted successfully.')
                 ->on(new SharedFolderList())
-                ->assertElementsCount('@table tbody tr', 2);
+                ->assertElementsCount('@table tbody tr', $count);
 
             $this->assertNull(SharedFolder::where('name', 'Test Folder Update')->first());
         });
 
         // Test creation/updating a mail folder with mail aliases
-        $this->browse(function (Browser $browser) {
+        $this->browse(function (Browser $browser) use ($count) {
             $browser->on(new SharedFolderList())
                 ->click('button.shared-folder-new')
                 ->on(new SharedFolderInfo())
@@ -228,7 +241,7 @@ class SharedFolderTest extends TestCaseDusk
                 ->click('@general button[type=submit]')
                 ->assertToast(Toast::TYPE_SUCCESS, 'Shared folder created successfully.')
                 ->on(new SharedFolderList())
-                ->assertElementsCount('@table tbody tr', 3);
+                ->assertElementsCount('@table tbody tr', $count + 1);
 
             $folder = SharedFolder::where('name', 'Test Folder2')->first();
 
@@ -238,7 +251,7 @@ class SharedFolderTest extends TestCaseDusk
             );
 
             // Test folder update
-            $browser->click('@table tr:nth-child(3) td:first-child a')
+            $browser->click('@table tr:nth-child(' . ($count + 1) . ') td:first-child a')
                 ->on(new SharedFolderInfo())
                 ->with('@general', static function (Browser $browser) {
                     // Assert form content
@@ -282,7 +295,7 @@ class SharedFolderTest extends TestCaseDusk
      */
     public function testStatus(): void
     {
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->status = SharedFolder::STATUS_NEW | SharedFolder::STATUS_ACTIVE | SharedFolder::STATUS_LDAP_READY;
         $folder->created_at = \now();
         $folder->save();
@@ -317,7 +330,7 @@ class SharedFolderTest extends TestCaseDusk
      */
     public function testSettings(): void
     {
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->setSetting('acl', null);
 
         $this->browse(static function ($browser) use ($folder) {

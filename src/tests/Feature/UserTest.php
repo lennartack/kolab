@@ -1216,21 +1216,26 @@ class UserTest extends TestCase
         $ned = $this->getTestUser('ned@kolab.org');
         $jack = $this->getTestUser('jack@kolab.org');
 
-        $folders = $john->sharedFolders()->orderBy('email')->get();
-
-        $this->assertSame(2, $folders->count());
-        $this->assertSame('folder-contact@kolab.org', $folders[0]->email);
-        $this->assertSame('folder-event@kolab.org', $folders[1]->email);
-
-        $folders = $ned->sharedFolders()->orderBy('email')->get();
-
-        $this->assertSame(2, $folders->count());
-        $this->assertSame('folder-contact@kolab.org', $folders[0]->email);
-        $this->assertSame('folder-event@kolab.org', $folders[1]->email);
-
         $folders = $jack->sharedFolders()->get();
 
         $this->assertSame(0, $folders->count());
+
+        $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
+
+        $folders = $john->sharedFolders()->orderBy('email')->get();
+
+        $this->assertSame($count, $folders->count());
+        if ($count == 3) {
+            $this->assertSame('folder-contact@kolab.org', $folders[0]->email);
+            $this->assertSame('folder-event@kolab.org', $folders[1]->email);
+            $this->assertSame('folder-mail@kolab.org', $folders[2]->email);
+        } else {
+            $this->assertSame('folder-mail@kolab.org', $folders[0]->email);
+        }
+
+        $folders = $ned->sharedFolders()->orderBy('email')->get();
+
+        $this->assertSame($count, $folders->count());
     }
 
     /**

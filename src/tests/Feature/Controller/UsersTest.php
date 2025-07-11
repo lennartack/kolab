@@ -80,6 +80,8 @@ class UsersTest extends TestCase
         $user->save();
         Plan::withEnvTenantContext()->where('title', 'individual')->update(['mode' => 'email']);
         $user->setSettings(['plan_id' => null]);
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
+        $folder->setAliases([]);
 
         parent::tearDown();
     }
@@ -1534,7 +1536,7 @@ class UsersTest extends TestCase
         $john = $this->getTestUser('john@kolab.org');
         $jack = $this->getTestUser('jack@kolab.org');
         $user = $this->getTestUser('UsersControllerTest1@userscontroller.com');
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->setAliases(['folder-alias1@kolab.org']);
         $folder_del = $this->getTestSharedFolder('folder-test@kolabnow.com');
         $folder_del->setAliases(['folder-alias2@kolabnow.com']);
@@ -1572,7 +1574,7 @@ class UsersTest extends TestCase
             ["jack.daniels@kolab.org", $john, 'The specified email is not available.'],
 
             // An existing shared folder or folder alias
-            ["folder-event@kolab.org", $john, 'The specified email is not available.'],
+            ["folder-mail@kolab.org", $john, 'The specified email is not available.'],
             ["folder-alias1@kolab.org", $john, 'The specified email is not available.'],
 
             // A soft-deleted shared folder or folder alias
@@ -1682,7 +1684,7 @@ class UsersTest extends TestCase
         $deleted_pub = $this->getTestUser('deleted@kolabnow.com');
         $deleted_pub->setAliases(['deleted-alias@kolabnow.com']);
         $deleted_pub->delete();
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
+        $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->setAliases(['folder-alias1@kolab.org']);
         $folder_del = $this->getTestSharedFolder('folder-test@kolabnow.com');
         $folder_del->setAliases(['folder-alias2@kolabnow.com']);
@@ -1729,7 +1731,7 @@ class UsersTest extends TestCase
             ["deleted-alias@kolabnow.com", $john, 'The specified alias is not available.'],
 
             // An existing shared folder or folder alias
-            ["folder-event@kolab.org", $john, 'The specified alias is not available.'],
+            ["folder-mail@kolab.org", $john, 'The specified alias is not available.'],
             ["folder-alias1@kolab.org", $john, null],
 
             // A soft-deleted shared folder or folder alias

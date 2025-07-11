@@ -97,22 +97,23 @@ class SharedFoldersTest extends TestCase
 
         $json = $response->json();
 
-        $folder = SharedFolder::where('name', 'Calendar')->first();
+        $folder = SharedFolder::where('name', 'Library')->first();
+        $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
 
         $this->assertCount(4, $json);
-        $this->assertSame(2, $json['count']);
+        $this->assertSame($count, $json['count']);
         $this->assertFalse($json['hasMore']);
-        $this->assertSame("2 shared folders have been found.", $json['message']);
-        $this->assertCount(2, $json['list']);
-        $this->assertSame($folder->id, $json['list'][0]['id']);
-        $this->assertSame($folder->email, $json['list'][0]['email']);
-        $this->assertSame($folder->name, $json['list'][0]['name']);
-        $this->assertSame($folder->type, $json['list'][0]['type']);
-        $this->assertArrayHasKey('isDeleted', $json['list'][0]);
-        $this->assertArrayHasKey('isActive', $json['list'][0]);
-        $this->assertArrayHasKey('isImapReady', $json['list'][0]);
+        $this->assertSame("{$count} shared folders have been found.", $json['message']);
+        $this->assertCount($count, $json['list']);
+        $this->assertSame($folder->id, $json['list'][$count - 1]['id']);
+        $this->assertSame($folder->email, $json['list'][$count - 1]['email']);
+        $this->assertSame($folder->name, $json['list'][$count - 1]['name']);
+        $this->assertSame($folder->type, $json['list'][$count - 1]['type']);
+        $this->assertArrayHasKey('isDeleted', $json['list'][$count - 1]);
+        $this->assertArrayHasKey('isActive', $json['list'][$count - 1]);
+        $this->assertArrayHasKey('isImapReady', $json['list'][$count - 1]);
         if (\config('app.with_ldap')) {
-            $this->assertArrayHasKey('isLdapReady', $json['list'][0]);
+            $this->assertArrayHasKey('isLdapReady', $json['list'][$count - 1]);
         }
 
         // Test that another wallet controller has access to shared folders
@@ -122,11 +123,7 @@ class SharedFoldersTest extends TestCase
         $json = $response->json();
 
         $this->assertCount(4, $json);
-        $this->assertSame(2, $json['count']);
-        $this->assertFalse($json['hasMore']);
-        $this->assertSame("2 shared folders have been found.", $json['message']);
-        $this->assertCount(2, $json['list']);
-        $this->assertSame($folder->email, $json['list'][0]['email']);
+        $this->assertSame($count, $json['count']);
     }
 
     /**

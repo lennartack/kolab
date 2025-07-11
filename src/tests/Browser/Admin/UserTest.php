@@ -379,18 +379,30 @@ class UserTest extends TestCaseDusk
                         ->assertMissing('table tfoot');
                 });
 
+            $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
+
             // Assert Shared folders tab
-            $browser->assertSeeIn('@nav #tab-folders', 'Shared folders (2)')
+            $browser->assertSeeIn('@nav #tab-folders', "Shared folders ({$count})")
                 ->click('@nav #tab-folders')
-                ->with('@user-folders', static function (Browser $browser) {
-                    $browser->assertElementsCount('table tbody tr', 2)
-                        ->assertSeeIn('table tbody tr:nth-child(1) td:first-child', 'Calendar')
-                        ->assertSeeIn('table tbody tr:nth-child(1) td:nth-child(2)', 'Calendar')
-                        ->assertSeeIn('table tbody tr:nth-child(1) td:last-child', 'folder-event@kolab.org')
-                        ->assertSeeIn('table tbody tr:nth-child(2) td:first-child', 'Contacts')
-                        ->assertSeeIn('table tbody tr:nth-child(2) td:nth-child(2)', 'Address Book')
-                        ->assertSeeIn('table tbody tr:nth-child(2) td:last-child', 'folder-contact@kolab.org')
+                ->with('@user-folders', static function (Browser $browser) use ($count) {
+                    $browser->assertElementsCount('table tbody tr', $count)
                         ->assertMissing('table tfoot');
+
+                    if ($count == 1) {
+                        $browser->assertSeeIn('table tbody tr:nth-child(1) td:first-child', 'Library')
+                            ->assertSeeIn('table tbody tr:nth-child(1) td:nth-child(2)', 'Mail')
+                            ->assertSeeIn('table tbody tr:nth-child(1) td:last-child', 'folder-mail@kolab.org');
+                    } else {
+                        $browser->assertSeeIn('table tbody tr:nth-child(1) td:first-child', 'Calendar')
+                            ->assertSeeIn('table tbody tr:nth-child(1) td:nth-child(2)', 'Calendar')
+                            ->assertSeeIn('table tbody tr:nth-child(1) td:last-child', 'folder-event@kolab.org')
+                            ->assertSeeIn('table tbody tr:nth-child(2) td:first-child', 'Contacts')
+                            ->assertSeeIn('table tbody tr:nth-child(2) td:nth-child(2)', 'Address Book')
+                            ->assertSeeIn('table tbody tr:nth-child(2) td:last-child', 'folder-contact@kolab.org')
+                            ->assertSeeIn('table tbody tr:nth-child(3) td:first-child', 'Library')
+                            ->assertSeeIn('table tbody tr:nth-child(3) td:nth-child(2)', 'Library')
+                            ->assertSeeIn('table tbody tr:nth-child(3) td:last-child', 'folder-mail@kolab.org');
+                    }
                 });
 
             // Assert History tab

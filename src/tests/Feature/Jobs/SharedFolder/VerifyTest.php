@@ -14,16 +14,12 @@ class VerifyTest extends TestCase
     {
         parent::setUp();
 
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
-        $folder->status |= SharedFolder::STATUS_IMAP_READY;
-        $folder->save();
+        $this->deleteTestSharedFolder('folder-test@kolabnow.com');
     }
 
     protected function tearDown(): void
     {
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
-        $folder->status |= SharedFolder::STATUS_IMAP_READY;
-        $folder->save();
+        $this->deleteTestSharedFolder('folder-test@kolabnow.com');
 
         parent::tearDown();
     }
@@ -41,12 +37,7 @@ class VerifyTest extends TestCase
         $job->assertFailedWith("Shared folder 123 could not be found in the database.");
 
         // Test existing folder
-        $folder = $this->getTestSharedFolder('folder-event@kolab.org');
-
-        if ($folder->isImapReady()) {
-            $folder->status ^= SharedFolder::STATUS_IMAP_READY;
-            $folder->save();
-        }
+        $folder = $this->getTestSharedFolder('folder-test@kolabnow.com', ['status' => SharedFolder::STATUS_NEW]);
 
         $this->assertFalse($folder->isImapReady());
 

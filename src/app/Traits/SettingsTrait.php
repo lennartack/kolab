@@ -141,10 +141,17 @@ trait SettingsTrait
         } else {
             // Note: upsert() is a single query (INSERT ... ON DUPLICATE KEY UPDATE),
             // updateOrCreate() is a few queries (BEGIN + INSERT [+ UPDATE] + COMMIT).
+            // However, it does not invoke event observers
+            /*
             $this->settings()->upsert(
                 ['key' => $key, 'value' => $value],
                 uniqueBy: ['user_id', 'key', 'value'],
                 update: ['key', 'value']
+            );
+            */
+            $this->settings()->updateOrCreate(
+                ['key' => $key],
+                ['value' => $value]
             );
         }
     }

@@ -84,7 +84,7 @@ class StatsTest extends TestCase
 
         $this->assertSame('All Users - last year', $json['title']);
         $this->assertCount(54, $json['data']['labels']);
-        $this->assertCount(1, $json['data']['datasets']);
+        $this->assertCount(2, $json['data']['datasets']);
 
         // 'vouchers' chart
         $discount = Discount::withObjectTenantContext($user)->where('code', 'TEST')->first();
