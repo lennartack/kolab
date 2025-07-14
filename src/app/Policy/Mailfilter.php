@@ -206,6 +206,9 @@ class Mailfilter
             }
         }
 
+        // Always enable the test module
+        $modules[Modules\TestModule::class] = [];
+
         return $modules;
     }
 }

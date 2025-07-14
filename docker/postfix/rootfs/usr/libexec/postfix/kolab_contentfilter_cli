@@ -44,6 +44,12 @@ def reinject(content, sender, to):
         return EX_TEMPFAIL
 
 
+def logContent(content):
+    content = content.replace("\r", "CR")
+    content = content.replace("\n", "LF\n")
+    logging.info(content)
+
+
 if __name__ == "__main__":
     (cli_from, cli_to) = get_args()
 
@@ -53,7 +59,15 @@ if __name__ == "__main__":
                         filename='/var/log/kolab/postfix-content-filter.log',
                         filemode='a')
 
-    content = ''.join(sys.stdin.readlines())
+    content = sys.stdin.read()
+
+    # To debug what we actually get in terms of line endings
+    # I've tested sys.stdin.buffer, but it seems we get LF line endings from postfix
+    # logContent(content)
+
+    # Normalize to CRLF line endings.
+    content = content.replace('\r\n', '\n')
+    content = content.replace('\n', '\r\n')
 
     try:
         to = ','.join(cli_to)
@@ -91,4 +105,5 @@ if __name__ == "__main__":
         print(f"Request failed: {request_url}, {str(e)}")
         sys.exit(EX_TEMPFAIL)
 
+    content = content.replace('\r\n', '\n')
     sys.exit(reinject(content, cli_from, cli_to))

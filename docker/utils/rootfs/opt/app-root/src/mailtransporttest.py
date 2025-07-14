@@ -189,6 +189,7 @@ class SendTest:
         self.bulk_send = options.bulk_send
         self.attachmentSize = options.attachmentSize
         self.invitation = options.invitation
+        self.testmessage = options.testmessage
 
         self.uuid = None
         self.subject = None
@@ -247,6 +248,25 @@ class SendTest:
 
         return True
 
+    def validate_testmessage(self, message):
+        import email.parser
+        import email.policy
+        msg = email.parser.BytesParser(policy=email.policy.default).parsebytes(message)
+        if self.verbose:
+            print(msg)
+
+        if "MODIFIED" not in msg['Subject']:
+            print_error("Failed to modify the Subject")
+            print("Existing header: " + str(msg['Subject']))
+            return False
+
+        if "KOLABv4TestMessage" not in msg.get_body():
+            print_error("Missing test body")
+            print("Existing body: " + str(msg.get_body()))
+            return False
+
+        return True
+
     def check_for_mail(self):
         print(f"Checking for uuid {self.uuid}")
         imap = imaplib.IMAP4_SSL(host=self.recipient_host, port=self.recipient_port)
@@ -254,11 +274,7 @@ class SendTest:
             imap.debug = 4
         imap.login(self.recipient_username, self.recipient_password)
         imap.select("INBOX")
-        # FIXME This seems to find emails that are not there
-        if self.body:
-            typ, data = imap.search(None, 'BODY', self.uuid)
-        else:
-            typ, data = imap.search(None, 'SUBJECT', self.uuid)
+        typ, data = imap.search(None, 'SUBJECT', self.uuid)
 
 
         for num in data[0].split():
@@ -271,6 +287,13 @@ class SendTest:
                     print_error("Failed to validate the message.")
                     print(message.decode())
                     sys.exit(1)
+            if self.testmessage:
+                typ, data = imap.fetch(num, "(RFC822)")
+                message = data[0][1]
+                if not self.validate_testmessage(message):
+                    print_error("Failed to validate the message.")
+                    print(message.decode())
+                    sys.exit(1)
 
 
             imap.store(num, '+FLAGS', '\\Deleted')
@@ -280,7 +303,11 @@ class SendTest:
 
     def get_message(self, from_address, to):
         self.uuid = str(uuid.uuid4())
-        self.subject = f"Delivery Check {self.uuid}"
+        if self.testmessage:
+            self.subject = f"KOLABv4TestMessage: DUMP MODIFYSUBJECT {self.uuid}"
+            self.body = "KOLABv4TestMessage"
+        else:
+            self.subject = f"Delivery Check {self.uuid}"
         dtstamp = datetime.utcnow()
         if self.invitation:
             start = dtstamp
@@ -384,6 +411,7 @@ parser.add_argument("--body", help="Body text to include")
 parser.add_argument("--validate", action='store_true', help="Validate the received message")
 parser.add_argument('--bulk-send', help='Bulk send email, then exit', type=int, default=0)
 parser.add_argument('--invitation', action='store_true', help='Send an invitation')
+parser.add_argument('--testmessage', action='store_true', help='Send a kolab4 testmessage')
 parser.add_argument('--attachmentSize', help='in MB', type=int, default=0)
 
 args = parser.parse_args()

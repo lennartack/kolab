@@ -45,6 +45,18 @@ class MailParser
     }
 
     /**
+     * Dump stream to a string
+     */
+    public function dumpStream(): string
+    {
+        $pos = ftell($this->stream);
+        rewind($this->stream);
+        $str = stream_get_contents($this->stream);
+        fseek($this->stream, $pos);
+        return $str;
+    }
+
+    /**
      * Log a debug message
      */
     public function debug(string $message): void
@@ -398,6 +410,13 @@ class MailParser
             if ($this->end && $position >= $this->end) {
                 $position = $this->end;
                 break;
+            }
+
+            // All emails MUST have CRLF line endings, per RFC and the parser does not work otherwise.
+            if (!str_ends_with($line, "\r\n")) {
+                $line = str_replace("\r", 'CR', $line);
+                $line = str_replace("\n", 'LF', $line);
+                throw new \Exception("Email with non CRLF line-ending detected: $line");
             }
 
             if ($line == "\n" || $line == "\r\n") {
