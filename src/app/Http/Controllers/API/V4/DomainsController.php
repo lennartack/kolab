@@ -257,20 +257,10 @@ class DomainsController extends RelationController
      */
     protected static function getDNSConfig(Domain $domain): array
     {
-        $serial = date('Ymd01');
         $hash_txt = $domain->hash(Domain::HASH_TEXT);
-        $hash_cname = $domain->hash(Domain::HASH_CNAME);
-        $hash = $domain->hash(Domain::HASH_CODE);
 
         return [
-            "@   IN  SOA ns1.dnsservice.com. hostmaster.{$domain->namespace}. (",
-            "        {$serial}  10800  3600  604800  86400 )",
-            ";",
-            "@       IN  A   <some-ip>",
-            "www     IN  A   <some-ip>",
-            ";",
-            "{$hash_cname}.{$domain->namespace}. IN CNAME {$hash}.{$domain->namespace}.",
-            "@   3600    TXT \"{$hash_txt}\"",
+            "{$domain->namespace}. TXT \"{$hash_txt}\"",
         ];
     }
 
