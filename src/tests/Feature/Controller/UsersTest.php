@@ -1435,7 +1435,6 @@ class UsersTest extends TestCase
         $this->assertTrue($result['statusInfo']['enableDomains']);
         $this->assertTrue($result['statusInfo']['enableWallets']);
         $this->assertTrue($result['statusInfo']['enableWalletMandates']);
-        $this->assertTrue($result['statusInfo']['enableWalletPayments']);
         $this->assertTrue($result['statusInfo']['enableUsers']);
         $this->assertTrue($result['statusInfo']['enableSettings']);
         $this->assertTrue($result['statusInfo']['enableDistlists']);
@@ -1467,7 +1466,6 @@ class UsersTest extends TestCase
         $this->assertTrue($result['statusInfo']['enableDomains']);
         $this->assertTrue($result['statusInfo']['enableWallets']);
         $this->assertTrue($result['statusInfo']['enableWalletMandates']);
-        $this->assertFalse($result['statusInfo']['enableWalletPayments']);
         $this->assertTrue($result['statusInfo']['enableUsers']);
         $this->assertTrue($result['statusInfo']['enableSettings']);
         $this->assertTrue($result['statusInfo']['enableDistlists']);
@@ -1504,7 +1502,6 @@ class UsersTest extends TestCase
         $this->assertFalse($result['statusInfo']['enableDomains']);
         $this->assertFalse($result['statusInfo']['enableWallets']);
         $this->assertFalse($result['statusInfo']['enableWalletMandates']);
-        $this->assertFalse($result['statusInfo']['enableWalletPayments']);
         $this->assertFalse($result['statusInfo']['enableUsers']);
         $this->assertFalse($result['statusInfo']['enableSettings']);
         $this->assertFalse($result['statusInfo']['enableDistlists']);

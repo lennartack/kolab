@@ -9,7 +9,7 @@
                     <div v-if="showPendingPayments" class="alert alert-warning">
                         {{ $t('wallet.pending-payments-warning') }}
                     </div>
-                    <p v-if="$root.hasPermission('walletPayments')">
+                    <p id="wallet-add-credit">
                         <btn class="btn-primary" @click="paymentMethodForm('manual')">{{ $t('wallet.add-credit') }}</btn>
                     </p>
                     <div id="mandate-form" v-if="!mandate.isValid && !mandate.isPending && $root.hasPermission('walletMandates')">

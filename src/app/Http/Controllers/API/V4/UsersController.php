@@ -302,7 +302,6 @@ class UsersController extends RelationController
             'enableUsers' => $isController,
             'enableWallets' => $isController && \config('app.with_wallet'),
             'enableWalletMandates' => $isController,
-            'enableWalletPayments' => $isController && $plan?->mode != Plan::MODE_MANDATE,
             'enableCompanionapps' => $hasBeta && \config('app.with_companion_app'),
             'enableLoginAs' => $isController && \config('app.with_loginas'),
         ];
