@@ -5,6 +5,7 @@ namespace Tests\Feature\Policy;
 use App\Policy\Mailfilter;
 use App\Policy\Mailfilter\Modules\ExternalSenderModule;
 use App\Policy\Mailfilter\Modules\ItipModule;
+use App\Policy\Mailfilter\Modules\TestModule;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -103,9 +104,13 @@ class MailfilterTest extends TestCase
         $jack = $this->getTestUser('jack@kolab.org');
         $filter = new Mailfilter();
 
+        $expected_default = [
+            TestModule::class => [],
+        ];
+
         // No module configured yet, no policy, no config
-        $this->assertSame([], $this->invokeMethod($filter, 'getModulesConfig', [$john]));
-        $this->assertSame([], $this->invokeMethod($filter, 'getModulesConfig', [$jack]));
+        $this->assertSame($expected_default, $this->invokeMethod($filter, 'getModulesConfig', [$john]));
+        $this->assertSame($expected_default, $this->invokeMethod($filter, 'getModulesConfig', [$jack]));
 
         // Enable account policies
         $john->setConfig(['externalsender_policy' => true, 'itip_policy' => true]);
@@ -119,6 +124,7 @@ class MailfilterTest extends TestCase
                 'externalsender_policy' => true,
                 'externalsender_policy_domains' => [],
             ],
+            TestModule::class => [],
         ];
 
         $this->assertSame($expected, $this->invokeMethod($filter, 'getModulesConfig', [$john]));
@@ -134,13 +140,13 @@ class MailfilterTest extends TestCase
         // Enabled account policies, and disabled per-user config
         $jack->setConfig(['externalsender_config' => false, 'itip_config' => false]);
 
-        $this->assertSame([], $this->invokeMethod($filter, 'getModulesConfig', [$jack]));
+        $this->assertSame($expected_default, $this->invokeMethod($filter, 'getModulesConfig', [$jack]));
 
         // Disabled account policies, and disabled per-user config
         $john->setConfig(['externalsender_policy' => false, 'itip_policy' => false]);
 
-        $this->assertSame([], $this->invokeMethod($filter, 'getModulesConfig', [$john]));
-        $this->assertSame([], $this->invokeMethod($filter, 'getModulesConfig', [$jack]));
+        $this->assertSame($expected_default, $this->invokeMethod($filter, 'getModulesConfig', [$john]));
+        $this->assertSame($expected_default, $this->invokeMethod($filter, 'getModulesConfig', [$jack]));
 
         // Disabled account policies, and enabled per-user config
         $jack->setConfig(['externalsender_config' => true, 'itip_config' => true]);
