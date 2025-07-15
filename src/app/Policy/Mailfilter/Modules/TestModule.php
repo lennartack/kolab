@@ -15,7 +15,7 @@ class TestModule extends Module
     {
         $subject = $parser->getHeader('subject');
         if (str_starts_with($subject, "KOLABv4TestMessage")) {
-            $parser->debug("Received a test message: $subject");
+            $parser->debug("Received a test message: {$subject}");
             if (str_contains($subject, "DUMP")) {
                 $str = $parser->dumpStream();
                 $str = str_replace("\r", "CR", $str);

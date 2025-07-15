@@ -416,7 +416,7 @@ class MailParser
             if (!str_ends_with($line, "\r\n")) {
                 $line = str_replace("\r", 'CR', $line);
                 $line = str_replace("\n", 'LF', $line);
-                throw new \Exception("Email with non CRLF line-ending detected: $line");
+                throw new \Exception("Email with non CRLF line-ending detected: {$line}");
             }
 
             if ($line == "\n" || $line == "\r\n") {
