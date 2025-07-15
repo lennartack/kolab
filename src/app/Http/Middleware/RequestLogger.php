@@ -22,8 +22,8 @@ class RequestLogger
             $method = $request->getMethod();
             $mem = round(memory_get_peak_usage() / 1024 / 1024, 1);
             $time = microtime(true) - self::$start;
-
-            \Log::info(sprintf("C: %s %s [%sM]: %.4f sec.", $method, $url, $mem, $time));
+            $code = $response->getStatusCode();
+            \Log::info(sprintf("C: %s %s [%sM]: %.4f sec. %s", $method, $url, $mem, $time, $code));
         }
         $threshold = \config('logging.slow_log');
         if ($threshold && ($time = microtime(true) - self::$start) > $threshold) {
