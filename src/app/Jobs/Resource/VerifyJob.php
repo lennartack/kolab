@@ -28,7 +28,7 @@ class VerifyJob extends ResourceJob
         if ($folder && IMAP::verifySharedFolder($folder)) {
             $resource->status |= Resource::STATUS_IMAP_READY;
             $resource->status |= Resource::STATUS_ACTIVE;
-            $resource->save();
+            $resource->saveQuietly();
         }
     }
 }

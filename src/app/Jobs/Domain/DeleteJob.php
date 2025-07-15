@@ -35,6 +35,6 @@ class DeleteJob extends DomainJob
         }
 
         $domain->status |= Domain::STATUS_DELETED;
-        $domain->save();
+        $domain->saveQuietly();
     }
 }

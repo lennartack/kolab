@@ -34,13 +34,13 @@ class CreateTest extends TestCase
      */
     public function testHandle(): void
     {
-        Queue::fake();
-
         $user = $this->getTestUser('new-job-user@' . \config('app.domain'), ['status' => User::STATUS_NEW]);
         $user->assignSku(Sku::withEnvTenantContext()->where('title', 'mailbox')->first());
         $domain = Domain::where('namespace', \config('app.domain'))->first();
         $domain->status |= Domain::STATUS_LDAP_READY;
         $domain->save();
+
+        Queue::fake();
 
         // TODO: Make the test working with various with_imap/with_ldap combinations
         \config(['app.with_ldap' => true]);
@@ -75,7 +75,7 @@ class CreateTest extends TestCase
         $job->assertFailedWith(MailboxExistsException::class);
 
         // Test deleted user
-        $user->delete();
+        $user->deleteQuietly();
 
         $job = (new CreateJob($user->id))->withFakeQueueInteractions();
         $job->handle();
@@ -88,5 +88,7 @@ class CreateTest extends TestCase
 
         // TODO: Test failures on domain sanity checks
         // TODO: Test partial execution, i.e. only IMAP or only LDAP
+
+        Queue::assertNothingPushed();
     }
 }

@@ -89,11 +89,17 @@ class CreateJob extends UserJob
             }
         }
 
+        // Make user active in non-mandate mode only
+        if (!$user->isActive() && $user->wallet()?->plan()?->mode != Plan::MODE_MANDATE) {
+            $user->status |= User::STATUS_ACTIVE;
+            $user->saveQuietly();
+        }
+
         if ($withLdap && !$user->isLdapReady()) {
             LDAP::createUser($user);
 
             $user->status |= User::STATUS_LDAP_READY;
-            $user->save();
+            $user->saveQuietly();
         }
 
         if (!$user->isImapReady()) {
@@ -119,16 +125,5 @@ class CreateJob extends UserJob
 
         // FIXME: Should we ignore exceptions on this operation or introduce DAV_READY status?
         DAV::initDefaultFolders($user);
-
-        // Make user active in non-mandate mode only
-        if (
-            !($wallet = $user->wallet())
-            || !($plan = $user->wallet()->plan())
-            || $plan->mode != Plan::MODE_MANDATE
-        ) {
-            $user->status |= User::STATUS_ACTIVE;
-        }
-
-        $user->save();
     }
 }

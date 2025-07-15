@@ -33,8 +33,7 @@ class DeleteJob extends SharedFolderJob
             LDAP::deleteSharedFolder($folder);
 
             $folder->status ^= SharedFolder::STATUS_LDAP_READY;
-            // Already save in case of exception below
-            $folder->save();
+            $folder->saveQuietly();
         }
 
         if ($folder->isImapReady()) {
@@ -48,6 +47,6 @@ class DeleteJob extends SharedFolderJob
         }
 
         $folder->status |= SharedFolder::STATUS_DELETED;
-        $folder->save();
+        $folder->saveQuietly();
     }
 }

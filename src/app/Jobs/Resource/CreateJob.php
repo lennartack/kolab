@@ -48,7 +48,7 @@ class CreateJob extends ResourceJob
             LDAP::createResource($resource);
 
             $resource->status |= Resource::STATUS_LDAP_READY;
-            $resource->save();
+            $resource->saveQuietly();
         }
 
         if (!$resource->isImapReady()) {
@@ -69,6 +69,6 @@ class CreateJob extends ResourceJob
         }
 
         $resource->status |= Resource::STATUS_ACTIVE;
-        $resource->save();
+        $resource->saveQuietly();
     }
 }

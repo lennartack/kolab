@@ -28,7 +28,7 @@ class VerifyJob extends SharedFolderJob
         if (IMAP::verifySharedFolder($folderName)) {
             $folder->status |= SharedFolder::STATUS_IMAP_READY;
             $folder->status |= SharedFolder::STATUS_ACTIVE;
-            $folder->save();
+            $folder->saveQuietly();
         }
     }
 }

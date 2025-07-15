@@ -48,7 +48,7 @@ class CreateJob extends SharedFolderJob
             LDAP::createSharedFolder($folder);
 
             $folder->status |= SharedFolder::STATUS_LDAP_READY;
-            $folder->save();
+            $folder->saveQuietly();
         }
 
         if (!$folder->isImapReady()) {
@@ -69,6 +69,6 @@ class CreateJob extends SharedFolderJob
         }
 
         $folder->status |= SharedFolder::STATUS_ACTIVE;
-        $folder->save();
+        $folder->saveQuietly();
     }
 }

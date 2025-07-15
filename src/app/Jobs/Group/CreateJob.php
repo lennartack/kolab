@@ -30,6 +30,6 @@ class CreateJob extends GroupJob
         }
 
         $group->status |= Group::STATUS_ACTIVE;
-        $group->save();
+        $group->saveQuietly();
     }
 }

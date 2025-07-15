@@ -38,7 +38,7 @@ class ResyncJob extends UserJob
             $domain = $user->domain();
             if (!$domain->isPublic() && !LDAP::getDomain($domain->namespace)) {
                 $domain->status &= ~Domain::STATUS_LDAP_READY;
-                $domain->save();
+                $domain->saveQuietly();
 
                 CreateJob::dispatchSync($domain->id);
             }
@@ -57,7 +57,7 @@ class ResyncJob extends UserJob
             }
         }
 
-        $user->update();
+        $user->saveQuietly();
 
         $userJob::dispatchSync($user->id);
     }

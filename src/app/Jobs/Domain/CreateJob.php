@@ -27,7 +27,7 @@ class CreateJob extends DomainJob
             LDAP::createDomain($domain);
 
             $domain->status |= Domain::STATUS_LDAP_READY;
-            $domain->save();
+            $domain->saveQuietly();
         }
 
         VerifyJob::dispatch($domain->id);

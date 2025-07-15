@@ -40,7 +40,7 @@ class DeleteJob extends UserJob
             LDAP::deleteUser($user);
 
             $user->status ^= User::STATUS_LDAP_READY;
-            $user->save();
+            $user->saveQuietly();
         }
 
         if ($user->isImapReady()) {
@@ -58,6 +58,6 @@ class DeleteJob extends UserJob
         }
 
         $user->status |= User::STATUS_DELETED;
-        $user->save();
+        $user->saveQuietly();
     }
 }

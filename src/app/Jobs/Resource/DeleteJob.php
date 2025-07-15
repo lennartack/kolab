@@ -33,7 +33,7 @@ class DeleteJob extends ResourceJob
             LDAP::deleteResource($resource);
 
             $resource->status ^= Resource::STATUS_LDAP_READY;
-            $resource->save();
+            $resource->saveQuietly();
         }
 
         if ($resource->isImapReady()) {
@@ -47,6 +47,6 @@ class DeleteJob extends ResourceJob
         }
 
         $resource->status |= Resource::STATUS_DELETED;
-        $resource->save();
+        $resource->saveQuietly();
     }
 }

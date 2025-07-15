@@ -456,7 +456,7 @@ class UsersController extends RelationController
         $wallet = $user->wallet();
 
         // IsLocked flag to lock the user to the Wallet page only
-        $response['isLocked'] = (!$user->isActive() && ($plan = $wallet->plan()) && $plan->mode == Plan::MODE_MANDATE);
+        $response['isLocked'] = !$user->isActive() && $wallet->plan()?->mode == Plan::MODE_MANDATE;
 
         // Settings
         $keys = array_merge(self::USER_SETTINGS, ['password_expired']);

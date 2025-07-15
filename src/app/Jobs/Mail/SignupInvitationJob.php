@@ -35,7 +35,7 @@ class SignupInvitationJob extends MailJob
 
         // Update invitation status
         $this->invitation->status = SignupInvitation::STATUS_SENT;
-        $this->invitation->save();
+        $this->invitation->saveQuietly();
     }
 
     /**
@@ -46,7 +46,7 @@ class SignupInvitationJob extends MailJob
         if ($this->attempts() >= $this->tries) {
             // Update invitation status
             $this->invitation->status = SignupInvitation::STATUS_FAILED;
-            $this->invitation->save();
+            $this->invitation->saveQuietly();
         }
     }
 }
