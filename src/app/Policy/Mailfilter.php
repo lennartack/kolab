@@ -12,11 +12,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Mailfilter
 {
-    public const CODE_ACCEPT = 200;
-    public const CODE_ACCEPT_EMPTY = 204;
-    public const CODE_DISCARD = 461;
-    public const CODE_REJECT = 460;
-    public const CODE_ERROR = 500;
+    public const HEADER = 'X-Kolab-Mailfilter-Action';
+    public const HEADER_ACTION_ACCEPT = 'ACCEPT';
+    public const HEADER_ACTION_ACCEPT_EMPTY = 'ACCEPT_EMPTY';
+    public const HEADER_ACTION_DISCARD = 'DISCARD';
+    public const HEADER_ACTION_REJECT = 'REJECT';
 
     protected static $debugid = '';
 
@@ -55,8 +55,9 @@ class Mailfilter
         // Email with multiple recipients, which we don't handle at the moment.
         // Likely an outgoing email, so we just accept.
         if (str_contains($request->recipient, ",")) {
-            self::debug('Multiple recipients', self::CODE_ACCEPT_EMPTY);
-            return response('', self::CODE_ACCEPT_EMPTY);
+            self::debug('Multiple recipients', self::HEADER_ACTION_ACCEPT_EMPTY);
+            return response('', 200)
+                ->header(self::HEADER, self::HEADER_ACTION_ACCEPT_EMPTY);
         }
 
         // Find the recipient user
@@ -64,16 +65,18 @@ class Mailfilter
 
         // Not a local recipient, so e.g. an outgoing email
         if (empty($user)) {
-            self::debug('Unknown recipient', self::CODE_ACCEPT_EMPTY);
-            return response('', self::CODE_ACCEPT_EMPTY);
+            self::debug('Unknown recipient', self::HEADER_ACTION_ACCEPT_EMPTY);
+            return response('', 200)
+                ->header(self::HEADER, self::HEADER_ACTION_ACCEPT_EMPTY);
         }
 
         // Get list of enabled modules for the recipient user
         $modules = self::getModulesConfig($user);
 
         if (empty($modules)) {
-            self::debug('All modules disabled', self::CODE_ACCEPT_EMPTY);
-            return response('', self::CODE_ACCEPT_EMPTY);
+            self::debug('All modules disabled', self::HEADER_ACTION_ACCEPT_EMPTY);
+            return response('', 200)
+                ->header(self::HEADER, self::HEADER_ACTION_ACCEPT_EMPTY);
         }
 
         // Handle the mail content from the input
@@ -82,8 +85,8 @@ class Mailfilter
         if (count($files) == 1) {
             $file = $files[array_key_first($files)];
             if (!$file->isValid()) {
-                self::debug('Invalid file upload', self::CODE_ERROR);
-                return response('Invalid file upload', self::CODE_ERROR);
+                self::debug('Invalid file upload', 500);
+                return response('Invalid file upload', 500);
             }
 
             $stream = fopen($file->path(), 'r');
@@ -113,14 +116,14 @@ class Mailfilter
 
             if ($result) {
                 if ($result->getStatus() == Result::STATUS_REJECT) {
-                    self::debug("Rejected by {$module_name}", self::CODE_REJECT);
-                    // FIXME: Better code? Should we use custom header instead?
-                    return response('', self::CODE_REJECT);
+                    self::debug("Rejected by {$module_name}", self::HEADER_ACTION_REJECT);
+                    return response('', 200)
+                        ->header(self::HEADER, self::HEADER_ACTION_REJECT);
                 }
                 if ($result->getStatus() == Result::STATUS_DISCARD) {
-                    self::debug("Discarded by {$module_name}", self::CODE_DISCARD);
-                    // FIXME: Better code? Should we use custom header instead?
-                    return response('', self::CODE_DISCARD);
+                    self::debug("Rejected by {$module_name}", self::HEADER_ACTION_DISCARD);
+                    return response('', 200)
+                        ->header(self::HEADER, self::HEADER_ACTION_DISCARD);
                 }
             }
         }
@@ -132,6 +135,7 @@ class Mailfilter
             $response->headers->replace([
                 'Content-Type' => 'message/rfc822',
                 'Content-Disposition' => 'attachment',
+                self::HEADER => self::HEADER_ACTION_ACCEPT,
             ]);
 
             $stream = $parser->getStream();
@@ -141,14 +145,13 @@ class Mailfilter
                 fclose($stream);
             });
 
-            self::debug('Message modified', self::CODE_ACCEPT);
-
+            self::debug('Message modified', self::HEADER_ACTION_ACCEPT);
             return $response;
         }
 
-        self::debug('Message intact', self::CODE_ACCEPT_EMPTY);
-
-        return response('', self::CODE_ACCEPT_EMPTY);
+        self::debug('Message intact', self::HEADER_ACTION_ACCEPT_EMPTY);
+        return response('', 200)
+            ->header(self::HEADER, self::HEADER_ACTION_ACCEPT_EMPTY);
     }
 
     /**

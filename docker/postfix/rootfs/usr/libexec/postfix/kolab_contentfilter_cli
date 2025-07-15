@@ -79,24 +79,31 @@ if __name__ == "__main__":
             verify=True
         )
 
-        if response.status_code == 204:
+        if response.status_code != 200:
+            logging.warning(f"Invalid status code {response.status_code}.")
+            print(f"Invalid status code {response.status_code}")
+            sys.exit(EX_TEMPFAIL)
+
+        result = response.headers['X-Kolab-Mailfilter-Action']
+
+        if result == 'ACCEPT_EMPTY':
             logging.debug("No changes requested, reinjecting original content.")
             print("Unmodified email")
-        elif response.status_code == 200:
+        elif result == 'ACCEPT':
             logging.debug("Updating content.")
             print("Modified email")
             content = response.text
-        elif response.status_code == 460:
+        elif result == 'REJECT':
             logging.debug("Rejecting email.")
             print("Rejecting email")
             sys.exit(EX_UNAVAILABLE)
-        elif response.status_code == 461:
+        elif result == 'DISCARD':
             logging.debug("Ignoring email.")
             print("Dropping email")
             sys.exit(EX_SUCCESS)
         else:
-            logging.warning(f"Unknown status code {response.status_code}.")
-            print(f"Unknown status code {response.status_code}")
+            logging.warning(f"Unknown X-Kolab-Mailfilter-Action {result}.")
+            print(f"Unknown X-Kolab-Mailfilter status {result}")
             sys.exit(EX_TEMPFAIL)
 
     # pylint: disable=broad-except

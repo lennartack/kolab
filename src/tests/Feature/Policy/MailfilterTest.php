@@ -53,7 +53,8 @@ class MailfilterTest extends TestCase
         $request = new Request($get, [], [], [], [], [], $mail);
         $response = Mailfilter::handle($request);
 
-        $this->assertSame(Mailfilter::CODE_ACCEPT_EMPTY, $response->status());
+        $this->assertSame(200, $response->status());
+        $this->assertSame(Mailfilter::HEADER_ACTION_ACCEPT_EMPTY, $response->headers->get(Mailfilter::HEADER));
         $this->assertSame('', $response->content());
 
         $john = $this->getTestUser('john@kolab.org');
@@ -63,7 +64,8 @@ class MailfilterTest extends TestCase
         $request = new Request($get, [], [], [], [], [], $mail);
         $response = Mailfilter::handle($request);
 
-        $this->assertSame(Mailfilter::CODE_ACCEPT_EMPTY, $response->status());
+        $this->assertSame(200, $response->status());
+        $this->assertSame(Mailfilter::HEADER_ACTION_ACCEPT_EMPTY, $response->headers->get(Mailfilter::HEADER));
         $this->assertSame('', $response->content());
 
         // Note: We using HTTP controller here for easier use of Laravel request/response
