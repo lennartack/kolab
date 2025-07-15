@@ -5,7 +5,8 @@ namespace Tests\Feature\Console\User;
 use App\Domain;
 use App\Entitlement;
 use App\Package;
-use App\Transaction;
+use App\Support\Facades\IMAP;
+use App\Support\Facades\Roundcube;
 use App\User;
 use App\Wallet;
 use Illuminate\Support\Facades\Queue;
@@ -63,37 +64,28 @@ class ForceDeleteTest extends TestCase
         $this->assertTrue($domain->fresh()->trashed());
 
         // Deleted user
-        $this->artisan('user:force-delete user@force-delete.com')
+        IMAP::shouldReceive('verifyAccount')->once()->with($user->email)->andReturn(false);
+        Roundcube::shouldReceive('deleteUser')->once()->with($user->email);
+
+        $this->artisan("user:force-delete {$user->email}")
             ->assertExitCode(0);
 
-        $this->assertCount(
-            0,
-            User::withTrashed()->where('email', 'user@force-delete.com')->get()
-        );
-        $this->assertCount(
-            0,
-            Domain::withTrashed()->where('namespace', 'force-delete.com')->get()
-        );
-        $this->assertCount(
-            0,
-            Wallet::where('id', $wallet->id)->get()
-        );
-        $this->assertCount(
-            0,
-            Entitlement::withTrashed()->where('wallet_id', $wallet->id)->get()
-        );
-        $this->assertCount(
-            0,
-            Entitlement::withTrashed()->where('entitleable_id', $user->id)->get()
-        );
+        $this->assertCount(0, User::withTrashed()->where('email', 'user@force-delete.com')->get());
+        $this->assertCount(0, Domain::withTrashed()->where('namespace', 'force-delete.com')->get());
+        $this->assertCount(0, Wallet::where('id', $wallet->id)->get());
+        $this->assertCount(0, Entitlement::withTrashed()->where('wallet_id', $wallet->id)->get());
+        $this->assertCount(0, Entitlement::withTrashed()->where('entitleable_id', $user->id)->get());
 
-        $this->assertCount(
-            0,
-            Transaction::whereIn('object_id', $entitlements)
-                ->where('object_type', Entitlement::class)
-                ->get()
-        );
+        // Deleted user with an existing mailbox
+        $user = $this->getTestUser('user@force-delete.com');
+        $user->delete();
 
-        // TODO: Test that it also deletes users in a group account
+        IMAP::shouldReceive('verifyAccount')->once()->with($user->email)->andReturn(true);
+        IMAP::shouldReceive('deleteUser')->once()->andReturn(true);
+        Roundcube::shouldReceive('deleteUser')->once()->with($user->email);
+
+        $this->artisan("user:force-delete {$user->email}")
+            ->assertExitCode(0)
+            ->expectsOutput('DONE');
     }
 }

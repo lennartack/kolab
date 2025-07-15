@@ -3,6 +3,8 @@
 namespace App\Console\Commands\User;
 
 use App\Console\Command;
+use App\Support\Facades\IMAP;
+use App\Support\Facades\Roundcube;
 use Illuminate\Support\Facades\DB;
 
 class ForceDeleteCommand extends Command
@@ -43,5 +45,20 @@ class ForceDeleteCommand extends Command
         DB::beginTransaction();
         $user->forceDelete();
         DB::commit();
+
+        // Make sure the mailbox got deleted
+        if (IMAP::verifyAccount($user->email)) {
+            $this->output->write('The mailbox still exists. Deleting... ');
+            if (IMAP::deleteUser($user)) {
+                $this->info('DONE');
+            } else {
+                $this->warn('FAILED');
+            }
+        }
+
+        // Make sure Roundcube user record is deleted
+        if (\config('database.connections.roundcube')) {
+            Roundcube::deleteUser($user->email);
+        }
     }
 }
