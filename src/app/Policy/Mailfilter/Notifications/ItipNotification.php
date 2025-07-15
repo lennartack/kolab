@@ -3,6 +3,7 @@
 namespace App\Policy\Mailfilter\Notifications;
 
 use App\User;
+use App\Enums\Queue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -44,5 +45,17 @@ class ItipNotification extends Notification implements ShouldQueue
         // https://laravel.com/docs/10.x/notifications#custom-channels
 
         return ['mail'];
+    }
+
+    /**
+     * Determine which queues should be used for each notification channel.
+     *
+     * @return array<string, string>
+     */
+    public function viaQueues(): array
+    {
+        return [
+            'mail' => Queue::Mail->value,
+        ];
     }
 }
