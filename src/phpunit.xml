@@ -44,5 +44,6 @@
         <server name="SWOOLE_HTTP_ACCESS_LOG" value="false"/>
         <server name="PGP_LENGTH" value="1024"/>
         <server name="DAV_WITH_DEFAULT_FOLDERS" value="false"/>
+        <server name="IMAP_CREATE_EXCEPTION_DISABLE" value="false"/>
     </php>
 </phpunit>

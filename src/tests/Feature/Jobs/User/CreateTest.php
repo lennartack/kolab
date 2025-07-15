@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\User;
 
+use App\Backends\IMAP\Exceptions\MailboxExistsException;
 use App\Domain;
 use App\Jobs\User\CreateJob;
 use App\Sku;
@@ -63,6 +64,15 @@ class CreateTest extends TestCase
         $this->assertTrue($user->isLdapReady());
         $this->assertTrue($user->isImapReady());
         $this->assertTrue($user->isActive());
+
+        // Test mailbox exists case
+        $user->status ^= User::STATUS_IMAP_READY;
+        $user->save();
+        IMAP::shouldReceive('createUser')->once()->with($user)->andThrow(new MailboxExistsException());
+
+        $job = (new CreateJob($user->id))->withFakeQueueInteractions();
+        $job->handle();
+        $job->assertFailedWith(MailboxExistsException::class);
 
         // Test deleted user
         $user->delete();

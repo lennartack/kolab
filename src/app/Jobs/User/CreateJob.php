@@ -2,6 +2,7 @@
 
 namespace App\Jobs\User;
 
+use App\Backends\IMAP\Exceptions\MailboxExistsException;
 use App\EventLog;
 use App\Jobs\UserJob;
 use App\Plan;
@@ -97,8 +98,13 @@ class CreateJob extends UserJob
 
         if (!$user->isImapReady()) {
             if (\config('app.with_imap')) {
-                if (!IMAP::createUser($user)) {
-                    throw new \Exception("Failed to create mailbox for user {$user->email}.");
+                try {
+                    if (!IMAP::createUser($user)) {
+                        throw new \Exception("Failed to create mailbox for user {$user->email}.");
+                    }
+                } catch (MailboxExistsException $e) {
+                    $this->fail($e);
+                    return;
                 }
             } else {
                 if (!IMAP::verifyAccount($user->email)) {
@@ -108,6 +114,7 @@ class CreateJob extends UserJob
             }
 
             $user->status |= User::STATUS_IMAP_READY;
+            $user->saveQuietly();
         }
 
         // FIXME: Should we ignore exceptions on this operation or introduce DAV_READY status?

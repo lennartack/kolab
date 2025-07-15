@@ -35,9 +35,10 @@ class IMAP
 
         // Mailbox already exists
         if (self::folderExists($imap, $mailbox)) {
-            $imap->closeConnection();
-            self::createDefaultFolders($user);
-            return true;
+            if (!\env('IMAP_CREATE_EXCEPTION_DISABLE')) {
+                $imap->closeConnection();
+                throw new IMAP\Exceptions\MailboxExistsException("Mailbox already exists: {$mailbox}");
+            }
         }
 
         // Create the mailbox
@@ -132,8 +133,20 @@ class IMAP
         $config = self::getConfig();
         $imap = self::initIMAP($config);
 
+        $result = self::deleteMailboxEx($imap, $mailbox);
+
+        $imap->closeConnection();
+
+        return $result;
+    }
+
+    /**
+     * Execute user mailbox deletion (as cyrus-admin)
+     */
+    protected static function deleteMailboxEx($imap, $mailbox): bool
+    {
         // To delete the mailbox cyrus-admin needs extra permissions
-        $result = $imap->setACL($mailbox, $config['user'], 'c');
+        $result = $imap->setACL($mailbox, \config('services.imap.admin_login'), 'c');
 
         // Ignore the error if the folder doesn't exist (maybe it was removed already).
         if (
@@ -141,15 +154,11 @@ class IMAP
             && str_contains($imap->error, 'Mailbox does not exist')
         ) {
             \Log::info("The mailbox to delete was already removed: {$mailbox}");
-            $result = true;
-        } else {
-            // Delete the mailbox (no need to delete subfolders?)
-            $result = $imap->deleteFolder($mailbox);
+            return true;
         }
 
-        $imap->closeConnection();
-
-        return $result;
+        // Delete the mailbox (no need to delete subfolders?)
+        return $imap->deleteFolder($mailbox);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Backends;
 
 use App\Backends\IMAP;
+use App\Backends\IMAP\Exceptions\MailboxExistsException;
 use App\Sku;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -173,6 +174,10 @@ class IMAPTest extends TestCase
         $imap = $this->getImap();
         $quota = $imap->getQuota('user/' . $user->email);
         $this->assertSame($expectedQuota, $quota['all']);
+
+        // Create the mailbox again throws exception
+        $this->expectException(MailboxExistsException::class);
+        IMAP::createUser($user);
 
         // Update the mailbox (increase quota)
         $user->assignSku($storage, 1, $user->wallets->first());
