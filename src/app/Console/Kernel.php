@@ -45,6 +45,9 @@ class Kernel extends ConsoleKernel
 
         // Keep the database size under control (every Monday)
         $schedule->command('db:expunge')->weeklyOn(1, '04:00');
+
+        // Make sure all deleted users are processed (delete jobs finish)
+        $schedule->command('user:resync --deleted-only')->dailyAt('04:30');
     }
 
     /**
