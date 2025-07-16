@@ -2,8 +2,8 @@
 
 namespace App\Policy\Mailfilter\Notifications;
 
-use App\User;
 use App\Enums\Queue;
+use App\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
