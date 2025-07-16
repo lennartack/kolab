@@ -65,10 +65,12 @@ class Kolab extends IMAP
 
         // Setup DAV connection
         $uri = sprintf(
-            'davs://%s:%s@%s',
+            '%s://%s:%s@%s%s',
+            $account->params['dav_protocol'] ?? "davs",
             urlencode($account->username),
             urlencode($account->password),
             $account->params['dav_host'] ?? $account->host,
+            $account->params['dav_path'] ?? "",
         );
 
         $this->davDriver = new DAV(new Account($uri), $engine);
