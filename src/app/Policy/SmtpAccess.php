@@ -81,6 +81,11 @@ class SmtpAccess
             return true;
         }
 
+        // noreply@ user can impersonate everyone
+        if ($user->email == \config('mail.mailers.smtp.username')) {
+            return true;
+        }
+
         // Is it one of user's aliases?
         $alias = $user->aliases()->where('alias', $email)->first();
 

@@ -43,9 +43,15 @@ class SmtpAccessTest extends TestCase
     {
         $john = $this->getTestUser('john@kolab.org');
         $jack = $this->getTestUser('jack@kolab.org');
+        $noreply = User::where('email', \config('mail.mailers.smtp.username'))->first();
 
         // Test main email address
         $this->assertTrue(SmtpAccess::verifySender($john, ucfirst($john->email)));
+
+        // Test noreply@ user
+        if ($noreply) {
+            $this->assertTrue(SmtpAccess::verifySender($noreply, $john->email));
+        }
 
         // Test an alias
         $this->assertTrue(SmtpAccess::verifySender($john, 'John.Doe@kolab.org'));
