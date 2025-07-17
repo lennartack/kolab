@@ -108,7 +108,8 @@ class DAV implements ExporterInterface, ImporterInterface
             \Log::warning("Failed (code {$e->getCode()}) to save DAV object at {$href}:\n  {$e->getMessage()}");
             // 400 is returned on errors that only affect individual events,
             // so we don't abort the migration because of that.
-            if ($e->getCode() != 400) {
+            // 403 is returned if validation checks fail
+            if ($e->getCode() != 400 && $e->getCode() != 403) {
                 throw new \Exception("Failed to save DAV object at {$href}");
             }
         }
