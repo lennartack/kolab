@@ -130,10 +130,20 @@ class RequestHandler extends ItipModule
      */
     protected function mergeComponents(Component $to, Component $from): void
     {
-        // TODO: Every property? What other properties? EXDATE/RDATE? ATTENDEE?
+        // TODO: Every property? What other properties? EXDATE/RDATE? ORGANIZER? ATTACH?
+        // TODO: Removal of RRULE from the master event
         $props = ['SEQUENCE', 'RRULE'];
         foreach ($props as $prop) {
-            $to->{$prop} = $from->{$prop} ?? null;
+            if (isset($from->{$prop})) {
+                $to->{$prop} = $from->{$prop};
+            }
+        }
+
+        // Replace the list of ATTENDEEs
+        $to->remove('ATTENDEE');
+        foreach ($from->ATTENDEE ?? [] as $attendee) {
+            $class = $attendee::class;
+            $to->add(new $class($to->parent, 'ATTENDEE', $attendee->getValue(), $attendee->parameters()));
         }
 
         // If RRULE contains UNTIL remove exceptions from the timestamp forward

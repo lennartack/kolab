@@ -143,9 +143,14 @@ class MailParserTest extends TestCase
     /**
      * Create mail parser instance for specified test message
      */
-    public static function getParserForFile(string $file, $recipient = null, $sender = null): MailParser
+    public static function getParserForFile(string $file, $recipient = null, $sender = null, $replaces = []): MailParser
     {
         $mail = file_get_contents(__DIR__ . '/../../../data/' . $file);
+
+        foreach ($replaces as $from => $to) {
+            $mail = str_replace($from, $to, $mail);
+        }
+
         $mail = str_replace("\n", "\r\n", $mail);
 
         $stream = fopen('php://memory', 'r+');
