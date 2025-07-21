@@ -61,18 +61,14 @@ class ChargeTest extends TestCase
         $user1 = $this->getTestUser('john@kolab.org');
         $wallet1 = $user1->wallets()->first();
 
-        $user2 = $this->getTestUser('wallet-charge@kolabnow.com');
+        $user2 = $this->getTestUser('fred@' . \config('app.domain'));
         $wallet2 = $user2->wallets()->first();
-
-        $count = Wallet::join('users', 'users.id', '=', 'wallets.user_id')
-            ->whereNull('users.deleted_at')
-            ->count();
 
         Queue::fake();
 
         $this->artisan('wallet:charge')->assertExitCode(0);
 
-        Queue::assertPushed(CheckJob::class, $count);
+        Queue::assertPushed(CheckJob::class, 4);
         Queue::assertPushed(CheckJob::class, static function ($job) use ($wallet1) {
             $job_wallet_id = TestCase::getObjectProperty($job, 'walletId');
             return $job_wallet_id === $wallet1->id;

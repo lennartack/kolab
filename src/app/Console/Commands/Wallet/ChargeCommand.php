@@ -7,7 +7,9 @@ use App\Jobs\Wallet\ChargeJob;
 use App\Jobs\Wallet\CheckJob;
 use App\User;
 use App\Wallet;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Facades\DB;
 
 class ChargeCommand extends Command
 {
@@ -60,10 +62,20 @@ class ChargeCommand extends Command
                 ->whereNot('users.status', '&', User::STATUS_DEGRADED | User::STATUS_SUSPENDED)
                 ->cursor();
         } else {
-            // Get all wallets, excluding deleted accounts
+            // Get all wallets...
             $wallets = Wallet::select('wallets.id')
                 ->join('users', 'users.id', '=', 'wallets.user_id')
+                // exclude deleted accounts
                 ->whereNull('users.deleted_at')
+                // exclude wallets w/o entitlements (but not wallets with a negative balance)
+                ->where(static function ($query) {
+                    $query->where('balance', '<', 0)
+                        ->orWhereExists(static function (Builder $query) {
+                            $query->select(DB::raw(1))
+                                ->from('entitlements')
+                                ->whereColumn('entitlements.wallet_id', 'wallets.id');
+                        });
+                })
                 ->cursor();
         }
 
