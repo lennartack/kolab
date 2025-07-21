@@ -144,5 +144,17 @@ return [
             'port' => env('REDIS_PORT', 6379),
             'database' => env('REDIS_CACHE_DB', 1),
         ],
+
+        'roundcube' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', 6379),
+            'database' => env('REDIS_CACHE_DB', 1),
+            // Unset Laravel's cache prefix
+            // FIXME: It seems it have to be in both config/cache.php and here
+            'prefix' => '',
+        ],
     ],
 ];

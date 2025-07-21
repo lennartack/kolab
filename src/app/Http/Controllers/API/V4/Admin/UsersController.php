@@ -411,16 +411,20 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
             return $this->errorResponse(403);
         }
 
-        // For now admins can change only user external email address
+        // For now admins can change only user external email address and debug mode
 
         $rules = [];
+        $input = $request->input();
 
-        if (array_key_exists('external_email', $request->input())) {
+        if (array_key_exists('external_email', $input)) {
             $rules['external_email'] = 'email';
+        }
+        if (array_key_exists('debug', $input) && $this->guard()->user()->role == User::ROLE_ADMIN) {
+            $rules['debug'] = 'nullable|string|max:255';
         }
 
         // Validate input
-        $v = Validator::make($request->all(), $rules);
+        $v = Validator::make($input, $rules);
 
         if ($v->fails()) {
             return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);

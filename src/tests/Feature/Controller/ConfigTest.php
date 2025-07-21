@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Controller;
 
+use App\Http\Controllers\API\V4\ConfigController;
 use Tests\TestCase;
 
 class ConfigTest extends TestCase
@@ -24,6 +25,7 @@ class ConfigTest extends TestCase
         $json = $response->json();
 
         $this->assertSame(['kolab4', 'groupware'], $json['kolab-configuration-overlays']);
+        $this->assertArrayNotHasKey('debug', $json);
 
         // Ned has groupware, activesync and 2FA
         $response = $this->actingAs($ned)->get('api/v4/config/webmail');
@@ -34,11 +36,25 @@ class ConfigTest extends TestCase
         $this->assertSame(['kolab4', 'activesync', '2fa', 'groupware'], $json['kolab-configuration-overlays']);
 
         // Joe has no groupware subscription
+        $setting = $joe->settings()->updateOrCreate(['key' => 'debug'], ['value' => 'roundcube,syncroton']);
         $response = $this->actingAs($joe)->get('api/v4/config/webmail');
         $response->assertStatus(200);
 
         $json = $response->json();
 
         $this->assertSame(['kolab4'], $json['kolab-configuration-overlays']);
+        $this->assertSame($setting->value, $json['debug']);
+
+        // Test that the debug mode expires
+        $setting->timestamps = false;
+        $setting->updated_at = now()->subHours(ConfigController::DEBUG_TTL + 1);
+        $setting->save();
+        $response = $this->actingAs($joe)->get('api/v4/config/webmail');
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertArrayNotHasKey('debug', $json);
+        $this->assertNull($joe->getSetting('debug'));
     }
 }

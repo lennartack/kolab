@@ -17,6 +17,12 @@ class UserSetting extends Model
 {
     use BelongsToUserTrait;
 
+    /** @var array<string, string> The attributes that should be cast */
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /** @var list<string> The attributes that are mass assignable */
     protected $fillable = ['user_id', 'key', 'value'];
 

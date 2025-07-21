@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Jobs\User\UpdateJob;
+use App\Support\Facades\Roundcube;
 use App\UserSetting;
 
 class UserSettingObserver
@@ -46,6 +47,10 @@ class UserSettingObserver
     {
         if ($userSetting->isBackendSetting()) {
             UpdateJob::dispatch($userSetting->user_id);
+        }
+
+        if ($userSetting->key === 'debug') {
+            Roundcube::resetConfigCache($userSetting->user);
         }
     }
 }

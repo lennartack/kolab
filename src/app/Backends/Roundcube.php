@@ -5,6 +5,7 @@ namespace App\Backends;
 use App\User;
 use App\UserAlias;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -291,6 +292,24 @@ class Roundcube
         // TODO: Make some query? Access the webmail URL?
         self::dbh();
         return true;
+    }
+
+    /**
+     * Reset the cache entry for webmail configuration passed to the Kolab plugin.
+     *
+     * @param User $user User
+     */
+    public static function resetConfigCache(User $user): void
+    {
+        $user_id = self::userId($user->email, false);
+
+        if (!$user_id) {
+            return;
+        }
+
+        $cache_key = "{$user_id}:kolab_client:get:api/v4/config/webmail";
+
+        Cache::store('roundcube')->forget($cache_key);
     }
 
     /**

@@ -20,6 +20,7 @@ return [
     ],
 
     'btn' => [
+        'actions' => "Actions",
         'add' => "Add",
         'accept' => "Accept",
         'back' => "Back",
@@ -481,6 +482,8 @@ return [
         'suspended' => "Suspended",
         'notready' => "Not Ready",
         'active' => "Active",
+        'on' => "On",
+        'off' => "Off",
     ],
 
     'support' => [
@@ -513,6 +516,7 @@ return [
         'country' => "Country",
         'create' => "Create user",
         'custno' => "Customer No.",
+        'debug-mode' => "Debug mode",
         'degraded-warning' => "The account is degraded. Some features have been disabled.",
         'degraded-hint' => "Please, make a payment.",
         'delegation' => "Delegation",

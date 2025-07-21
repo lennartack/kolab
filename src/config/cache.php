@@ -74,6 +74,15 @@ return [
             'lock_connection' => 'default',
         ],
 
+        'roundcube' => [
+            'driver' => 'redis',
+            'connection' => 'roundcube',
+            'lock_connection' => null,
+            // Unset the Laravel's cache prefix
+            // Note: It seems it have to be in both config/database.php and here
+            'prefix' => '',
+        ],
+
         'dynamodb' => [
             'driver' => 'dynamodb',
             'key' => env('AWS_ACCESS_KEY_ID'),

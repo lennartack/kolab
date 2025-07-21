@@ -11,6 +11,7 @@ use App\User;
 use App\Utils;
 use Tests\Browser;
 use Tests\Browser\Components\Dialog;
+use Tests\Browser\Components\Dropdown;
 use Tests\Browser\Components\Toast;
 use Tests\Browser\Pages\Admin\User as UserPage;
 use Tests\Browser\Pages\Dashboard;
@@ -29,6 +30,7 @@ class UserTest extends TestCaseDusk
             'phone' => '+48123123123',
             'external_email' => 'john.doe.external@gmail.com',
             'password_expired' => '2020-01-01 10:10:10',
+            'greylist_policy' => null,
         ]);
         if ($john->isSuspended()) {
             User::where('email', $john->email)->update(['status' => $john->status - User::STATUS_SUSPENDED]);
@@ -91,6 +93,8 @@ class UserTest extends TestCaseDusk
                 'limit_geo' => null,
                 'organization' => null,
                 'guam_enabled' => null,
+                'greylist_enabled' => null,
+                'greylist_policy' => null,
             ]);
 
             $event1 = EventLog::createFor($jack, EventLog::TYPE_SUSPENDED, 'Event 1');
@@ -208,7 +212,7 @@ class UserTest extends TestCaseDusk
                 ->whenAvailable('@user-settings form', static function (Browser $browser) {
                     $browser->assertElementsCount('.row', 3)
                         ->assertSeeIn('.row:first-child label', 'Greylisting')
-                        ->assertSeeIn('.row:first-child .text-success', 'enabled')
+                        ->assertSeeIn('.row:first-child .text-danger', 'disabled')
                         ->assertSeeIn('.row:nth-child(2) label', 'IMAP proxy')
                         ->assertSeeIn('.row:nth-child(2) .text-danger', 'disabled')
                         ->assertSeeIn('.row:nth-child(3) label', 'Geo-lockin')
@@ -604,9 +608,10 @@ class UserTest extends TestCaseDusk
             $john = $this->getTestUser('john@kolab.org');
 
             $browser->visit(new UserPage($john->id))
-                ->assertVisible('@user-info #button-suspend')
-                ->assertMissing('@user-info #button-unsuspend')
-                ->click('@user-info #button-suspend')
+                ->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                    $browser->assertButton('Actions', 'btn-outline-primary')
+                        ->clickDropdownItem('#button-suspend', 'Suspend');
+                })
                 ->with(new Dialog('#suspend-dialog'), static function (Browser $browser) {
                     $browser->assertSeeIn('@title', 'Suspend')
                         ->assertSeeIn('@button-cancel', 'Cancel')
@@ -615,13 +620,14 @@ class UserTest extends TestCaseDusk
                         ->click('@button-action');
                 })
                 ->assertToast(Toast::TYPE_SUCCESS, 'User suspended successfully.')
-                ->assertSeeIn('@user-info #status span.text-warning', 'Suspended')
-                ->assertMissing('@user-info #button-suspend');
+                ->assertSeeIn('@user-info #status span.text-warning', 'Suspended');
 
             $event = EventLog::where('type', EventLog::TYPE_SUSPENDED)->first();
             $this->assertSame('test suspend', $event->comment);
 
-            $browser->click('@user-info #button-unsuspend')
+            $browser->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                $browser->clickDropdownItem('#button-unsuspend', 'Unsuspend');
+            })
                 ->with(new Dialog('#suspend-dialog'), static function (Browser $browser) {
                     $browser->assertSeeIn('@title', 'Unsuspend')
                         ->assertSeeIn('@button-cancel', 'Cancel')
@@ -630,8 +636,12 @@ class UserTest extends TestCaseDusk
                 })
                 ->assertToast(Toast::TYPE_SUCCESS, 'User unsuspended successfully.')
                 ->assertSeeIn('@user-info #status span.text-success', 'Active')
-                ->assertVisible('@user-info #button-suspend')
-                ->assertMissing('@user-info #button-unsuspend');
+                ->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                    $browser->clickDropdownItem('#button-suspend', 'Suspend');
+                })
+                ->with(new Dialog('#suspend-dialog'), static function (Browser $browser) {
+                    $browser->click('@button-cancel');
+                });
 
             $event = EventLog::where('type', EventLog::TYPE_UNSUSPENDED)->first();
             $this->assertNull($event->comment);
@@ -647,8 +657,10 @@ class UserTest extends TestCaseDusk
             $john = $this->getTestUser('john@kolab.org');
 
             $browser->visit(new UserPage($john->id))
-                ->assertSeeIn('@user-info #button-resync', 'Resync')
-                ->click('@user-info #button-resync')
+                ->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                    $browser->assertButton('Actions', 'btn-outline-primary')
+                        ->clickDropdownItem('#button-resync', 'Resync');
+                })
                 ->assertToast(Toast::TYPE_SUCCESS, "User synchronization has been started.");
         });
     }
@@ -683,6 +695,61 @@ class UserTest extends TestCaseDusk
                 ->assertToast(Toast::TYPE_SUCCESS, '2-Factor authentication reset successfully.')
                 ->assertMissing('#sku' . $sku2fa->id)
                 ->assertSeeIn('@nav #tab-subscriptions', 'Subscriptions (0)');
+        });
+    }
+
+    /**
+     * Test setting debug mode for the user
+     */
+    public function testDebugMode(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $user = $this->getTestUser('userstest1@kolabnow.com');
+
+            $browser->visit(new UserPage($user->id))
+                ->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                    $browser->click('@button')
+                        ->assertMissing('#button-debug > span.badge')
+                        ->click('@button')
+                        ->clickDropdownItem('#button-debug', 'Debug mode');
+                })
+                ->with(new Dialog('#debug-dialog'), static function (Browser $browser) {
+                    $browser->assertSeeIn('@title', 'Debug mode')
+                        ->assertSeeIn('@button-cancel', 'Cancel')
+                        ->assertSeeIn('@button-action', 'Submit')
+                        ->assertNotChecked('input#debug_Roundcube')
+                        ->assertNotChecked('input#debug_Syncroton')
+                        ->assertNotChecked('input#debug_Chwala')
+                        ->click('input#debug_Syncroton')
+                        ->click('input#debug_Chwala')
+                        ->click('@button-action');
+                })
+                ->assertToast(Toast::TYPE_SUCCESS, "User data updated successfully.");
+
+            $this->assertSame('syncroton,chwala', $user->getSetting('debug'));
+
+            $browser->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                $browser->click('@button')
+                    ->assertSeeIn('#button-debug > span.badge', 'On')
+                    ->click('@button')
+                    ->clickDropdownItem('#button-debug', 'Debug mode');
+            })
+                ->with(new Dialog('#debug-dialog'), static function (Browser $browser) {
+                    $browser->assertNotChecked('input#debug_Roundcube')
+                        ->assertChecked('input#debug_Syncroton')
+                        ->assertChecked('input#debug_Chwala')
+                        ->click('input#debug_Syncroton')
+                        ->click('input#debug_Chwala')
+                        ->click('@button-action');
+                })
+                ->assertToast(Toast::TYPE_SUCCESS, "User data updated successfully.")
+                ->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                    $browser->click('@button')
+                        ->assertMissing('#button-debug > span.badge')
+                        ->click('@button');
+                });
+
+            $this->assertNull($user->getSetting('debug'));
         });
     }
 

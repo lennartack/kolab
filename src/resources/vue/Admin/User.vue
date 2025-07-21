@@ -2,7 +2,20 @@
     <div class="container">
         <div class="card" id="user-info">
             <div class="card-body">
-                <h1 class="card-title">{{ user.email }}</h1>
+                <h1 class="card-title lh-base">
+                    {{ user.email }}
+                    <div class="dropdown float-end">
+                        <btn class="btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">{{ $t('btn.actions') }}</btn>
+                        <ul class="dropdown-menu">
+                            <li><btn :id="`button-${suspendAction}`" class="dropdown-item" @click="setSuspendState">{{ $t(`btn.${suspendAction}`) }}</btn></li>
+                            <li><btn id="button-resync" class="dropdown-item" @click="resyncUser">{{ $t('btn.resync') }}</btn></li>
+                            <li v-if="isAdmin"><btn id="button-debug" class="dropdown-item" @click="$refs.debugDialog.show()">
+                                {{ $t('user.debug-mode') }}
+                                <span :class="'float-end badge bg-danger rounded-pill' + (user.settings.debug ? '' : ' d-none')" style="top:1px">{{ $t('status.on') }}</span>
+                            </btn></li>
+                        </ul>
+                    </div>
+                </h1>
                 <div class="card-text">
                     <form class="read-only short">
                         <div v-if="user.wallet.user_id != user.id" class="row plaintext">
@@ -77,14 +90,6 @@
                             </div>
                         </div>
                     </form>
-                    <div class="mt-2 buttons">
-                        <btn :id="`button-${suspendAction}`" class="btn-outline-primary" @click="setSuspendState">
-                            {{ $t(`btn.${suspendAction}`) }}
-                        </btn>
-                        <btn id="button-resync" class="btn-outline-primary" @click="resyncUser">
-                            {{ $t('btn.resync') }}
-                        </btn>
-                    </div>
                 </div>
             </div>
         </div>
@@ -258,6 +263,13 @@
             <textarea v-model="comment" name="comment" class="form-control" :placeholder="$t('form.comment')" rows="3"></textarea>
         </modal-dialog>
 
+        <modal-dialog id="debug-dialog" ref="debugDialog" :title="$t('user.debug-mode')" @click="submitDebug()" :buttons="['submit']">
+            <div class="form-check" v-for="mode in debug_modes" :key="mode">
+                <input :id="`debug_${mode}`" :value="mode" type="checkbox" class="form-check-input" :checked="hasDebug(mode)">
+                <label :for="`debug_${mode}`" class="form-check-label">{{ mode }}</label>
+            </div>
+        </modal-dialog>
+
         <modal-dialog id="oneoff-dialog" ref="oneoffDialog" @click="submitOneOff()" :buttons="['submit']"
                       :title="$t(oneoff_negative ? 'user.add-penalty-title' : 'user.add-bonus-title')"
         >
@@ -338,6 +350,7 @@
                     footLabel: 'user.aliases-none'
                 },
                 comment: '',
+                debug_modes: [ 'Roundcube', 'Syncroton', 'Chwala' ],
                 discount: 0,
                 discount_description: '',
                 discounts: [],
@@ -353,6 +366,7 @@
                 walletReload: false,
                 distlists: [],
                 domains: [],
+                isAdmin: window.isAdmin,
                 resources: [],
                 sku2FA: null,
                 skus: [],
@@ -552,6 +566,9 @@
                 this.$root.clearFormValidation($('#email-dialog'))
                 this.$refs.emailDialog.show()
             },
+            hasDebug(mode) {
+                return String(this.user.settings.debug).includes(mode.toLowerCase())
+            },
             setMandateState() {
                 let mandate = this.wallet.mandate
                 if (mandate && mandate.id) {
@@ -621,6 +638,22 @@
                                     sku.price = this.$root.priceLabel(sku.cost, this.discount, this.wallet.currency)
                                 })
                             }
+                        }
+                    })
+            },
+            submitDebug() {
+                let debug = []
+                $(this.$refs.debugDialog.$el).find('input:checked').each((i, elem) => debug.push(elem.value.toLowerCase()))
+                debug = debug.length ? debug.join() : null
+
+                axios.put('/api/v4/users/' + this.user.id, { debug })
+                    .then(response => {
+                        if (response.data.status == 'success') {
+                            this.$refs.debugDialog.hide()
+                            this.$toast.success(response.data.message)
+                            this.user.settings.debug = debug
+                            // we have to update the badge manually (because of some Bootstrap dropdown magic?)
+                            $('#button-debug .badge')[debug ? 'removeClass' : 'addClass']('d-none')
                         }
                     })
             },

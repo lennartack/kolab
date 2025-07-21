@@ -622,7 +622,7 @@ class UsersTest extends TestCase
         $this->assertCount(2, $json);
 
         // Test real update
-        $post = ['external_email' => 'modified@test.com'];
+        $post = ['external_email' => 'modified@test.com', 'debug' => 'roundcube'];
         $response = $this->actingAs($admin)->put("/api/v4/users/{$user->id}", $post);
         $response->assertStatus(200);
 
@@ -632,5 +632,13 @@ class UsersTest extends TestCase
         $this->assertSame("User data updated successfully.", $json['message']);
         $this->assertCount(2, $json);
         $this->assertSame('modified@test.com', $user->getSetting('external_email'));
+        $this->assertSame('roundcube', $user->getSetting('debug'));
+
+        // Test unsetting debug
+        $post = ['debug' => null];
+        $response = $this->actingAs($admin)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(200);
+
+        $this->assertNull($user->getSetting('debug'));
     }
 }
