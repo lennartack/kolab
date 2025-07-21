@@ -22,7 +22,6 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
 use Illuminate\Http\Middleware\SetCacheHeaders;
-use Illuminate\Http\Response;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ValidateSignature;
@@ -99,17 +98,4 @@ class Kernel extends HttpKernel
         'allowedHosts' => AllowedHosts::class,
         'regularHosts' => RegularHosts::class,
     ];
-
-    /**
-     * Handle an incoming HTTP request.
-     *
-     * @param \Illuminate\Http\Request $request HTTP Request object
-     *
-     * @return Response
-     */
-    public function handle($request)
-    {
-        // Overwrite the http request object
-        return parent::handle(Request::createFrom($request));
-    }
 }
