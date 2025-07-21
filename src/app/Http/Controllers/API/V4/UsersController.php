@@ -689,9 +689,8 @@ class UsersController extends RelationController
         if ($v->fails()) {
             return $v->errors()->toArray()['email'][0];
         }
-
         // Check if it is one of domains available to the user
-        if (!$domain->isPublic() && $user->id != $domain->walletOwner()->id) {
+        if (!$domain->isPublic() && $user->id != $domain->walletOwner()?->id) {
             return self::trans('validation.entryexists', ['attribute' => 'domain']);
         }
 
