@@ -433,6 +433,11 @@ class MailParser
             }
         }
 
+        // Throw if the content is empty
+        if ($this->start == 0 && $position == 0) {
+            throw new \Exception('MailParser: Empty content');
+        }
+
         $this->addHeader($header);
         $this->bodyPosition = $position;
     }

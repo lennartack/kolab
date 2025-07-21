@@ -182,6 +182,7 @@ class Mailfilter
     protected static function getModulesConfig(User $user): array
     {
         $modules = [
+            Modules\TestModule::class => [],
             Modules\ItipModule::class => [],
             Modules\ExternalSenderModule::class => [],
         ];
@@ -194,8 +195,9 @@ class Mailfilter
 
             // Check if the module is enabled
             if (
-                (isset($config["{$module}_config"]) && $config["{$module}_config"] === false)
-                || (!isset($config["{$module}_config"]) && empty($config["{$module}_policy"]))
+                $module != 'test' // Always enable the test module
+                && ((isset($config["{$module}_config"]) && $config["{$module}_config"] === false)
+                    || (!isset($config["{$module}_config"]) && empty($config["{$module}_policy"])))
             ) {
                 unset($modules[$class]);
                 continue;
@@ -208,9 +210,6 @@ class Mailfilter
                 }
             }
         }
-
-        // Always enable the test module
-        $modules[Modules\TestModule::class] = [];
 
         return $modules;
     }

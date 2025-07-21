@@ -48,28 +48,24 @@ class MailfilterTest extends TestCase
         $mail = file_get_contents(self::BASE_DIR . '/data/mail/1.eml');
         $mail = str_replace("\n", "\r\n", $mail);
 
-        // Test unknown recipient
-        $get = ['recipient' => 'unknown@domain.tld', 'sender' => 'jack@kolab.org'];
-        $request = new Request($get, [], [], [], [], [], $mail);
-        $response = Mailfilter::handle($request);
-
-        $this->assertSame(200, $response->status());
-        $this->assertSame(Mailfilter::HEADER_ACTION_ACCEPT_EMPTY, $response->headers->get(Mailfilter::HEADER));
-        $this->assertSame('', $response->content());
-
         $john = $this->getTestUser('john@kolab.org');
 
-        // No modules enabled, no changes to the mail content
-        $get = ['recipient' => $john->email, 'sender' => 'jack@kolab.org'];
-        $request = new Request($get, [], [], [], [], [], $mail);
-        $response = Mailfilter::handle($request);
-
-        $this->assertSame(200, $response->status());
-        $this->assertSame(Mailfilter::HEADER_ACTION_ACCEPT_EMPTY, $response->headers->get(Mailfilter::HEADER));
-        $this->assertSame('', $response->content());
-
-        // Note: We using HTTP controller here for easier use of Laravel request/response
+        // Note: We use the HTTP controller here for easier use of Laravel request/response assertions
         $this->useServicesUrl();
+
+        // Test unknown recipient
+        $url = '/api/webhooks/policy/mail/filter?recipient=unknown@domain.tld&sender=jack@kolab.org';
+        $this->call('POST', $url, [], [], [], [], $mail)
+            ->assertStatus(200)
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_ACCEPT_EMPTY)
+            ->assertContent('');
+
+        // No modules enabled, no changes to the mail content
+        $url = '/api/webhooks/policy/mail/filter?recipient=john@kolab.org&sender=jack@kolab.org';
+        $this->call('POST', $url, [], [], [], [], $mail)
+            ->assertStatus(200)
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_ACCEPT_EMPTY)
+            ->assertContent('');
 
         // Test returning (modified) mail content
         $john->setConfig(['externalsender_policy' => true]);
@@ -77,6 +73,7 @@ class MailfilterTest extends TestCase
         $content = $this->call('POST', $url, [], [], [], [], $mail)
             ->assertStatus(200)
             ->assertHeader('Content-Type', 'message/rfc822')
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_ACCEPT)
             ->streamedContent();
 
         $this->assertStringContainsString('Subject: [EXTERNAL] test sync', $content);
@@ -87,14 +84,39 @@ class MailfilterTest extends TestCase
         $content = $this->call('POST', $url, ['file' => $file], [], [], [])
             ->assertStatus(200)
             ->assertHeader('Content-Type', 'message/rfc822')
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_ACCEPT)
             ->streamedContent();
 
         $this->assertStringContainsString('Subject: [EXTERNAL] test sync', $content);
         $this->assertStringContainsString('ZWVlYQ==', $content);
 
-        // TODO: Test rejecting mail
-        // TODO: Test two modules that both modify the mail content
-        $this->markTestIncomplete();
+        // Test request with no file attached and no content
+        $this->call('POST', $url, [], [], [], [])->assertStatus(500);
+
+        // Test two modules that both modify the mail content
+        $mail = str_replace('test sync', 'KOLABv4TestMessage MODIFYSUBJECT', $mail);
+        $content = $this->call('POST', $url, [], [], [], [], $mail)
+            ->assertStatus(200)
+            ->assertHeader('Content-Type', 'message/rfc822')
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_ACCEPT)
+            ->streamedContent();
+
+        $this->assertStringContainsString('Subject: [EXTERNAL] KOLABv4TestMessage MODIFYSUBJECT MODIFIED', $content);
+        $this->assertStringContainsString('ZWVlYQ==', $content);
+
+        // Test rejecting mail
+        $mail = str_replace('KOLABv4TestMessage MODIFYSUBJECT', 'KOLABv4TestMessage REJECT', $mail);
+        $this->call('POST', $url, [], [], [], [], $mail)
+            ->assertStatus(200)
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_REJECT)
+            ->assertContent('');
+
+        // Test discarding mail
+        $mail = str_replace('REJECT', 'DISCARD', $mail);
+        $this->call('POST', $url, [], [], [], [], $mail)
+            ->assertStatus(200)
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_DISCARD)
+            ->assertContent('');
     }
 
     /**
@@ -117,6 +139,7 @@ class MailfilterTest extends TestCase
         // Enable account policies
         $john->setConfig(['externalsender_policy' => true, 'itip_policy' => true]);
         $expected = [
+            TestModule::class => [],
             ItipModule::class => [
                 'itip_config' => null,
                 'itip_policy' => true,
@@ -126,7 +149,6 @@ class MailfilterTest extends TestCase
                 'externalsender_policy' => true,
                 'externalsender_policy_domains' => [],
             ],
-            TestModule::class => [],
         ];
 
         $this->assertSame($expected, $this->invokeMethod($filter, 'getModulesConfig', [$john]));

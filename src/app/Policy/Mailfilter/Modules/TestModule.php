@@ -14,17 +14,27 @@ class TestModule extends Module
     public function handle(MailParser $parser): ?Result
     {
         $subject = $parser->getHeader('subject');
-        if (str_starts_with($subject, "KOLABv4TestMessage")) {
+
+        if (str_starts_with($subject, 'KOLABv4TestMessage')) {
             $parser->debug("Received a test message: {$subject}");
-            if (str_contains($subject, "DUMP")) {
+
+            if (str_contains($subject, 'DUMP')) {
                 $str = $parser->dumpStream();
                 $str = str_replace("\r", "CR", $str);
                 $str = str_replace("\n", "LF\n", $str);
                 $parser->debug($str);
             }
 
-            if (str_contains($subject, "MODIFYSUBJECT")) {
-                $parser->setHeader('Subject', $subject . " MODIFIED");
+            if (str_contains($subject, 'REJECT')) {
+                return new Result(Result::STATUS_REJECT);
+            }
+
+            if (str_contains($subject, 'DISCARD')) {
+                return new Result(Result::STATUS_DISCARD);
+            }
+
+            if (str_contains($subject, 'MODIFYSUBJECT')) {
+                $parser->setHeader('Subject', $subject . ' MODIFIED');
             }
         }
 
