@@ -17,11 +17,12 @@ $config['kolab_client_cache'] = 'redis';
 $config['kolab_client_cache_ttl'] = '10m';
 
 $config['configuration-overlays']['kolabobjects'] = [
-    'plugins' => ['kolab_config', 'kolab_folders', 'kolab_notes'],
+    'plugins' => ['kolab_config', 'kolab_folders'],
     'calendar_driver' => 'kolab',
     'fileapi_backend' => 'kolab',
     'kolab_tags_driver' => 'kolab',
-    'tasklist_driver' => 'kolab'
+    'tasklist_driver' => 'kolab',
+    'kolab_addressbook_driver' => 'kolab'
 ];
 
 $config['configuration-overlays']['kolab4'] = [
@@ -35,6 +36,8 @@ $config['configuration-overlays']['kolab4'] = [
     'kolab_dav_sharing' => 'sharing',
     'tasklist_driver' => 'caldav',
     'tasklist_caldav_server' => getenv('TASKLIST_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
+    'kolab_addressbook_driver' => 'carddav',
+    'kolab_addressbook_carddav_server' => getenv('KOLAB_ADDRESSBOOK_CARDDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
 ];
 
 $config['configuration-overlays']['activesync'] = [
