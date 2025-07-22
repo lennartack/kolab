@@ -502,6 +502,38 @@ class IMAP
         return $result;
     }
 
+
+    /**
+     * List groupware mailboxes.
+     *
+     * @param string $user The user
+     *
+     * @return array List of mailboxes
+     *
+     * @throws \Exception
+     */
+    public static function listGroupwareMailboxes(string $user): array
+    {
+        $config = self::getConfig();
+        $imap = self::initIMAP($config);
+
+        $mailboxes = $imap->listMailboxes('', self::userMailbox($user, "*"));
+        $result = [];
+        foreach ($mailboxes as $folder) {
+            $metadata = $imap->getMetadata($folder, ['/shared/vendor/kolab/folder-type']);
+            if (!empty($metadata)) {
+                $metadata = implode(" ", $metadata[$folder]);
+                if (!empty($metadata) && !str_contains($metadata, "mail")) {
+                    $result[] = $folder;
+                }
+            }
+        }
+
+        $imap->closeConnection();
+
+        return $result;
+    }
+
     /**
      * Convert UTF8 string to UTF7-IMAP encoding
      */

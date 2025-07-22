@@ -12,7 +12,7 @@ class ListCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'imap:list {user}';
+    protected $signature = 'imap:list {user} {--groupware}';
 
     /**
      * The console command description.
@@ -29,8 +29,14 @@ class ListCommand extends Command
     public function handle()
     {
         $user = $this->argument('user');
-        foreach (IMAP::listMailboxes($user) as $mailbox) {
-            $this->info("{$mailbox}");
+        if ($this->option("groupware")) {
+            foreach (IMAP::listGroupwareMailboxes($user) as $mailbox) {
+                $this->info("{$mailbox}");
+            }
+        } else {
+            foreach (IMAP::listMailboxes($user) as $mailbox) {
+                $this->info("{$mailbox}");
+            }
         }
     }
 }

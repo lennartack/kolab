@@ -12,7 +12,7 @@ class DeleteCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'imap:delete {user} {mailbox} {--clear : Clear mailbox instead}';
+    protected $signature = 'imap:delete {user} {mailbox} {--clear : Clear mailbox instead} {--groupware : Only match groupware mailboxes}';
 
     /**
      * The console command description.
@@ -31,16 +31,21 @@ class DeleteCommand extends Command
         $user = $this->argument('user');
         $mailbox = $this->argument('mailbox');
         if ($mailbox == "*") {
+            if ($this->option('groupware')) {
+                $mailboxes = IMAP::listGroupwareMailboxes($user);
+            } else {
+                $mailboxes = IMAP::listMailboxes($user);
+                // Can't delete INBOX
+                IMAP::clearMailbox(IMAP::userMailbox($user, "INBOX"));
+            }
             // Reverse so subfolders are deleted before parent folders
-            foreach (array_reverse(IMAP::listMailboxes($user)) as $mailbox) {
+            foreach (array_reverse($mailboxes) as $mailbox) {
                 if ($this->option('clear')) {
                     IMAP::clearMailbox($mailbox);
                 } else {
                     IMAP::deleteMailbox($mailbox);
                 }
             }
-            // Can't delete INBOX
-            IMAP::clearMailbox(IMAP::userMailbox($user, "INBOX"));
         } else {
             if ($this->option('clear')) {
                 IMAP::clearMailbox(IMAP::userMailbox($user, $mailbox));
