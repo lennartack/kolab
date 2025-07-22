@@ -42,6 +42,9 @@ class Account
     /** @var ?User User object */
     protected $user;
 
+    /** @var array Metadata entries to migrate */
+    public $metadata;
+
     /**
      * Object constructor
      *

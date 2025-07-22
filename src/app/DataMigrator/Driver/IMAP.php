@@ -117,6 +117,14 @@ class IMAP implements ExporterInterface, ImporterInterface
             }
             */
         }
+
+        // Metadata
+        if (!empty($folder->metadata)) {
+            \Log::info("Setting METADATA " . var_export($folder->metadata, true));
+            if (!$this->imap->setMetadata($mailbox, $folder->metadata)) {
+                \Log::warning("Failed to set METADATA for {$mailbox} on the folder: {$this->imap->error}");
+            }
+        }
     }
 
     /**
@@ -210,6 +218,11 @@ class IMAP implements ExporterInterface, ImporterInterface
                 \Log::warning("Failed to get ACL for the folder: {$this->imap->error}");
             }
         }
+
+        if ($this->imap->getCapability('METADATA') && !empty($this->account->metadata)) {
+            $folder->metadata = $this->imap->getMetadata($mailbox, $this->account->metadata)[$mailbox] ?? null;
+        }
+
     }
 
     /**

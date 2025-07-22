@@ -53,6 +53,7 @@ class MigrateCommand extends Command
     public function handle()
     {
         $src = new DataMigrator\Account($this->argument('src'));
+        $src->metadata = $this->option('metadata');
         $dst = new DataMigrator\Account($this->argument('dst'));
 
         $folderMapping = [];
