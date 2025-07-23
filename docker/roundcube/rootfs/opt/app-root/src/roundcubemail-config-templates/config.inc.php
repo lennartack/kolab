@@ -173,16 +173,16 @@ if (!function_exists("getenvlist")) {
     $config['debug_level'] = 1;
     $config['devel_mode'] = false;
     $config['log_driver'] = getenv('LOG_DRIVER');
-    $config['per_user_logging'] = (getenv('PER_USER_LOGGING') == "true");
+    //$config['per_user_logging'] = (getenv('PER_USER_LOGGING') == "true");
     $config['log_date_format'] = 'd-M-Y H:i:s,u O';
     $config['smtp_log'] = false;
     $config['log_logins'] = true;
     $config['log_session'] = false;
-    $config['sql_debug'] = getenv('SQL_DEBUG');
-    $config['memcache_debug'] = getenv('MEMCACHE_DEBUG');
-    $config['imap_debug'] = getenv('IMAP_DEBUG');
-    $config['smtp_debug'] = getenv('SMTP_DEBUG');
-    $config['dav_debug'] = getenv('DAV_DEBUG');
+    //$config['sql_debug'] = getenv('SQL_DEBUG');
+    //$config['memcache_debug'] = getenv('MEMCACHE_DEBUG');
+    //$config['imap_debug'] = getenv('IMAP_DEBUG');
+    //$config['smtp_debug'] = getenv('SMTP_DEBUG');
+    //$config['dav_debug'] = getenv('DAV_DEBUG');
 
     $config['skin'] = getenv('SKIN');
     $config['skin_include_php'] = false;

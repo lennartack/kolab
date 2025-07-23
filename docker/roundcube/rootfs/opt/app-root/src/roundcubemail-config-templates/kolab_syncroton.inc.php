@@ -3,7 +3,7 @@
 // This file lists all ActiveSync-related configuration options
 
 // Enables ActiveSync protocol debuging
-$config['activesync_debug'] = getenv('ACTIVESYNC_DEBUG');
+//$config['activesync_debug'] = getenv('ACTIVESYNC_DEBUG');
 
 // If specified all ActiveSync-related logs will be saved to this file
 // Note: This doesn't change Roundcube Framework log locations
