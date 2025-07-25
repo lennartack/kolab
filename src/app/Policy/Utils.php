@@ -99,12 +99,12 @@ class Utils
     }
 
     /**
-     * Get user setting with a fallback to account policy
+     * Get recipient's setting with a fallback to account policy
      *
-     * @param User   $user User to get the setting for
-     * @param string $name Setting name
+     * @param User|Resource|SharedFolder $recipient Recipient to get the setting for
+     * @param string                     $name      Setting name
      */
-    public static function getPolicySetting(User $user, $name): bool|string
+    public static function getPolicySetting(Resource|SharedFolder|User $recipient, $name): bool|string
     {
         // Fallback default values for policies
         // TODO: This probably should be configurable
@@ -113,14 +113,14 @@ class Utils
         ];
 
         $policy_name = str_replace(['_enabled', '_config'], '_policy', $name);
-        $settings = $user->getSettings([$name, $policy_name]);
+        $settings = $recipient->getSettings([$name, $policy_name]);
 
         $value = $settings[$name] ?? null;
 
         if ($value === null) {
-            $owner = $user->walletOwner();
+            $owner = $recipient->walletOwner();
 
-            if ($owner && $owner->id != $user->id) {
+            if ($owner && ($owner->id != $recipient->id || !$recipient instanceof User)) {
                 $value = $owner->getSetting($policy_name);
             } elseif (isset($settings[$policy_name])) {
                 $value = $settings[$policy_name];

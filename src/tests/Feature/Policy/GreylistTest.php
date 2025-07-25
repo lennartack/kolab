@@ -16,6 +16,8 @@ class GreylistTest extends TestCase
 {
     private $clientAddress;
     private $net;
+    private $testResource;
+    private $testSharedFolder;
 
     protected function setUp(): void
     {
@@ -43,6 +45,13 @@ class GreylistTest extends TestCase
     {
         Greylist\Connect::where('sender_domain', 'sender.domain')->delete();
         Greylist\Whitelist::where('sender_domain', 'sender.domain')->delete();
+
+        if ($this->testSharedFolder) {
+            $this->deleteTestSharedFolder($this->testSharedFolder->email);
+        }
+        if ($this->testResource) {
+            $this->deleteTestResource($this->testResource->email);
+        }
 
         parent::tearDown();
     }
@@ -374,5 +383,77 @@ class GreylistTest extends TestCase
                 $this->assertFalse($request->shouldDefer());
             }
         }
+    }
+
+    /**
+     * Test shouldDefer() method against non-user recipient
+     */
+    public function testShouldDeferSharedFolder()
+    {
+        $this->testSharedFolder = $this->getTestSharedFolder('folder-test@kolabnow.com');
+        $this->testSharedFolder->assignToWallet($this->domainOwner->wallets->first());
+        $this->testResource = $this->getTestResource('resource-test@kolabnow.com');
+        $this->testResource->assignToWallet($this->domainOwner->wallets->first());
+
+        // Test a SharedFolder recipient
+        $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
+        $this->assertNull($whitelist);
+
+        for ($i = 0; $i < 5; $i++) {
+            $request = new Greylist([
+                'sender' => "someone{$i}@sender.domain",
+                'recipient' => $this->testSharedFolder->email,
+                'client_address' => $this->clientAddress,
+                'client_name' => 'some.mx',
+                'timestamp' => Carbon::now()->subDays(1),
+            ]);
+
+            $this->assertTrue($request->shouldDefer());
+        }
+
+        $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
+        $this->assertNotNull($whitelist);
+
+        $request = new Greylist([
+            'sender' => "someone5@sender.domain",
+            'recipient' => $this->testSharedFolder->email,
+            'client_address' => $this->clientAddress,
+            'client_name' => 'some.mx',
+            'timestamp' => Carbon::now()->subDays(1),
+        ]);
+
+        $this->assertFalse($request->shouldDefer());
+
+        Greylist\Connect::where('sender_domain', 'sender.domain')->delete();
+        Greylist\Whitelist::where('sender_domain', 'sender.domain')->delete();
+
+        // Test a Resource recipient
+        $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
+        $this->assertNull($whitelist);
+
+        for ($i = 0; $i < 5; $i++) {
+            $request = new Greylist([
+                'sender' => "someone{$i}@sender.domain",
+                'recipient' => $this->testResource->email,
+                'client_address' => $this->clientAddress,
+                'client_name' => 'some.mx',
+                'timestamp' => Carbon::now()->subDays(1),
+            ]);
+
+            $this->assertTrue($request->shouldDefer());
+        }
+
+        $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
+        $this->assertNotNull($whitelist);
+
+        $request = new Greylist([
+            'sender' => "someone5@sender.domain",
+            'recipient' => $this->testResource->email,
+            'client_address' => $this->clientAddress,
+            'client_name' => 'some.mx',
+            'timestamp' => Carbon::now()->subDays(1),
+        ]);
+
+        $this->assertFalse($request->shouldDefer());
     }
 }
