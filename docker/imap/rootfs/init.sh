@@ -101,6 +101,10 @@ else
     fi
 fi
 
+sed -i -r \
+    -e "s|EXPIRY_DELAY|$EXPIRY_DELAY|g" \
+    /etc/cyrus.conf
+
 # Can't run as user because of /dev/ permissions so far.
 # Cyrus imap only logs to /dev/log, no way around it it seems.
 busybox syslogd -n -O- &
