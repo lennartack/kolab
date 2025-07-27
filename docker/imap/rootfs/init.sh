@@ -60,6 +60,12 @@ if [[ "$SYNC_HOST" != "" ]]; then
         /etc/cyrus.conf
 fi
 
+if [[ "$WITH_LEGACY_SYNC_SERVER" != "" ]]; then
+    sed -i \
+        -e "s|# WITH_LEGACY_SYNC_SERVER ||g" \
+        /etc/cyrus.conf
+fi
+
 if [[ "$ROLE" == "frontend" ]]; then
     sed -i \
         -e "s|# WITH_MUPDATE ||g" \
