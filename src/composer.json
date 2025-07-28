@@ -25,7 +25,7 @@
         "kolab/net_ldap3": "dev-master",
         "laravel/framework": "^11.0",
         "laravel/horizon": "^5.9",
-        "laravel/octane": "^2.3",
+        "laravel/octane": "~2.11.0",
         "laravel/passport": "^12.0",
         "laravel/tinker": "^2.8",
         "league/flysystem-aws-s3-v3": "^3.0",
