@@ -61,6 +61,10 @@ if [ "$WITH_PROXY_PROTOCOL" == "true" ]; then
         /etc/postfix/master.cf
 fi
 
+if [ "$BLOCK_OUTGOING_EMAILS" == "true" ]; then
+    echo "default_transport = error:No outside emails." >> /etc/postfix/main.cf
+fi
+
 sed -i -r \
     -e "s|SERVICES_HOST|http://$APP_SERVICES_DOMAIN:$SERVICES_PORT|g" \
     /usr/libexec/postfix/kolab_policy*
