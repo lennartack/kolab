@@ -150,6 +150,8 @@
         "roundcube/rtf-html-php": "~2.1",
         "masterminds/html5": "~2.7.0",
         "endroid/qr-code": "~1.6.5",
+        "spomky-labs/otphp": "~10.0.3",
+        "enygma/yubikey": "~3.2",
         "guzzlehttp/guzzle": "^7.4.1",
         "kolab/calendar": "~3.6.0",
         "kolab/kolab": "~3.6.0",
