@@ -546,6 +546,16 @@ class GroupsTest extends TestCase
         $response->assertStatus(200);
 
         $this->assertCount(1, Group::where('email', $post['email'])->get());
+
+        // Test that wallet controllers can create groups too
+        $ned = $this->getTestUser('ned@kolab.org');
+        Group::where('email', $post['email'])->delete();
+
+        $response = $this->actingAs($ned)->post("/api/v4/groups", $post);
+        $response->assertStatus(200);
+
+        $group = Group::where('email', $post['email'])->first();
+        $this->assertSame($john->wallets->first()->id, $group->wallet()->id);
     }
 
     /**

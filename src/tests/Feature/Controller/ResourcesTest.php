@@ -513,6 +513,17 @@ class ResourcesTest extends TestCase
         $this->assertInstanceOf(Resource::class, $resource);
         $this->assertTrue($john->resources()->get()->contains($resource));
 
+        // Test that a wallet controller can create a resource
+        $ned = $this->getTestUser('ned@kolab.org');
+        $resource->delete();
+
+        $response = $this->actingAs($ned)->post("/api/v4/resources", $post);
+        $json = $response->json();
+
+        $response->assertStatus(200);
+        $resource = Resource::where('name', $post['name'])->first();
+        $this->assertTrue($john->resources()->get()->contains($resource));
+
         // Resource name must be unique within a domain
         $response = $this->actingAs($john)->post("/api/v4/resources", $post);
         $response->assertStatus(422);

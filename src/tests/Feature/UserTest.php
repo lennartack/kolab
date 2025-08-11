@@ -258,7 +258,7 @@ class UserTest extends TestCase
         $this->assertFalse($jack->canDelete($admin));
 
         // Normal user - John's wallet controller
-        $this->assertTrue($ned->canDelete($ned));
+        $this->assertFalse($ned->canDelete($ned));
         $this->assertFalse($ned->canDelete($john));
         $this->assertTrue($ned->canDelete($jack));
         $this->assertTrue($ned->canDelete($domain));

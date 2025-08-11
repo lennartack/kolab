@@ -103,9 +103,9 @@ class DomainsController extends RelationController
     public function store(Request $request)
     {
         $current_user = $this->guard()->user();
-        $owner = $current_user->wallet()->owner;
+        $wallet = $current_user->wallet();
 
-        if ($owner->id != $current_user->id) {
+        if (!$wallet || !$wallet->isController($current_user) || !$wallet->owner) {
             return $this->errorResponse(403);
         }
 
@@ -126,8 +126,8 @@ class DomainsController extends RelationController
         // Domain already exists
         if ($domain = Domain::withTrashed()->where('namespace', $namespace)->first()) {
             // Check if the domain is soft-deleted and belongs to the same user
-            $deleteBeforeCreate = $domain->trashed() && ($wallet = $domain->wallet())
-                && $wallet->owner && $wallet->owner->id == $owner->id;
+            $deleteBeforeCreate = $domain->trashed() && ($domain_wallet = $domain->wallet())
+                && $domain_wallet->id == $wallet->id;
 
             if (!$deleteBeforeCreate) {
                 $errors = ['namespace' => self::trans('validation.domainnotavailable')];
@@ -137,7 +137,7 @@ class DomainsController extends RelationController
 
         if (
             empty($request->package)
-            || !($package = Package::withObjectTenantContext($owner)->find($request->package))
+            || !($package = Package::withObjectTenantContext($wallet->owner)->find($request->package))
         ) {
             $errors = ['package' => self::trans('validation.packagerequired')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
@@ -161,7 +161,7 @@ class DomainsController extends RelationController
             'type' => Domain::TYPE_EXTERNAL,
         ]);
 
-        $domain->assignPackage($package, $owner);
+        $domain->assignPackage($package, $wallet->owner);
 
         DB::commit();
 

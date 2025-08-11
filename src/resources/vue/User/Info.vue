@@ -6,7 +6,7 @@
             <div class="card-body">
                 <div class="card-title" v-if="user_id === 'new'">{{ $t('user.new') }}</div>
                 <div class="card-title" v-else>{{ $t($route.name == 'settings' ? 'dashboard.myaccount' : 'user.title') }}
-                    <btn v-if="isController" icon="trash-can" class="btn-outline-danger button-delete float-end" @click="$refs.deleteWarning.show()">
+                    <btn v-if="user.canDelete" icon="trash-can" class="btn-outline-danger button-delete float-end" @click="$refs.deleteWarning.show()">
                         {{ $t(isSelf ? 'user.profile-delete' : 'user.delete') }}
                     </btn>
                 </div>
@@ -367,7 +367,7 @@
                     }
                     opts.maildelivery = this.$t('policies.mailDelivery')
                 }
-                if ((this.isController || this.isSelf) && this.$root.authInfo.statusInfo.enableDelegation) {
+                if ((this.isController || this.isSelf) && this.$root.hasPermission('delegation')) {
                     opts.delegation = this.$t('user.delegation')
                 }
                 return opts
@@ -407,6 +407,13 @@
             if (this.user_id !== 'new') {
                 axios.get('/api/v4/users/' + this.user_id, { loader: true })
                     .then(response => {
+                        // A controller cannot edit the account owner
+                        if (this.user_id != this.$root.authInfo.id && this.user_id == response.data.wallet.user_id) {
+                            // TODO: Instead of an error page we should consider a read-only page
+                            this.$root.errorPage(403)
+                            return
+                        }
+
                         this.user = { ...response.data, ...response.data.settings }
                         this.status = response.data.statusInfo
                         this.passwordLinkCode = this.user.passwordLinkCode

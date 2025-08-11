@@ -124,9 +124,11 @@ class UsersTest extends TestCase
         $response = $this->actingAs($user3)->delete("api/v4/users/{$user3->id}");
         $response->assertStatus(403);
 
-        // Test that wallet controller cannot remove the account owner
+        // Test that wallet controller cannot remove the account owner, nor himself
         $user1->wallets()->first()->addController($user3);
         $response = $this->actingAs($user3)->delete("api/v4/users/{$user1->id}");
+        $response->assertStatus(403);
+        $response = $this->actingAs($user3)->delete("api/v4/users/{$user3->id}");
         $response->assertStatus(403);
 
         // Test that wallet controller can delete other non-owner users
@@ -992,11 +994,21 @@ class UsersTest extends TestCase
         $this->assertTrue($code->active);
         $this->assertTrue(is_string($user->password) && strlen($user->password) >= 60);
 
-        // Test acting as account controller not owner, which is not yet supported
+        // Test acting as account controller not owner
+        $this->deleteTestUser('john2.doe2@kolab.org');
         $john->wallets->first()->addController($user);
+        $post = [
+            'password' => 'simple123',
+            'password_confirmation' => 'simple123',
+            'email' => 'john2.doe2@kolab.org',
+            'package' => $package_kolab->id,
+        ];
 
-        $response = $this->actingAs($user)->post("/api/v4/users", []);
-        $response->assertStatus(403);
+        $response = $this->actingAs($user)->post("/api/v4/users", $post);
+        $response->assertStatus(200);
+
+        $user = User::where('email', 'john2.doe2@kolab.org')->first();
+        $this->assertSame($john->wallets->first()->id, $user->wallet()->id);
 
         // Test that creating a user in a restricted account creates a restricted user
         $package_domain = Package::withEnvTenantContext()->where('title', 'domain-hosting')->first();
@@ -1463,11 +1475,11 @@ class UsersTest extends TestCase
         $this->assertSame($provider, $result['wallets'][0]['provider']);
         $this->assertFalse($result['isLocked']);
 
+        $this->assertFalse($result['statusInfo']['enableWallets']);
+        $this->assertFalse($result['statusInfo']['enableWalletMandates']);
+        $this->assertFalse($result['statusInfo']['enableSettings']);
         $this->assertTrue($result['statusInfo']['enableDomains']);
-        $this->assertTrue($result['statusInfo']['enableWallets']);
-        $this->assertTrue($result['statusInfo']['enableWalletMandates']);
         $this->assertTrue($result['statusInfo']['enableUsers']);
-        $this->assertTrue($result['statusInfo']['enableSettings']);
         $this->assertTrue($result['statusInfo']['enableDistlists']);
         $this->assertTrue($result['statusInfo']['enableFolders']);
         $this->assertTrue($result['statusInfo']['enableDelegation']);

@@ -111,23 +111,6 @@ const app = new Vue({
         hasSKU(name) {
             return this.authInfo.statusInfo.skus && this.authInfo.statusInfo.skus.indexOf(name) != -1
         },
-        isController(wallet_id) {
-            if (wallet_id && this.authInfo) {
-                let i
-                for (i = 0; i < this.authInfo.wallets.length; i++) {
-                    if (wallet_id == this.authInfo.wallets[i].id) {
-                        return true
-                    }
-                }
-                for (i = 0; i < this.authInfo.accounts.length; i++) {
-                    if (wallet_id == this.authInfo.accounts[i].id) {
-                        return true
-                    }
-                }
-            }
-
-            return false
-        },
         isDegraded() {
             return this.authInfo && this.authInfo.isAccountDegraded
         },

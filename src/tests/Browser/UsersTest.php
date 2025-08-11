@@ -711,7 +711,7 @@ class UsersTest extends TestCaseDusk
         });
 
         // Test that controller user (Ned) can see all the users
-        $this->browse(static function (Browser $browser) {
+        $this->browse(function (Browser $browser) use ($john) {
             $browser->visit('/logout')
                 ->on(new Home())
                 ->submitLogon('ned@kolab.org', 'simple123', true)
@@ -720,7 +720,21 @@ class UsersTest extends TestCaseDusk
                     $browser->assertElementsCount('tbody tr', 4);
                 });
 
-            // TODO: Test the delete action in details
+            // Test that controller cannot edit/delete the account owner
+            $browser->visit('/user/' . $john->id)
+                ->assertErrorPage(403);
+
+            // Test that controller cannot delete himself
+            $ned = $this->getTestUser('ned@kolab.org');
+            $browser->visit('/user/' . $ned->id)
+                ->on(new UserInfo())
+                ->assertMissing('button.button-delete');
+
+            // Test that controller can delete any other user in controlled wallet
+            $jack = $this->getTestUser('jack@kolab.org');
+            $browser->visit('/user/' . $jack->id)
+                ->on(new UserInfo())
+                ->assertSeeIn('button.button-delete', 'Delete user');
         });
 
         // TODO: Test what happens with the logged in user session after he's been deleted by another user

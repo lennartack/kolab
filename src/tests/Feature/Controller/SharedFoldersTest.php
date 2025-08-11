@@ -565,6 +565,14 @@ class SharedFoldersTest extends TestCase
 
         $folder = SharedFolder::where('name', $post['name'])->first();
         $this->assertSame(['shared+shared/Test/Folder@kolab.org'], $folder->aliases()->pluck('alias')->all());
+
+        // Test wallet controllers can create shared folders
+        $ned = $this->getTestUser('ned@kolab.org');
+        $folder->forceDelete();
+        $response = $this->actingAs($ned)->post("/api/v4/shared-folders", $post);
+        $json = $response->json();
+
+        $response->assertStatus(200);
     }
 
     /**

@@ -207,9 +207,11 @@ class User extends Authenticatable
             return true;
         }
 
-        // Other wallet controllers can remove users but not the account owner
-        if ($object instanceof self && $object->id == $wallet->user_id) {
-            return false;
+        // Other wallet controllers can remove users, but not the account owner nor themselves
+        if ($object instanceof self) {
+            if ($object->id == $wallet->user_id || $object->id == $this->id) {
+                return false;
+            }
         }
 
         return $wallet->isController($this);

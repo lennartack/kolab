@@ -65,9 +65,9 @@ class GroupsController extends RelationController
     public function store(Request $request)
     {
         $current_user = $this->guard()->user();
-        $owner = $current_user->wallet()->owner;
+        $wallet = $current_user->wallet();
 
-        if ($owner->id != $current_user->id) {
+        if (!$wallet || !$wallet->isController($current_user) || !$wallet->owner) {
             return $this->errorResponse(403);
         }
 
@@ -81,11 +81,11 @@ class GroupsController extends RelationController
         $this->deleteBeforeCreate = null;
 
         // Validate group address
-        if ($error = self::validateGroupEmail($email, $owner, $this->deleteBeforeCreate)) {
+        if ($error = self::validateGroupEmail($email, $wallet->owner, $this->deleteBeforeCreate)) {
             $errors['email'] = $error;
         } else {
             [, $domainName] = explode('@', $email);
-            $rules['name'] = ['required', 'string', new GroupName($owner, $domainName)];
+            $rules['name'] = ['required', 'string', new GroupName($wallet->owner, $domainName)];
         }
 
         // Validate the group name
@@ -101,7 +101,7 @@ class GroupsController extends RelationController
         } else {
             foreach ($members as $i => $member) {
                 if (is_string($member) && !empty($member)) {
-                    if ($error = self::validateMemberEmail($member, $owner)) {
+                    if ($error = self::validateMemberEmail($member, $wallet->owner)) {
                         $errors['members'][$i] = $error;
                     } elseif (\strtolower($member) === \strtolower($email)) {
                         $errors['members'][$i] = self::trans('validation.memberislist');
@@ -129,7 +129,7 @@ class GroupsController extends RelationController
         $group->members = $members;
         $group->save();
 
-        $group->assignToWallet($owner->wallets->first());
+        $group->assignToWallet($wallet);
 
         DB::commit();
 

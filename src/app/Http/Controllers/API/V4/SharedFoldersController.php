@@ -57,13 +57,13 @@ class SharedFoldersController extends RelationController
     public function store(Request $request)
     {
         $current_user = $this->guard()->user();
-        $owner = $current_user->walletOwner();
+        $wallet = $current_user->wallet();
 
-        if (empty($owner) || $owner->id != $current_user->id) {
+        if (!$wallet || !$wallet->isController($current_user) || !$wallet->owner) {
             return $this->errorResponse(403);
         }
 
-        if ($error_response = $this->validateFolderRequest($request, null, $owner)) {
+        if ($error_response = $this->validateFolderRequest($request, null, $wallet->owner)) {
             return $error_response;
         }
 
@@ -80,7 +80,7 @@ class SharedFoldersController extends RelationController
             $folder->setAliases($request->aliases);
         }
 
-        $folder->assignToWallet($owner->wallets->first());
+        $folder->assignToWallet($wallet);
 
         DB::commit();
 

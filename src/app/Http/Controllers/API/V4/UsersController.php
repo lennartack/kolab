@@ -241,6 +241,7 @@ class UsersController extends RelationController
         $response['skus'] = Entitlement::objectEntitlementsSummary($user);
         $response['config'] = $user->getConfig(true);
         $response['aliases'] = $user->aliases()->pluck('alias')->all();
+        $response['canDelete'] = $this->guard()->user()->canDelete($user);
 
         $code = $user->verificationcodes()->where('active', true)
             ->where('expires_at', '>', Carbon::now())
@@ -273,6 +274,7 @@ class UsersController extends RelationController
 
         $wallet = $user->wallet();
         $isController = $wallet->isController($user);
+        $isOwner = $wallet->user_id == $user->id;
         $isDegraded = $user->isDegraded();
 
         $plan = $isController ? $wallet->plan() : null;
@@ -297,11 +299,11 @@ class UsersController extends RelationController
             'enableMailfilter' => $isController && config('app.with_mailfilter'),
             'enableResources' => $isController && $hasCustomDomain && $hasBeta && \config('app.with_resources'),
             'enableRooms' => $hasMeet,
-            'enableSettings' => $isController,
+            'enableSettings' => $isOwner,
             'enableSubscriptions' => $isController && \config('app.with_subscriptions'),
             'enableUsers' => $isController,
-            'enableWallets' => $isController && \config('app.with_wallet'),
-            'enableWalletMandates' => $isController,
+            'enableWallets' => $isOwner && \config('app.with_wallet'),
+            'enableWalletMandates' => $isOwner,
             'enableCompanionapps' => $hasBeta && \config('app.with_companion_app'),
             'enableLoginAs' => $isController && \config('app.with_loginas'),
         ];
@@ -319,9 +321,9 @@ class UsersController extends RelationController
     public function store(Request $request)
     {
         $current_user = $this->guard()->user();
-        $owner = $current_user->walletOwner();
+        $wallet = $current_user->wallet();
 
-        if ($owner->id != $current_user->id) {
+        if (!$wallet || !$wallet->isController($current_user) || !$wallet->owner) {
             return $this->errorResponse(403);
         }
 
@@ -333,7 +335,7 @@ class UsersController extends RelationController
 
         if (
             empty($request->package)
-            || !($package = Package::withObjectTenantContext($owner)->find($request->package))
+            || !($package = Package::withObjectTenantContext($current_user)->find($request->package))
         ) {
             $errors = ['package' => self::trans('validation.packagerequired')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
@@ -355,12 +357,12 @@ class UsersController extends RelationController
         $user = User::create([
             'email' => $request->email,
             'password' => $request->password,
-            'status' => $owner->isRestricted() ? User::STATUS_RESTRICTED : 0,
+            'status' => $wallet->owner->isRestricted() ? User::STATUS_RESTRICTED : 0,
         ]);
 
         $this->activatePassCode($user);
 
-        $owner->assignPackage($package, $user);
+        $wallet->owner->assignPackage($package, $user);
 
         if (!empty($settings)) {
             $user->setSettings($settings);

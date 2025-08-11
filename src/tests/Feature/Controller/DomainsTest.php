@@ -618,7 +618,13 @@ class DomainsTest extends TestCase
         $this->assertSame('The specified domain is not available.', $json['errors']['namespace']);
 
         // Test acting as account controller (not owner)
+        $ned = $this->getTestUser('ned@kolab.org');
+        $domain->forceDelete();
 
-        $this->markTestIncomplete();
+        $response = $this->actingAs($ned)->post("/api/v4/domains", $post);
+        $response->assertStatus(200);
+
+        $domain = Domain::where('namespace', $post['namespace'])->first();
+        $this->assertSame($john->wallets->first()->id, $domain->wallet()->id);
     }
 }

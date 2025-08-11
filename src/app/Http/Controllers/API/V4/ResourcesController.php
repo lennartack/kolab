@@ -54,15 +54,15 @@ class ResourcesController extends RelationController
     public function store(Request $request)
     {
         $current_user = $this->guard()->user();
-        $owner = $current_user->wallet()->owner;
+        $wallet = $current_user->wallet();
 
-        if ($owner->id != $current_user->id) {
+        if (!$wallet || !$wallet->isController($current_user) || !$wallet->owner) {
             return $this->errorResponse(403);
         }
 
         $domain = request()->input('domain');
 
-        $rules = ['name' => ['required', 'string', new ResourceName($owner, $domain)]];
+        $rules = ['name' => ['required', 'string', new ResourceName($wallet->owner, $domain)]];
 
         $v = Validator::make($request->all(), $rules);
 
@@ -78,7 +78,7 @@ class ResourcesController extends RelationController
         $resource->domainName = $domain;
         $resource->save();
 
-        $resource->assignToWallet($owner->wallets->first());
+        $resource->assignToWallet($wallet);
 
         DB::commit();
 
