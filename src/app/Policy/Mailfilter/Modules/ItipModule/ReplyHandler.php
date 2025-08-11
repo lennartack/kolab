@@ -40,13 +40,8 @@ class ReplyHandler extends ItipModule
         $existing = $this->findObject($user, $this->uid, $this->type);
 
         if (!$existing) {
-            // FIXME: Should we stop message delivery?
             return null;
         }
-
-        // FIXME: what to do if the REPLY comes from an address not mentioned in the event?
-        // FIXME: Should we check if the recipient is an organizer?
-        // stop processing here and pass the message to the inbox, or drop it?
 
         $existingMaster = $this->extractMainComponent($existing);
         $replyMaster = $this->extractMainComponent($this->itip);
@@ -56,34 +51,31 @@ class ReplyHandler extends ItipModule
             return null;
         }
 
-        // SEQUENCE does not match, deliver the message, let the MUAs to deal with this
-        // FIXME: Is this even a valid aproach regarding recurrence?
-        if ((string) $existingMaster->SEQUENCE != (string) $replyMaster->SEQUENCE) {
-            $parser->debug("Sequence mismatch. Ignored.");
+        // Spoofing protection
+        if (!$this->checkOrigin($replyMaster, $existing)) {
             return null;
         }
 
-        // Per RFC 5546 there can be only one ATTENDEE in REPLY
-        if (count($replyMaster->ATTENDEE) != 1) {
-            $parser->debug("Too many attendees in REPLY. Ignored.");
-            return null;
+        // Per https://datatracker.ietf.org/doc/html/rfc5546#section-3.2.3 there can be only
+        // one ATTENDEE in a REPLY. However, there are examples for a delegation case that
+        // have two ATTENDEEs
+        $sender_email = strtolower($parser->getSender());
+        $sender = null;
+        foreach ($replyMaster->ATTENDEE ?? [] as $attendee) {
+            $attendee_email = strtolower(str_ireplace('mailto:', '', (string) $attendee));
+            // TODO: Support using of an alias by a local user?
+            if ($attendee_email === $sender_email) {
+                $sender = $attendee;
+            }
         }
 
-        // TODO: Delegation
-
-        $sender = $replyMaster->ATTENDEE;
-        $partstat = $sender['PARTSTAT'];
-        $email = strtolower(preg_replace('!^mailto:!i', '', (string) $sender));
-
-        // Supporting attendees w/o an email address could be considered in the future
-        if (empty($email)) {
-            $parser->debug("Attendee without an email address. Ignored.");
+        if (empty($sender)) {
+            $parser->debug("The sender does not match any ATTENDEE in the REPLY. Ignored.");
             return null;
         }
 
         // Invalid/useless reply, let the MUA deal with it
-        // FIXME: Or should we stop delivery?
-        if (empty($partstat) || $partstat == 'NEEDS-ACTION') {
+        if (in_array($sender['PARTSTAT'] ?? '', ['', 'NEEDS-ACTION'])) {
             $parser->debug("Unexpected PARTSTAT in REPLY. Ignored.");
             return null;
         }
@@ -92,8 +84,8 @@ class ReplyHandler extends ItipModule
 
         if ($recurrence_id) {
             $existingInstance = $this->extractRecurrenceInstanceComponent($existing, $recurrence_id);
+
             // No such recurrence exception, let the MUA deal with it
-            // FIXME: Or should we stop delivery?
             if (!$existingInstance) {
                 $parser->debug("No existing recurrence instance. Ignored.");
                 return null;
@@ -102,21 +94,12 @@ class ReplyHandler extends ItipModule
             $existingInstance = $existingMaster;
         }
 
-        // Update organizer's event with attendee status
-        $updated = false;
-        if (isset($existingInstance->ATTENDEE)) {
-            foreach ($existingInstance->ATTENDEE as $attendee) {
-                $value = strtolower(preg_replace('!^mailto:!i', '', (string) $attendee));
-                if ($value === $email) {
-                    if (empty($attendee['PARTSTAT']) || (string) $attendee['PARTSTAT'] != $partstat) {
-                        $attendee['PARTSTAT'] = $partstat;
-                        $updated = true;
-                    }
-                }
-            }
+        // Outdated message, just deliver it, let the MUAs deal with this
+        if (!$this->isEligibleForUpdate($replyMaster, $existingInstance)) {
+            return null;
         }
 
-        if ($updated) {
+        if ($this->updateObject($existingInstance, $replyMaster, $sender)) {
             $parser->debug("Updating object at {$this->davLocation}");
 
             $dav = $this->getDAVClient($user);
@@ -146,8 +129,93 @@ class ReplyHandler extends ItipModule
         $params->comment = (string) $comment;
         $params->partstat = (string) $attendee['PARTSTAT'];
         $params->senderName = (string) $attendee['CN'];
-        $params->senderEmail = strtolower(preg_replace('!^mailto:!i', '', (string) $attendee));
+        $params->senderEmail = strtolower(str_ireplace('mailto:', '', (string) $attendee));
+
+        if ($attendee['DELEGATED-TO']) {
+            $names = [];
+            $delegates = array_map(
+                fn ($item) => str_ireplace('mailto:', '', $item),
+                $attendee['DELEGATED-TO']->getParts()
+            );
+
+            foreach ($delegates as $delegate) {
+                foreach ($existing->ATTENDEE ?? [] as $attendee) {
+                    $attendee_email = strtolower(str_ireplace('mailto:', '', (string) $attendee));
+                    if ($attendee_email === $delegate && $attendee['CN']) {
+                        $names[] = $attendee['CN'];
+                    }
+                }
+            }
+
+            $params->delegateEmail = implode(', ', $delegates);
+            $params->delegateName = (count($names) == count($delegates)) ? implode(', ', $names) : '';
+        }
 
         return new ItipNotification($params);
+    }
+
+    /**
+     * Update the object with attendee state from the reply
+     */
+    private function updateObject(Component $existing, Component $reply, $sender): bool
+    {
+        $sender_email = strtolower(str_ireplace('mailto:', '', (string) $sender));
+        $updated = false;
+        $attendees = [];
+
+        // Update organizer's event with attendee status
+        foreach ($existing->ATTENDEE ?? [] as $attendee) {
+            $attendee_email = strtolower(str_ireplace('mailto:', '', (string) $attendee));
+            $attendees[] = $attendee_email;
+
+            if ($attendee_email === $sender_email) {
+                // FIXME: Is there a cleaner way to copy parameters?
+                foreach (array_keys($attendee->parameters()) as $key) {
+                    unset($attendee[$key]);
+                }
+                foreach ($sender->parameters() as $key => $value) {
+                    $attendee[$key] = $value;
+                }
+                $updated = true;
+            }
+        }
+
+        // When an attendee delegates another user he may reply to the organizer
+        // with his ATTENDEE property, and optionally the delegatee's ATTENDEE property
+        // We make sure to add delegatee's ATTENDEE property to the object (if not exists yet)
+        if ($updated && $sender['DELEGATED-TO']) {
+            $delegates = array_map(
+                fn ($item) => str_ireplace('mailto:', '', $item),
+                $sender['DELEGATED-TO']->getParts()
+            );
+
+            foreach ($delegates as $delegate) {
+                if (!in_array($delegate, $attendees)) {
+                    $params = [];
+                    foreach ($reply->ATTENDEE as $attendee) {
+                        $attendee_email = strtolower(str_ireplace('mailto:', '', (string) $attendee));
+                        if ($attendee_email === $delegate) {
+                            $params = $attendee->parameters();
+                            break;
+                        }
+                    }
+
+                    if (empty($params)) {
+                        $params = [
+                            'PARTSTAT' => 'NEEDS-ACTION',
+                            'DELEGATED-FROM' => 'mailto:' . $sender_email,
+                            'ROLE' => $sender['ROLE'],
+                            'CUTYPE' => $sender['CUTYPE'],
+                        ];
+                    }
+
+                    $existing->add('ATTENDEE', 'mailto:' . $delegate, $params);
+                }
+            }
+        }
+
+        // FIXME: We should probably bump LAST-MODIFIED and/or DTSTAMP property
+
+        return $updated;
     }
 }

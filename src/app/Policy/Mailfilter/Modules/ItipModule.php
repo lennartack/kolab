@@ -271,4 +271,145 @@ class ItipModule extends Module
 
         return $object;
     }
+
+    /**
+     * Check iTip message origin. Spoofing detection
+     *
+     * @param Component  $request  iTip content
+     * @param ?Component $existing Existing object
+     */
+    protected function checkOrigin(Component $request, ?Component $existing): bool
+    {
+        $method = strtoupper(str_replace('Handler', '', class_basename(static::class)));
+        $sender = strtolower($this->parser->getSender());
+
+        // First we check if the envelope sender matches the ORGANIZER/ATTENDEE in the iTip
+        // TODO: Support a local user using one of his aliases?
+        switch ($method) {
+            case 'REQUEST':
+            case 'CANCEL':
+                $property = 'ORGANIZER';
+                $email = strtolower(str_ireplace('mailto:', '', (string) $request->ORGANIZER));
+                $result = $email === $sender;
+                break;
+            case 'REPLY':
+                $property = 'ATTENDEE';
+                // Per https://datatracker.ietf.org/doc/html/rfc5546#section-3.2.3 there can be only
+                // one ATTENDEE in a REPLY. However, there are examples for a delegation case that
+                // have two ATTENDEEs
+                $result = false;
+                foreach ($request->ATTENDEE ?? [] as $attendee) {
+                    $attendee_email = strtolower(str_ireplace('mailto:', '', (string) $attendee));
+                    if ($attendee_email === $sender) {
+                        $result = true;
+                        $email = $attendee_email;
+                        break 2;
+                    }
+                }
+                if (count($request->ATTENDEE) == 1) {
+                    $email = str_ireplace('mailto:', '', (string) $request->ATTENDEE);
+                }
+                if (empty($email)) {
+                    return false;
+                }
+                break;
+            default:
+                throw new \Exception("Unexpected iTip method: {$method}");
+        }
+
+        // Check if this ORGANIZER/ATTENDEE matches the one in the existing object
+        // Note: According to https://datatracker.ietf.org/doc/html/rfc5546 (3.2.2.4, 3.2.2.5)
+        // change of ORGANIZER is possible, but there's no way to do anything about it.
+        // In such a case passing the iTip to the recipient's Inbox is probably the best we can do.
+        // The same applies to uninvited users https://datatracker.ietf.org/doc/html/rfc5546 (3.2.2.6).
+        if ($result && $existing) {
+            $rid = (string) $request->{'RECURRENCE-ID'};
+            $master = $this->extractMainComponent($existing);
+            $occurence = $rid ? $this->extractRecurrenceInstanceComponent($existing, $rid) : null;
+
+            switch ($method) {
+                case 'REQUEST':
+                case 'CANCEL':
+                    $source = $occurence && !empty($occurence->ORGANIZER) ? $occurence : $master;
+                    $organizer = str_ireplace('mailto:', '', (string) $source->ORGANIZER);
+
+                    $result = strtolower($organizer) === $email;
+                    break;
+                case 'REPLY':
+                    $source = $occurence && !empty($occurence->ATTENDEE) ? $occurence : $master;
+                    $attendees = self::getAttendeeEmails($source);
+
+                    $result = in_array($email, $attendees);
+                    break;
+            }
+        }
+
+        // Check if this is a delegation request, where an ATTENDEE sends it to a delegatee
+        if (!$result && !$existing && $method == 'REQUEST') {
+            foreach ($request->ATTENDEE ?? [] as $attendee) {
+                $email = str_ireplace('mailto:', '', (string) $attendee);
+                // TODO: Check if DELEGATED-TO matches the iTip recipient
+                if ($email == $sender && !empty($attendee['DELEGATED-TO'])) {
+                    $result = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$result) {
+            \Log::warning("Itip {$method} origin mismatch for {$property}.");
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get email addresses of all attendees, including delegatees, in a component
+     */
+    private static function getAttendeeEmails(Component $object): array
+    {
+        $attendees = [];
+
+        foreach ($object->ATTENDEE ?? [] as $attendee) {
+            if ($email = str_ireplace('mailto:', '', (string) $attendee)) {
+                $attendees[] = $email;
+            }
+
+            if (!empty($attendee['DELEGATED-TO'])) {
+                $delegates = array_map(
+                    fn ($item) => str_ireplace('mailto:', '', $item),
+                    $attendee['DELEGATED-TO']->getParts()
+                );
+
+                $attendees = array_merge($attendees, $delegates);
+            }
+        }
+
+        return array_map('strtolower', $attendees);
+    }
+
+    /**
+     * Check if the iTip message is eligible for an auto-update.
+     *
+     * @param Component  $request  iTip content
+     * @param ?Component $existing Existing object
+     */
+    protected function isEligibleForUpdate(Component $request, ?Component $existing = null): bool
+    {
+        if ($existing === null) {
+            return true;
+        }
+
+        // SEQUENCE does not match, we'll let the MUAs deal with this
+        if ((string) $existing->SEQUENCE > (string) $request->SEQUENCE) {
+            $this->parser->debug("Sequence mismatch. Ignored.");
+            return false;
+        }
+
+        // FIXME: When SEQUENCEs are equal we should compare DTSTAMP. Should we?
+        // https://datatracker.ietf.org/doc/html/rfc5546#section-2.1.4
+        // https://datatracker.ietf.org/doc/html/rfc5546#section-5.3
+
+        return true;
+    }
 }

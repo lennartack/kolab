@@ -34,29 +34,24 @@ class CancelHandlerTest extends TestCase
         $this->davEmptyFolder($account, 'Calendar', 'event');
 
         // Jack cancelled the meeting, but there's no event in John's calendar
-        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org');
+        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org', 'jack@kolab.org');
         $module = new ItipModule();
         $result = $module->handle($parser);
 
         $this->assertNull($result);
+        $this->assertCount(0, $this->davList($account, 'Calendar', 'event'));
 
         Notification::assertNothingSent();
 
         // Jack cancelled the meeting, and now the event exists in John's calendar
         $this->davAppend($account, 'Calendar', ['mailfilter/event2.ics'], 'event');
 
-        $list = $this->davList($account, 'Calendar', 'event');
-        $this->assertCount(1, $list);
-        $this->assertSame('5463F1DDF6DA264A3FC70E7924B729A5-D9F1889254B163F5', $list[0]->uid);
-
-        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org');
+        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org', 'jack@kolab.org');
         $module = new ItipModule();
         $result = $module->handle($parser);
 
         $this->assertSame(Result::STATUS_DISCARD, $result->getStatus());
-
-        $list = $this->davList($account, 'Calendar', 'event');
-        $this->assertCount(0, $list);
+        $this->assertCount(0, $this->davList($account, 'Calendar', 'event'));
 
         Notification::assertCount(1);
         Notification::assertSentTo(
@@ -72,6 +67,63 @@ class CancelHandlerTest extends TestCase
                     && empty($notification->params->recurrenceId);
             }
         );
+
+        Notification::fake();
+
+        // Jack cancelled the meeting, but the iTIP has outdated SEQUENCE
+        $replaces = [
+            '/SEQUENCE:0/' => 'SEQUENCE:1',
+        ];
+        $this->davEmptyFolder($account, 'Calendar', 'event');
+        $this->davAppend($account, 'Calendar', ['mailfilter/event2.ics'], 'event', $replaces);
+
+        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org', 'jack@kolab.org');
+        $module = new ItipModule();
+        $result = $module->handle($parser);
+
+        $this->assertNull($result);
+        $this->assertCount(1, $this->davList($account, 'Calendar', 'event'));
+
+        Notification::assertNothingSent();
+    }
+
+    /**
+     * Test spoofing protection on CANCEL
+     *
+     * @group @dav
+     */
+    public function testItipCancelSpoofing(): void
+    {
+        Notification::fake();
+
+        $user = $this->getTestUser('john@kolab.org');
+        $uri = preg_replace('|^http|', 'dav', \config('services.dav.uri'));
+        $account = new Account(preg_replace('|://|', '://john%40kolab.org:simple123@', $uri));
+
+        $this->davEmptyFolder($account, 'Calendar', 'event');
+
+        // Ned impersonates Jack cancelling the meeting, but there's no event in John's calendar
+        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org', 'ned@kolab.org');
+        $module = new ItipModule();
+        $result = $module->handle($parser);
+
+        $this->assertNull($result);
+        $this->assertCount(0, $this->davList($account, 'Calendar', 'event'));
+
+        $this->davAppend($account, 'Calendar', ['mailfilter/event2.ics'], 'event');
+
+        // Ned impersonates Jack cancelling the meeting, but now the event exists in John's calendar
+        $replaces = [
+            'mailto:jack@kolab.org' => 'mailto:ned@kolab.org',
+        ];
+        $parser = MailParserTest::getParserForFile('mailfilter/itip1_cancel.eml', 'john@kolab.org', 'ned@kolab.org', $replaces);
+        $module = new ItipModule();
+        $result = $module->handle($parser);
+
+        $this->assertNull($result);
+        $this->assertCount(1, $this->davList($account, 'Calendar', 'event'));
+
+        Notification::assertNothingSent();
     }
 
     /**
@@ -90,8 +142,8 @@ class CancelHandlerTest extends TestCase
         $this->davEmptyFolder($account, 'Calendar', 'event');
         $this->davAppend($account, 'Calendar', ['mailfilter/event4.ics'], 'event');
 
-        // Jack cancelled the meeting, and the event exists in John's calendar
-        $parser = MailParserTest::getParserForFile('mailfilter/itip2_cancel.eml', 'john@kolab.org');
+        // Jack cancelled the meeting occurence, and the event exists in John's calendar
+        $parser = MailParserTest::getParserForFile('mailfilter/itip2_cancel.eml', 'john@kolab.org', 'jack@kolab.org');
         $module = new ItipModule();
         $result = $module->handle($parser);
 
@@ -119,5 +171,56 @@ class CancelHandlerTest extends TestCase
                     && $notification->params->recurrenceId == '20240717T123000';
             }
         );
+
+        Notification::fake();
+
+        // Jack cancelled the meeting occurence, but the iTip CANCEL contains outdated SEQUENCE
+        $replaces = [
+            '/SEQUENCE:0\nTRANSP/' => 'SEQUENCE:1\nTRANSP',
+        ];
+        $this->davEmptyFolder($account, 'Calendar', 'event');
+        $this->davAppend($account, 'Calendar', ['mailfilter/event4.ics'], 'event', $replaces);
+
+        $parser = MailParserTest::getParserForFile('mailfilter/itip2_cancel.eml', 'john@kolab.org', 'jack@kolab.org');
+        $module = new ItipModule();
+        $result = $module->handle($parser);
+
+        $this->assertNull($result);
+        $list = $this->davList($account, 'Calendar', 'event');
+        $this->assertCount(1, $list[0]->exceptions);
+
+        Notification::assertNothingSent();
+    }
+
+    /**
+     * Test spoofing protection on CANCEL with recurrence
+     *
+     * @group @dav
+     */
+    public function testItipCancelRecurrenceSpoofing(): void
+    {
+        Notification::fake();
+
+        $user = $this->getTestUser('john@kolab.org');
+        $uri = preg_replace('|^http|', 'dav', \config('services.dav.uri'));
+        $account = new Account(preg_replace('|://|', '://john%40kolab.org:simple123@', $uri));
+
+        $this->davEmptyFolder($account, 'Calendar', 'event');
+        $this->davAppend($account, 'Calendar', ['mailfilter/event4.ics'], 'event');
+
+        // Ned impersonates Jack cancelling the meeting occurrence, the event exists in John's calendar
+        $replaces = [
+            'mailto:jack@kolab.org' => 'mailto:ned@kolab.org',
+        ];
+        $parser = MailParserTest::getParserForFile('mailfilter/itip2_cancel.eml', 'john@kolab.org', 'ned@kolab.org', $replaces);
+        $module = new ItipModule();
+        $result = $module->handle($parser);
+
+        $this->assertNull($result);
+        $this->assertCount(1, $list = $this->davList($account, 'Calendar', 'event'));
+        $this->assertCount(1, $list[0]->exceptions);
+        $this->assertCount(0, $list[0]->exdate);
+
+        Notification::assertNothingSent();
     }
 }

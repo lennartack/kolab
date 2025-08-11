@@ -187,6 +187,11 @@ class Vevent extends CommonObject
                             case 'CN':
                                 $attendee[$key] = str_replace('\,', ',', (string) $value);
                                 break;
+                            case 'SENT-BY':
+                            case 'DELEGATED-TO':
+                            case 'DELEGATED-FROM':
+                                $attendee[$key] = preg_replace(['!^mailto:!i', '!"!'], '', (string) $value);
+                                break;
                             default:
                                 if (in_array($name, $attendeeProps)) {
                                     $attendee[$key] = (string) $value;

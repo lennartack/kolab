@@ -1,8 +1,8 @@
 MIME-Version: 1.0
-From: Jack <jack@kolab.org>
+From: John <john@kolab.org>
 Date: Tue, 09 Jul 2024 14:43:04 +0200
-Message-ID: <f49ee5182874694372696db14c90f2@kolab.org>
-To: john@kolab.org
+Message-ID: <f49eee5182874694372696db14c90f2@kolab.org>
+To: joe@kolab.org
 Subject: You've been invited to "Test Meeting"
 Content-Type: multipart/alternative;
  boundary="=_f77327deb61c6eccadcf01b3f6f854cb"
@@ -12,7 +12,13 @@ Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
 
-*Test Meeting*
+*Test Meeting *
+
+When: 2024-07-10 10:30 - 11:30 (Europe/Berlin)
+
+Please find attached an iCalendar file with all the event details which you=
+=20
+can import to your calendar application.
 
 --=_f77327deb61c6eccadcf01b3f6f854cb
 Content-Transfer-Encoding: 8bit
@@ -22,10 +28,11 @@ Content-Type: text/calendar; charset=UTF-8; method=REQUEST;
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Roundcube 1.5-git//Sabre VObject 4.5.4//EN
-METHOD:REQUEST
 CALSCALE:GREGORIAN
+METHOD:REQUEST
 BEGIN:VTIMEZONE
 TZID:Europe/Berlin
+X-MICROSOFT-CDO-TZID:4
 BEGIN:STANDARD
 DTSTART:20231029T010000
 TZOFFSETFROM:+0200
@@ -46,23 +53,23 @@ TZNAME:CEST
 END:DAYLIGHT
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:5463F1DDF6DA264A3FC70E7924B729A5-222222
-RECURRENCE-ID;TZID=Europe/Berlin:20240717T123000
+UID:5463F1DDF6DA264A3FC70E7924B729A5-D9F1889254B163F5
 DTSTAMP:20240709T124304Z
 CREATED:20240709T124304Z
-LAST-MODIFIED:20240709T124304Z
-DTSTART;TZID=Europe/Berlin:20240717T123000
-DTEND;TZID=Europe/Berlin:20240717T133000
-SUMMARY:Test Meeting Ex
+LAST-MODIFIED:20240709T124305Z
+DTSTART;TZID=Europe/Berlin:20240710T103000
+DTEND;TZID=Europe/Berlin:20240710T113000
+SUMMARY:Test Meeting 1
 LOCATION:Berlin
-SEQUENCE:1
+SEQUENCE:0
 TRANSP:OPAQUE
-ATTENDEE;CN=John;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;CUTYPE=INDI
- VIDUAL;RSVP=TRUE:mailto:john@kolab.org
-ATTENDEE;CN=Ned;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;CUTYPE=IND
- IVIDUAL;RSVP=TRUE:mailto:ned@kolab.org
+ATTENDEE;CN=John;PARTSTAT=DELEGATED;DELEGATED-TO="mailto:joe@kolab.org","mailto:jeoe@kolab.org";ROLE=REQ-PARTICIPANT;CUTYPE=INDIVIDUAL;
+ RSVP=TRUE:mailto:john@kolab.org
+ATTENDEE;CN=Joe;PARTSTAT=NEEDS-ACTION;DELEGATED-FROM="mailto:john@kolab.org";ROLE=REQ-PARTICIPANT;CUTYPE=INDIVIDUAL;
+ RSVP=TRUE:mailto:joe@kolab.org
+ATTENDEE;CN=Ned;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;CUTYPE=INDIVIDUAL;
+ RSVP=TRUE:mailto:ned@kolab.org
 ORGANIZER;CN=Jack:mailto:jack@kolab.org
-COMMENT:Ex
 END:VEVENT
 END:VCALENDAR
 --=_f77327deb61c6eccadcf01b3f6f854cb--

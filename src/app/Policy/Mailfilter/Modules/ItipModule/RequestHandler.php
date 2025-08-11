@@ -4,9 +4,11 @@ namespace App\Policy\Mailfilter\Modules\ItipModule;
 
 use App\Policy\Mailfilter\MailParser;
 use App\Policy\Mailfilter\Modules\ItipModule;
+use App\Policy\Mailfilter\Notifications\ItipNotification;
+use App\Policy\Mailfilter\Notifications\ItipNotificationParams;
 use App\Policy\Mailfilter\Result;
+use App\User;
 use Sabre\VObject\Component;
-use Sabre\VObject\Document;
 
 class RequestHandler extends ItipModule
 {
@@ -37,10 +39,6 @@ class RequestHandler extends ItipModule
         // - For an existing "VEVENT" calendar component, delegate the role of "Attendee" to another user.
         // - For an existing "VEVENT" calendar component, change the role of "Organizer" to another user.
 
-        // FIXME: This whole method could be async, if we wanted to be more responsive on mail delivery,
-        // but CANCEL and REPLY could not, because we're potentially stopping mail delivery there,
-        // so I suppose we'll do all of them synchronously for now. Still some parts of it can be async.
-
         $this->parser = $parser;
 
         // Check whether the object already exists in the recipient's calendar
@@ -52,11 +50,20 @@ class RequestHandler extends ItipModule
             return null;
         }
 
-        // FIXME: what to do if REQUEST attendees do not match with the recipient email(s)?
-        // stop processing here and pass the message to the inbox?
-
         $requestMaster = $this->extractMainComponent($this->itip);
         $recurrence_id = (string) $requestMaster->{'RECURRENCE-ID'};
+
+        // Spoofing protection
+        if (!$this->checkOrigin($requestMaster, $existing)) {
+            return null;
+        }
+
+        // If REQUEST attendees do not match with the recipient email(s)
+        // stop processing here and pass the message to the Inbox.
+        if (!$this->checkRecipient($requestMaster)) {
+            $parser->debug("REQUEST attendees do not match recipient's addresses. Ignored.");
+            return null;
+        }
 
         // The event does not exist yet in the recipient's calendar, create it
         if (!$existing) {
@@ -76,45 +83,33 @@ class RequestHandler extends ItipModule
             return null;
         }
 
-        // TODO: Cover all cases mentioned above
-
-        // FIXME: For updates that don't create a new exception should we replace the iTip with a notification?
-        // Or maybe we should not even bother with auto-updating and leave it to MUAs?
-
         if ($recurrence_id) {
             // Recurrence instance
             $existingInstance = $this->extractRecurrenceInstanceComponent($existing, $recurrence_id);
 
-            // A new recurrence instance, just add it to the existing event
-            if (!$existingInstance) {
-                // TODO: Bump LAST-MODIFIED on the master object
-                $existing->add($requestMaster);
-            } else {
-                // SEQUENCE does not match, deliver the message, let the MUAs deal with this
-                // TODO: A higher SEQUENCE indicates a re-scheduled object, we should update the existing event.
-                if ((int) ((string) $existingInstance->SEQUENCE) != (int) ((string) $requestMaster->SEQUENCE)) {
-                    return null;
-                }
-
-                $this->mergeComponents($existingInstance, $requestMaster);
-                // TODO: Bump LAST-MODIFIED on the master object
+            // Outdated message, just deliver it, let the MUAs deal with this
+            if (!$this->isEligibleForUpdate($requestMaster, $existingInstance)) {
+                return null;
             }
+
+            // Organizer is the event owner, always replace the whole exception with the new one
+            if ($existingInstance) {
+                $existing->remove($existingInstance);
+            }
+
+            $existing->add($requestMaster);
         } else {
             // Master event
             $existingMaster = $this->extractMainComponent($existing);
 
-            if (!$existingMaster) {
+            // Outdated message, just deliver it, let the MUAs deal with this
+            if (!$this->isEligibleForUpdate($requestMaster, $existingMaster)) {
                 return null;
             }
 
-            // SEQUENCE does not match, deliver the message, let the MUAs deal with this
-            // TODO: A higher SEQUENCE indicates a re-scheduled object, we should update the existing event.
-            if ((int) ((string) $existingMaster->SEQUENCE) != (int) ((string) $requestMaster->SEQUENCE)) {
-                return null;
-            }
-
-            // FIXME: Merge all components included in the request?
-            $this->mergeComponents($existingMaster, $requestMaster);
+            // Organizer is the event owner, always replace the whole event with the new one
+            $existing = $this->itip;
+            $existingInstance = $existingMaster;
         }
 
         $parser->debug("Updating object at {$this->davLocation}");
@@ -122,44 +117,83 @@ class RequestHandler extends ItipModule
         $dav = $this->getDAVClient($user);
         $dav->update($this->toOpaqueObject($existing, $this->davLocation));
 
+        // If the recipient's action is not required replace the message with a notification
+        if (!$this->isActionRequired($requestMaster, $existingInstance)) {
+            $parser->debug("Sending notification to {$user->email}");
+            $user->notify($this->notification($requestMaster));
+
+            return new Result(Result::STATUS_DISCARD);
+        }
+
         return null;
     }
 
     /**
-     * Merge VOBJECT component properties into another component
+     * Check if the request recipient is one of the event attendees
      */
-    protected function mergeComponents(Component $to, Component $from): void
+    private function checkRecipient(Component $request): bool
     {
-        // TODO: Every property? What other properties? EXDATE/RDATE? ORGANIZER? ATTACH?
-        // TODO: Removal of RRULE from the master event
-        $props = ['SEQUENCE', 'RRULE'];
-        foreach ($props as $prop) {
-            if (isset($from->{$prop})) {
-                $to->{$prop} = $from->{$prop};
+        if (empty($request->ATTENDEE)) {
+            return false;
+        }
+
+        $user = $this->parser->getUser();
+        $attendees = [];
+
+        // Check the main user email address
+        foreach ($request->ATTENDEE as $attendee) {
+            $email = strtolower(preg_replace('!^mailto:!i', '', (string) $attendee));
+            if ($email === $user->email) {
+                return true;
+            }
+            if ($email) {
+                $attendees[] = $email;
             }
         }
 
-        // Replace the list of ATTENDEEs
-        $to->remove('ATTENDEE');
-        foreach ($from->ATTENDEE ?? [] as $attendee) {
-            $class = $attendee::class;
-            $to->add(new $class($to->parent, 'ATTENDEE', $attendee->getValue(), $attendee->parameters()));
+        // Check the user aliases
+        return $user->aliases->whereIn('alias', $attendees)->count() > 0;
+    }
+
+    /**
+     * Check if attendee action is required for the request
+     */
+    private function isActionRequired(Component $request, ?Component $existing = null): bool
+    {
+        if (empty($existing)) {
+            return true;
         }
 
-        // If RRULE contains UNTIL remove exceptions from the timestamp forward
-        if (isset($to->RRULE) && ($parts = $to->RRULE->getParts()) && !empty($parts['UNTIL'])) {
-            // TODO: Timezone? Also test that with UNTIL using a date format
-            $until = new \DateTime($parts['UNTIL']);
-            /** @var Document $doc */
-            $doc = $to->parent;
+        if ((string) $existing->SEQUENCE < (string) $request->SEQUENCE) {
+            return true;
+        }
 
-            foreach ($doc->getComponents() as $component) {
-                if ($component->name == $to->name && !empty($component->{'RECURRENCE-ID'})) {
-                    if ($component->{'RECURRENCE-ID'}->getDateTime() >= $until) {
-                        $doc->remove($component);
-                    }
+        $user = $this->parser->getUser();
+
+        foreach ($request->ATTENDEE as $attendee) {
+            $email = strtolower(preg_replace('!^mailto:!i', '', (string) $attendee));
+            if ($email === $user->email || $user->aliases->contains('alias', $email)) {
+                if (empty($attendee['PARTSTAT']) || (string) $attendee['PARTSTAT'] == 'NEEDS-ACTION') {
+                    return true;
                 }
             }
         }
+
+        return false;
+    }
+
+    /**
+     * Create a notification
+     */
+    private function notification(Component $request): ItipNotification
+    {
+        $organizer = $request->ORGANIZER;
+
+        $params = new ItipNotificationParams('request', $request);
+        $params->comment = (string) $request->COMMENT;
+        $params->senderName = (string) $organizer['CN'];
+        $params->senderEmail = strtolower(preg_replace('!^mailto:!i', '', (string) $organizer));
+
+        return new ItipNotification($params);
     }
 }

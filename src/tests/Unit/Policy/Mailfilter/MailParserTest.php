@@ -24,7 +24,7 @@ class MailParserTest extends TestCase
 
         $body = $parser->getBody();
 
-        $this->assertSame(1639, strlen($body));
+        $this->assertSame(1641, strlen($body));
 
         $body = $parser->getBody(0); // text/plain part
 

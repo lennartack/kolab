@@ -35,7 +35,6 @@ return [
 
     'itip-request-subject' => "\":summary\" has been updated",
     'itip-request-body' => "The event \":summary\" at :start has been updated in your calendar.",
-    'itip-request-changes' => "Changes submitted by :sender have been automatically applied.",
 
     'itip-attendee-accepted' => ":sender accepted the invitation.",
     'itip-attendee-declined' => ":sender declined the invitation.",

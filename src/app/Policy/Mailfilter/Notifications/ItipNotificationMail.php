@@ -29,6 +29,7 @@ class ItipNotificationMail extends Mailable
         $vars = get_object_vars($this->params);
 
         $vars['sender'] = $this->params->senderName ?: $this->params->senderEmail ?: '';
+        $vars['delegatee'] = $this->params->delegateName ?: $this->params->delegateEmail ?: '';
 
         $vars['body1'] = \trans("mail.itip-{$mode}-body", $vars);
         $vars['body2'] = '';

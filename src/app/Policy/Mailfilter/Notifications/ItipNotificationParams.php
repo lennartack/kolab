@@ -10,6 +10,12 @@ class ItipNotificationParams
     /** @var ?string iTip COMMENT property */
     public ?string $comment;
 
+    /** @var string iTip delegatee (attendee) email address */
+    public string $delegateEmail = '';
+
+    /** @var string iTip delegatee (attendee) name */
+    public string $delegateName = '';
+
     /** @var ?string Notification mode (iTip method) */
     public ?string $mode;
 

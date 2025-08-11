@@ -33,27 +33,19 @@ class CancelHandler extends ItipModule
         $existing = $this->findObject($user, $this->uid, $this->type);
 
         if (!$existing) {
-            // FIXME: Should we stop message delivery?
             return null;
         }
-
-        // FIXME: what to do if CANCEL attendees do not match with the recipient email(s)?
-        // FIXME: what to do if CANCEL does not come from the organizer's email?
-        // stop processing here and pass the message to the inbox?
 
         $existingMaster = $this->extractMainComponent($existing);
         $cancelMaster = $this->extractMainComponent($this->itip);
 
         if (!$existingMaster || !$cancelMaster) {
-            // FIXME: Should we stop message delivery?
             $parser->debug("Failed to get the main component. Ignored.");
             return null;
         }
 
-        // SEQUENCE does not match, deliver the message, let the MUAs to deal with this
-        // FIXME: Is this even a valid aproach regarding recurrence?
-        if ((string) $existingMaster->SEQUENCE != (string) $cancelMaster->SEQUENCE) {
-            $parser->debug("Sequence mismatch. Ignored.");
+        // Spoofing protection
+        if (!$this->checkOrigin($cancelMaster, $existing)) {
             return null;
         }
 
@@ -65,11 +57,16 @@ class CancelHandler extends ItipModule
 
             // First find and remove the exception object, if exists
             if ($existingInstance = $this->extractRecurrenceInstanceComponent($existing, $recurrence_id)) {
+                // Outdated message, just deliver it, let the MUAs deal with this
+                if (!$this->isEligibleForUpdate($cancelMaster, $existingInstance)) {
+                    return null;
+                }
+
                 $existing->remove($existingInstance);
             }
 
             // Add the EXDATE entry
-            // FIXME: Do we need to handle RECURRENE-ID differently to get the exception date (timezone)?
+            // FIXME: Do we need to handle RECURRENCE-ID differently to get the exception date (timezone)?
             // TODO: We should probably make sure the entry does not exist yet
             $exdate = $cancelMaster->{'RECURRENCE-ID'}->getDateTime();
             $existingMaster->add('EXDATE', $exdate, ['VALUE' => 'DATE'], 'DATE');
@@ -79,6 +76,11 @@ class CancelHandler extends ItipModule
             $dav = $this->getDAVClient($user);
             $dav->update($this->toOpaqueObject($existing, $this->davLocation));
         } else {
+            // Outdated message, just deliver it, let the MUAs deal with this
+            if (!$this->isEligibleForUpdate($cancelMaster, $existingMaster)) {
+                return null;
+            }
+
             $existingInstance = $existingMaster;
 
             $parser->debug("Deleting object at {$this->davLocation}");

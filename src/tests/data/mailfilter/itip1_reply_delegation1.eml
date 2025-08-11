@@ -1,0 +1,36 @@
+MIME-Version: 1.0
+From: John <john@kolab.org>
+Date: Tue, 09 Jul 2024 14:45:04 +0200
+Message-ID: <f493eee5182874694372696db14c90f2@kolab.org>
+To: jack@kolab.org
+Subject: Reply to "Test Meeting"
+Content-Type: multipart/alternative;
+ boundary="=_f77327deb61c6eccadcf01b3f6f854cb"
+
+--=_f77327deb61c6eccadcf01b3f6f854cb
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+
+Delegator replies to the organizer
+
+--=_f77327deb61c6eccadcf01b3f6f854cb
+Content-Transfer-Encoding: 8bit
+Content-Type: text/calendar; charset=UTF-8; method=REPLY;
+ name=event.ics
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Roundcube 1.5-git//Sabre VObject 4.5.4//EN
+CALSCALE:GREGORIAN
+METHOD:REPLY
+BEGIN:VEVENT
+UID:5463F1DDF6DA264A3FC70E7924B729A5-D9F1889254B163F5
+DTSTAMP:20240709T124304Z
+SEQUENCE:0
+ATTENDEE;CN=John;PARTSTAT=DELEGATED;DELEGATED-TO="mailto:joe@kolab.org";ROLE=REQ-PARTICIPANT;CUTYPE=INDIVIDUAL;
+ RSVP=FALSE:mailto:john@kolab.org
+ORGANIZER;CN=Jack:mailto:jack@kolab.org
+COMMENT:a reply from John
+END:VEVENT
+END:VCALENDAR
+--=_f77327deb61c6eccadcf01b3f6f854cb--
