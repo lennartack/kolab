@@ -599,6 +599,7 @@ trait TestCaseTrait
         }
 
         if ($createInBackends) {
+            $user->assignSku(Sku::firstOrCreate(['title' => 'mailbox']));
             $job = new CreateJob($user->id);
             $job->handle();
         }

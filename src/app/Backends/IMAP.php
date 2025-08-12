@@ -472,6 +472,106 @@ class IMAP
         return true;
     }
 
+    /**
+     * Copy a folder.
+     *
+     * @param string $sourceMailbox Source Mailbox
+     * @param string $targetMailbox Target Mailbox
+     * @param array  $metadata Metadata entries to copy
+     *
+     * @return bool True if the mailbox was copied successfully, False otherwise
+     *
+     * @throws \Exception
+     */
+    public static function copyMailbox($sourceMailbox, $targetMailbox, $metadata = []): bool
+    {
+        $config = self::getConfig();
+        $imap = self::initIMAP($config);
+
+        $sourceMailbox = self::toUTF7($sourceMailbox);
+        $targetMailbox = self::toUTF7($targetMailbox);
+
+        if (!empty($targetMailbox) && $targetMailbox != $sourceMailbox) {
+            // We assume the mailbox already exists if this fails
+            $imap->createFolder($targetMailbox);
+
+            if (!empty($metadata)) {
+                if ($meta = $imap->getMetadata($sourceMailbox, $metadata)[$sourceMailbox] ?? null) {
+                    if (!$imap->setMetadata($targetMailbox, $meta)) {
+                        \Log::error("Failed to set mailbox metadata on {$targetMailbox}");
+                        $imap->closeConnection();
+                        return false;
+                    }
+                }
+            }
+
+            // The cyrus user needs permissions to select the mailbox, and to copy write the messages to the folder.
+            $result = $imap->setACL($sourceMailbox, $config['user'], 'lr');
+            $result = $imap->setACL($targetMailbox, $config['user'], 'lrswi');
+            if (!$imap->copy("1:*", $sourceMailbox, $targetMailbox)) {
+                \Log::error("Failed to copy messages from mailbox {$sourceMailbox} to {$targetMailbox}");
+                $imap->closeConnection();
+                return false;
+            }
+            $result = $imap->deleteACL($sourceMailbox, $config['user']);
+            $result = $imap->deleteACL($targetMailbox, $config['user']);
+        }
+
+        $imap->closeConnection();
+
+        return true;
+    }
+
+    /**
+     * subscribe to the user mailbox
+     *
+     * @param string $user user email address
+     * @param string $mailbox mailbox name
+     *
+     * @return bool True if the mailbox was subscribed successfully, False otherwise
+     *
+     * @throws \Exception
+     */
+    public static function subscribeMailbox($user, $mailbox): bool
+    {
+        $config = self::getConfig();
+        $imap = self::initIMAP($config, $user);
+        $ret = $imap->subscribe($mailbox);
+        $imap->closeConnection();
+
+        return $ret;
+    }
+
+    /**
+     * unsubscribe from the user mailbox
+     *
+     * @param string $user user email address
+     * @param string $mailbox mailbox name
+     *
+     * @return bool True if the mailbox was unsubscribed successfully, False otherwise
+     *
+     * @throws \Exception
+     */
+    public static function unsubscribeMailbox($user, $mailbox): bool
+    {
+        $config = self::getConfig();
+        $imap = self::initIMAP($config, $user);
+        $ret = $imap->unsubscribe($mailbox);
+        $imap->closeConnection();
+
+        return $ret;
+    }
+
+    /**
+     * get the user mailbox name for cyrus-imap
+     *
+     * @param string $user user email address
+     * @param string $mailbox mailbox name
+     *
+     * @return string user mailbox in user/ namespace
+     *
+     * @throws \Exception
+     */
     public static function userMailbox(string $user, string $mailbox): string
     {
         [$localpart, $domain] = explode('@', $user, 2);
@@ -479,6 +579,22 @@ class IMAP
             return "user/{$localpart}@{$domain}";
         }
         return "user/{$localpart}/{$mailbox}@{$domain}";
+    }
+
+    /**
+     * get the folder name from a full mailbox name for cyrus-imap
+     *
+     * @param string $mailbox mailbox name
+     *
+     * @return string folder name
+     */
+    public static function folderName(string $mailbox): string
+    {
+        [$localpart, $domain] = explode('@', $mailbox, 2);
+        $parts = explode('/', $localpart);
+        array_shift($parts);
+        array_shift($parts);
+        return implode('/', $parts);
     }
 
     /**

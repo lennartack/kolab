@@ -37,7 +37,7 @@ class IMAPTest extends TestCase
             $this->deleteTestUser($this->user->email, true);
         }
         if ($this->user2) {
-            $this->deleteTestUser($this->user2->email);
+            $this->deleteTestUser($this->user2->email, true);
         }
         if ($this->group) {
             $this->deleteTestGroup($this->group->email, true);
@@ -475,6 +475,40 @@ class IMAPTest extends TestCase
         $result = IMAP::listMailboxes("john@kolab.org");
         $this->assertTrue(in_array(IMAP::userMailbox("john@kolab.org", "renametest2"), $result));
         $this->assertFalse(in_array(IMAP::userMailbox("john@kolab.org", "renametest1"), $result));
+    }
+
+    /**
+     * Test copyMailbox
+     *
+     * @group imap
+     */
+    public function testCopyMailbox(): void
+    {
+        $ts = str_replace('.', '', (string) microtime(true));
+        $this->user = $user = $this->getTestUser("test-{$ts}@" . \config('app.domain'), [], true);
+        $this->user2 = $user2 = $this->getTestUser("test2-{$ts}@" . \config('app.domain'), [], true);
+
+        $imap = $this->getImap($user->email);
+        $imap->createFolder("copytest1");
+
+        # TODO add messages
+
+        $result = IMAP::copyMailbox(
+            IMAP::userMailbox($user->email, "copytest1"),
+            IMAP::userMailbox($user2->email, "copytest2")
+        );
+
+        $this->assertTrue($result);
+
+        // Target was created
+        $result = IMAP::listMailboxes($user2->email);
+        $this->assertTrue(in_array(IMAP::userMailbox($user2->email, "copytest2"), $result));
+
+        // Source is still ok
+        $result = IMAP::listMailboxes($user->email);
+        $this->assertTrue(in_array(IMAP::userMailbox($user->email, "copytest1"), $result));
+
+        # TODO verify messages
     }
 
     /**
