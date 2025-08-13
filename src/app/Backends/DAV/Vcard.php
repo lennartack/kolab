@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Sabre\VObject\Property;
 use Sabre\VObject\Reader;
 use Sabre\VObject\Writer;
+use Sabre\VObject\Document;
 
 class Vcard extends CommonObject
 {
@@ -125,10 +126,9 @@ class Vcard extends CommonObject
     public function __toString()
     {
         if (!$this->vobject) {
-            // TODO we currently can only serialize a message back that we just read
             throw new \Exception("Writing from properties is not implemented");
         }
-
-        return Writer::write($this->vobject);
+        $vcard = $this->vobject->convert(Document::VCARD40);
+        return Writer::write($vcard);
     }
 }
