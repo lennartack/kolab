@@ -303,6 +303,7 @@ class DAV implements ExporterInterface, ImporterInterface
             \Log::warning(
                 "Exception while fetching item list. Pretending the target collection is empty: " . $e->getMessage()
             );
+            $result = true;
         }
 
         if (count($set->items)) {
