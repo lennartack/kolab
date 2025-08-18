@@ -255,14 +255,17 @@ class SendTest:
         if self.verbose:
             print(msg)
 
-        if "MODIFIED" not in msg['Subject']:
+        subject = str(msg['Subject'])
+        body = str(msg.get_body())
+
+        if "MODIFIED" not in subject:
             print_error("Failed to modify the Subject")
-            print("Existing header: " + str(msg['Subject']))
+            print("Existing header: " + subject)
             return False
 
-        if "KOLABv4TestMessage" not in msg.get_body():
+        if "KOLABv4TestMessage" not in body:
             print_error("Missing test body")
-            print("Existing body: " + str(msg.get_body()))
+            print("Existing body: " + body)
             return False
 
         return True
