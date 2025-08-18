@@ -52,7 +52,6 @@ RUN git clone https://github.com/libwbxml/libwbxml.git && \
     cmake -D CMAKE_INSTALL_PREFIX=/usr .. && \
     make && \
     make install && \
-    mv /usr/lib/libwbxml2.so* /usr/lib64/ && \
     cd .. && \
     rm -rf libwbxml
 
