@@ -870,6 +870,7 @@ class DAV
         }
 
         $client = Http::withOptions(['verify' => \config('services.dav.verify')]);
+        $client = $client->timeout(300);
 
         if ($this->user) {
             $client = $client->withBasicAuth($this->user, $this->password);
