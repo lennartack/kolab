@@ -156,7 +156,6 @@ class MetricsController extends Controller
                 'Content-Type' => "text/plain",
             ]
         );
-
     }
 
     /**

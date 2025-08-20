@@ -3,7 +3,6 @@
 namespace App\Console\Commands\User;
 
 use App\Console\Command;
-use App\User;
 
 class SetSettingCommand extends Command
 {

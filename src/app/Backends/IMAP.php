@@ -502,7 +502,6 @@ class IMAP
         return $result;
     }
 
-
     /**
      * List groupware mailboxes.
      *
