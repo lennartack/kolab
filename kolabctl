@@ -60,11 +60,13 @@ __export_env() {
     export KOLAB_SSL_CERTIFICATE_FULLCHAIN
     export KOLAB_SSL_CERTIFICATE_KEY
     export PUBLIC_IP
+    export PASSPORT_WEBMAIL_SSO_CLIENT_ID
+    export PASSPORT_WEBMAIL_SSO_CLIENT_SECRET
 }
 
 kolab__configure() {
     if [[ "$1" == "--force" ]]; then
-        rm src/.env
+        rm -f src/.env
     fi
 
     # Generate the .env once with all the necessary secrets
@@ -185,7 +187,7 @@ kolab__deploy() {
         exit 1
     fi
 
-    if [[ "$1" == "--reset" ]]; then
+    if [[ "$*" =~ "--reset" ]]; then
         kolab__reset --force
     fi
 
@@ -200,7 +202,9 @@ kolab__deploy() {
     podman volume create $POD-redis-data --ignore -l=kolab
     podman volume create $POD-minio-data --ignore -l=kolab
 
-    kolab__build
+    if [[ "$*" =~ "--nobuild" ]]; then
+        kolab__build
+    fi
 
     # Create the pod first
     $PODMAN pod create \
