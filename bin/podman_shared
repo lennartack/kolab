@@ -175,6 +175,8 @@ podman__run_proxy() {
         -e DAV_ALTERNATIVE_PATH="/dav/" \
         -e COLLABORA_BACKEND="http://127.0.0.1:9980" \
         -e SIEVE_BACKEND="127.0.0.1:4190" \
+        -e FREEBUSY_BACKEND="http://127.0.0.1:11080" \
+        -e FREEBUSY_PATH="/freebusy" \
         kolab-proxy:latest $@
 }
 
