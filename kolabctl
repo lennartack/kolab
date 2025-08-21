@@ -441,7 +441,6 @@ kolab__build() {
         podman__build_postfix
         podman__build_amavis
         podman__build_collabora
-        podman__build docker/vector vector
         podman pull quay.io/minio/minio:latest
         env CERT_DIR=docker/certs APP_DOMAIN=$HOST bin/regen-certs
     fi
