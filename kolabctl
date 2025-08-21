@@ -203,6 +203,8 @@ kolab__deploy() {
     podman volume create $POD-minio-data --ignore -l=kolab
 
     if [[ "$*" =~ "--nobuild" ]]; then
+        echo "Skipping image builds"
+    else
         kolab__build
     fi
 
