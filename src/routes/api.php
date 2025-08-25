@@ -315,6 +315,7 @@ if (\config('app.with_services')) {
             Route::post('policy/greylist', [API\V4\PolicyController::class, 'greylist']);
             Route::post('policy/ratelimit', [API\V4\PolicyController::class, 'ratelimit']);
             Route::post('policy/spf', [API\V4\PolicyController::class, 'senderPolicyFramework']);
+            Route::post('policy/reception', [API\V4\PolicyController::class, 'reception']);
             Route::post('policy/submission', [API\V4\PolicyController::class, 'submission']);
             Route::post('policy/mail/filter', [API\V4\PolicyController::class, 'mailfilter']);
         }

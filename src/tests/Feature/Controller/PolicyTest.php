@@ -5,6 +5,7 @@ namespace Tests\Feature\Controller;
 use App\Domain;
 use App\IP4Net;
 use App\Policy\Greylist;
+use App\Policy\Mailfilter;
 use Carbon\Carbon;
 use Tests\TestCase;
 
@@ -45,6 +46,7 @@ class PolicyTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->deleteTestGroup('group-test@kolab.org');
         $this->deleteTestUser($this->testUser->email);
         $this->deleteTestDomain($this->testDomain->namespace);
         $this->net->delete();
@@ -269,7 +271,8 @@ class PolicyTest extends TestCase
         // Basic test, no changes to the mail content
         $url = '/api/webhooks/policy/mail/filter?recipient=john@kolab.org&sender=jack@kolab.org';
         $response = $this->call('POST', $url, [], [], [], $headers, $post)
-            ->assertNoContent(204);
+            ->assertNoContent(200)
+            ->assertHeader(Mailfilter::HEADER, Mailfilter::HEADER_ACTION_ACCEPT_EMPTY);
 
         // Test returning (modified) mail content
         $john->setConfig(['externalsender_policy' => true, 'itip_policy' => true]);
@@ -280,6 +283,57 @@ class PolicyTest extends TestCase
             ->streamedContent();
 
         $this->assertStringContainsString('Subject: [EXTERNAL] test sync', $content);
+    }
+
+    /**
+     * Test mail reception policy webhook
+     */
+    public function testReception()
+    {
+        // Note: Only basic tests here. More detailed policy handler tests are in another place
+
+        // Test 403 response
+        $post = [
+            'sender' => 'someone@sender.domain',
+            'recipient' => $this->testUser->email,
+            'client_address' => $this->clientAddress,
+            'client_name' => 'some.mx',
+        ];
+
+        $response = $this->post('/api/webhooks/policy/reception', $post);
+        $response->assertStatus(403);
+
+        $json = $response->json();
+
+        $this->assertSame('DEFER_IF_PERMIT', $json['response']);
+        $this->assertSame("Greylisted for 5 minutes. Try again later.", $json['reason']);
+
+        // Test 200 response
+        $connect = Greylist\Connect::where('sender_domain', 'sender.domain')->first();
+        $connect->created_at = Carbon::now()->subMinutes(6);
+        $connect->save();
+
+        $response = $this->post('/api/webhooks/policy/reception', $post);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('DUNNO', $json['response']);
+        $this->assertMatchesRegularExpression('/^Received-Greylist: greylisted from/', $json['prepend'][0]);
+
+        // Test sender access check (403)
+        $group = $this->getTestGroup('group-test@kolab.org');
+        $group->setConfig(['sender_policy' => ['aaa.pl']]);
+
+        $post['recipient'] = $group->email;
+        $response = $this->post('/api/webhooks/policy/reception', $post);
+        $response->assertStatus(403);
+
+        $json = $response->json();
+
+        $this->assertCount(2, $json);
+        $this->assertSame('REJECT', $json['response']);
+        $this->assertSame('Invalid recipient', $json['reason']);
     }
 
     /**

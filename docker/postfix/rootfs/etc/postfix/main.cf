@@ -496,11 +496,24 @@ smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
 # plaintext (opportunistic TLS outbound).
 #
 smtp_tls_security_level = may
+
 meta_directory = /etc/postfix
 shlib_directory = /usr/lib64/postfix
 recipient_delimiter = +
-transport_maps = regexp:/etc/postfix/transport
 smtpd_tls_auth_only = no
+smtpd_helo_required = yes
+smtpd_peername_lookup = yes
+smtpd_sasl_auth_enable = yes
+maillog_file = /dev/stdout
+message_size_limit = MESSAGE_SIZE_LIMIT
+
+# Disable BDAT support without the useless "discarding EHLO keywords: CHUNKING" message
+smtpd_discard_ehlo_keywords = chunking, silent-discard
+
+content_filter = smtp-amavis:[AMAVIS_HOST]:13024
+transport_maps = regexp:/etc/postfix/transport
+
+smtpd_sender_login_maps = mysql:/etc/postfix/sql/local_recipient_maps.cf
 
 local_recipient_maps =
     mysql:/etc/postfix/sql/local_recipient_maps.cf,
@@ -513,43 +526,17 @@ virtual_alias_maps =
     mysql:/etc/postfix/sql/virtual_alias_maps_groups.cf,
     mysql:/etc/postfix/sql/virtual_alias_maps_shared_folders.cf
 
-# Inbound
+# Inbound (restrictions in order of execution)
 smtpd_client_restrictions =
     permit_mynetworks,
     reject_unknown_reverse_client_hostname,
     #reject_rbl_client zen.spamhaus.org,
     #reject_rhsbl_reverse_client dbl.spamhaus.org
-smtpd_data_restrictions =
-    reject_unauth_pipelining
-smtpd_helo_required = yes
 smtpd_helo_restrictions =
     permit_mynetworks,
     reject_invalid_helo_hostname,
     reject_non_fqdn_helo_hostname,
     # reject_rhsbl_helo dbl.spamhaus.org
-# Local clients and authenticated clients may specify any destination domain
-smtpd_relay_restrictions =
-    permit_mynetworks,
-    permit_sasl_authenticated,
-    reject_unauth_destination
-smtpd_recipient_restrictions =
-    permit_mynetworks,
-    reject_invalid_hostname,
-    reject_non_fqdn_sender,
-    reject_non_fqdn_recipient,
-    reject_unauth_destination,
-    #reject_rhsbl_recipient dbl.spamhaus.org,
-    # TODO block suspended recipients (by domain or account)
-    #check_recipient_access ldap:/etc/postfix/ldap/domain_suspended.cf,
-    #check_recipient_access ldap:/etc/postfix/ldap/account_suspended.cf,
-    check_policy_service unix:private/policy_greylist,
-    permit
-smtpd_peername_lookup = yes
-smtpd_sasl_auth_enable = yes
-
-smtpd_sender_login_maps =
-    mysql:/etc/postfix/sql/local_recipient_maps.cf
-
 smtpd_sender_restrictions =
     # We used to also block spammers via sender_access
     check_sender_access hash:/etc/postfix/sender_access,
@@ -564,7 +551,21 @@ smtpd_sender_restrictions =
     check_policy_service unix:private/policy_spf,
     #reject_rhsbl_sender dbl.spamhaus.org,
     permit
-
+# Local clients and authenticated clients may specify any destination domain
+smtpd_relay_restrictions =
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination
+smtpd_recipient_restrictions =
+    permit_mynetworks,
+    reject_invalid_hostname,
+    reject_non_fqdn_sender,
+    reject_non_fqdn_recipient,
+    reject_unauth_destination,
+    #reject_rhsbl_recipient dbl.spamhaus.org,
+    check_policy_service unix:private/policy_reception,
+    permit
+smtpd_data_restrictions = reject_unauth_pipelining
 
 # Outbound
 submission_data_restrictions = 
@@ -601,12 +602,3 @@ submission_recipient_restrictions =
     permit_sasl_authenticated,
     # permit_mynetworks,
     reject
-
-# Disable BDAT support without the useless "discarding EHLO keywords: CHUNKING" message
-smtpd_discard_ehlo_keywords = chunking, silent-discard
-
-content_filter = smtp-amavis:[AMAVIS_HOST]:13024
-
-maillog_file = /dev/stdout
-
-message_size_limit = MESSAGE_SIZE_LIMIT

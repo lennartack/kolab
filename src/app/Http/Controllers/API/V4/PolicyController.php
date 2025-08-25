@@ -124,6 +124,18 @@ class PolicyController extends Controller
         return $response->jsonResponse();
     }
 
+    /**
+     * Validate a mail reception request (includes greylisting)
+     *
+     * @return JsonResponse
+     */
+    public function reception()
+    {
+        $response = SmtpAccess::reception(\request()->input());
+
+        return $response->jsonResponse();
+    }
+
     /*
      * Apply the sender policy framework to a request.
      *

@@ -2,12 +2,31 @@
 
 namespace App\Policy;
 
+use App\Group;
 use App\User;
 use App\UserAlias;
 use App\Utils;
 
 class SmtpAccess
 {
+    /**
+     * Handle SMTP external mail reception request
+     *
+     * @param array $data Input data
+     */
+    public static function reception($data): Response
+    {
+        // Check access policy
+        if (!self::verifyRecipient($data['sender'], $data['recipient'])) {
+            return new Response(Response::ACTION_REJECT, 'Invalid recipient', 403);
+        }
+
+        // Greylisting
+        $response = Greylist::handle($data);
+
+        return $response;
+    }
+
     /**
      * Handle SMTP submission request
      *
@@ -112,5 +131,57 @@ class SmtpAccess
         }
 
         return false;
+    }
+
+    /**
+     * Verify whether a sender is allowed to send mail to the recipient address.
+     *
+     * @param string $sender    Sender email address
+     * @param string $recipient Recipient email address
+     */
+    public static function verifyRecipient(string $sender, string $recipient): bool
+    {
+        $sender = \strtolower($sender);
+
+        if (!str_contains($sender, '@')) {
+            return false;
+        }
+
+        $group = Group::where('email', $recipient)->first();
+
+        // Check distribution list sender access list
+        if ($group) {
+            $policy = $group->getConfig()['sender_policy'];
+
+            if (!empty($policy)) {
+                foreach ($policy as $entry) {
+                    // Full email address match
+                    if (str_contains($entry, '@')) {
+                        if ($sender === $entry) {
+                            return true;
+                        }
+                    } else {
+                        [$local, $domain] = explode('@', $sender);
+
+                        // Domain suffix match
+                        if (str_starts_with($entry, '.')) {
+                            if (str_ends_with($domain, $entry)) {
+                                return true;
+                            }
+                        }
+                        // Full domain match
+                        elseif ($entry === $domain) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        // TODO: Check domain/recipient suspended status?
+
+        return true;
     }
 }

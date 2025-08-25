@@ -25,6 +25,7 @@ class SmtpAccessTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->deleteTestGroup('group-test@kolab.org');
         Delegation::query()->delete();
         $john = $this->getTestUser('john@kolab.org');
         $john->status &= ~User::STATUS_SUSPENDED;
@@ -34,6 +35,37 @@ class SmtpAccessTest extends TestCase
         $jack->save();
 
         parent::tearDown();
+    }
+
+    /**
+     * Test verifyRecipient() method
+     */
+    public function testVerifyRecipient(): void
+    {
+        $group = $this->getTestGroup('group-test@kolab.org');
+
+        // invalid sender address
+        $this->assertFalse(SmtpAccess::verifyRecipient('invalid', 'none@unknown.tld'));
+
+        // non-existing recipient
+        $this->assertTrue(SmtpAccess::verifyRecipient('ext@gmail.com', 'none@unknown.tld'));
+
+        // no policy for a group
+        $this->assertTrue(SmtpAccess::verifyRecipient('ext@gmail.com', $group->email));
+
+        $group->setConfig(['sender_policy' => ['.gmail.com', 'allowed.tld', 'allowed@kolab.org']]);
+
+        // domain suffix match
+        $this->assertTrue(SmtpAccess::verifyRecipient('ext@test.gmail.com', $group->email));
+
+        // domain match
+        $this->assertTrue(SmtpAccess::verifyRecipient('ext@allowed.tld', $group->email));
+
+        // email address match
+        $this->assertTrue(SmtpAccess::verifyRecipient('allowed@kolab.org', $group->email));
+
+        // no match
+        $this->assertFalse(SmtpAccess::verifyRecipient('test@kolab.ch', $group->email));
     }
 
     /**

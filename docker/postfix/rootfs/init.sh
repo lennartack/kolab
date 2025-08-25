@@ -18,10 +18,11 @@ sed -i -r \
     /etc/postfix/main.cf
 
 mkdir /var/log/kolab
-touch /var/log/kolab/postfix-policy-submission.log
-touch /var/log/kolab/postfix-policy-spf.log
-touch /var/log/kolab/postfix-policy-greylist.log
 touch /var/log/kolab/postfix-content-filter.log
+#touch /var/log/kolab/postfix-policy-greylist.log
+touch /var/log/kolab/postfix-policy-submission.log
+touch /var/log/kolab/postfix-policy-reception.log
+touch /var/log/kolab/postfix-policy-spf.log
 chmod -R 777 /var/log/kolab
 
 chown -R postfix:mail /var/lib/postfix
