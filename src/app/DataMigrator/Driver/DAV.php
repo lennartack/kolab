@@ -214,7 +214,9 @@ class DAV implements ExporterInterface, ImporterInterface
             throw new \Exception("Failed to fetch DAV item for {$item->id}");
         }
 
-        // TODO: Do any content changes, e.g. organizer/attendee email migration
+        // Make the item compatible with standards (and Cyrus DAV) if possible
+        // We try to prevent the event to be not accepted by the DAV server as much as we can.
+        $result[0]->repair();
 
         $content = (string) $result[0];
 

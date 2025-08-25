@@ -290,6 +290,60 @@ class Vevent extends CommonObject
     }
 
     /**
+     * Make the item compatible with standards (and Cyrus DAV) by fixing
+     * obvious issues, if possible
+     */
+    public function repair(): void
+    {
+        if (!$this->vobject || $this->vobject->name != 'VCALENDAR') {
+            return;
+        }
+
+        // TODO: We apply changes to $this->vobject. We should do the same with $this, but
+        // we can ignore that until we have support for it in __toString().
+
+        $selfType = strtoupper(class_basename(static::class));
+        $master = null;
+        $exceptions = [];
+
+        foreach ($this->vobject->getComponents() as $component) {
+            if ($component->name == $selfType) {
+                if (empty($master) && empty($component->{'RECURRENCE-ID'})) {
+                    $master = $component;
+                } elseif ($this->uid && $this->uid == $component->UID && !empty($component->{'RECURRENCE-ID'})) {
+                    $exceptions[] = $component;
+                }
+            }
+        }
+
+        // Event exceptions cannot change the organizer
+        // We reset it to the original organizer, and make the user an attendee with role=chair.
+        if ($master && !empty($exceptions)) {
+            foreach ($exceptions as $exception) {
+                if ($exception->ORGANIZER && (string) $exception->ORGANIZER != (string) $master->ORGANIZER) {
+                    $chair = $exception->ORGANIZER;
+                    $exception->ORGANIZER = $master->ORGANIZER;
+                    $attendee = null;
+
+                    foreach ($exception->ATTENDEE as $_attendee) {
+                        if ((string) $_attendee == (string) $chair) {
+                            $attendee = $_attendee;
+                            break;
+                        }
+                    }
+
+                    if (!$attendee) {
+                        $attendee = $exception->add('ATTENDEE', (string) $chair, $chair->parameters());
+                        $attendee['PARTSTAT'] = 'ACCEPTED';
+                    }
+
+                    $attendee['ROLE'] = 'CHAIR';
+                }
+            }
+        }
+    }
+
+    /**
      * Create string representation of the DAV object (iCalendar)
      *
      * @return string
@@ -300,6 +354,7 @@ class Vevent extends CommonObject
             // TODO we currently can only serialize a message back that we just read
             throw new \Exception("Writing from properties is not implemented");
         }
+
         return Writer::write($this->vobject);
     }
 }

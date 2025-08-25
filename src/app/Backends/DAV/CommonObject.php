@@ -49,6 +49,15 @@ class CommonObject
     }
 
     /**
+     * Make the item compatible with standards (and Cyrus DAV) by fixing
+     * obvious issues, if possible
+     */
+    public function repair(): void
+    {
+        // do nothing by default
+    }
+
+    /**
      * Create string representation of the DAV object
      *
      * @return string
