@@ -499,12 +499,19 @@ smtp_tls_security_level = may
 meta_directory = /etc/postfix
 shlib_directory = /usr/lib64/postfix
 recipient_delimiter = +
-local_recipient_maps = mysql:/etc/postfix/sql/local_recipient_maps.cf
-#transport_maps = ldap:/etc/postfix/ldap/transport_maps.cf, hash:/etc/postfix/transport
 transport_maps = regexp:/etc/postfix/transport
-virtual_alias_maps = $alias_maps, mysql:/etc/postfix/sql/virtual_alias_maps.cf
-#Other virtual alias maps we used to have: ldap:/etc/postfix/ldap/virtual_alias_maps_mailforwarding.cf, ldap:/etc/postfix/ldap/virtual_alias_maps_sharedfolders.cf, ldap:/etc/postfix/ldap/mailenabled_distgroups.cf, ldap:/etc/postfix/ldap/mailenabled_dynamic_distgroups.cf
 smtpd_tls_auth_only = no
+
+local_recipient_maps =
+    mysql:/etc/postfix/sql/local_recipient_maps.cf,
+    mysql:/etc/postfix/sql/local_recipient_maps_groups.cf,
+    mysql:/etc/postfix/sql/local_recipient_maps_shared_folders.cf
+
+virtual_alias_maps =
+    $alias_maps,
+    mysql:/etc/postfix/sql/virtual_alias_maps.cf,
+    mysql:/etc/postfix/sql/virtual_alias_maps_groups.cf,
+    mysql:/etc/postfix/sql/virtual_alias_maps_shared_folders.cf
 
 # Inbound
 smtpd_client_restrictions =

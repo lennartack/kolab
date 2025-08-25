@@ -1,0 +1,6 @@
+hosts = DB_HOST
+user = DB_USERNAME
+password = DB_PASSWORD
+dbname = DB_DATABASE
+query = SELECT m.email FROM group_members m JOIN groups g ON g.id = m.group_id
+    WHERE g.email = '%s' AND g.status & 2 AND NOT g.status & 4 AND g.deleted_at IS NULL

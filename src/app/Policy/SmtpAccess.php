@@ -52,10 +52,8 @@ class SmtpAccess
         }
 
         // TODO: Prepending Sender/X-Sender/X-Authenticated-As headers?
-        // TODO: Recipient policies here?
 
-        // Leave it up to the postfix configuration how to proceed
-        // (accept would stop processing)
+        // Leave it up to the postfix configuration how to proceed (accept would stop processing)
         return new Response(Response::ACTION_DUNNO);
     }
 
@@ -72,8 +70,6 @@ class SmtpAccess
         }
 
         // TODO: Make sure the domain is not suspended
-        // TODO: Email might belong to a group (distlists), check group's sender_policy
-        // TODO: Email might be a shared folder (or it's alias)?
 
         $email = \strtolower($email);
 

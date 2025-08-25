@@ -31,6 +31,47 @@ class GroupTest extends TestCase
     }
 
     /**
+     * Test Group::addAddresses()
+     */
+    public function testAddAddresses(): void
+    {
+        Queue::fake();
+
+        $group = $this->getTestGroup('group-test@kolabnow.com');
+
+        $group->setAddresses(['test@gmail.com']);
+
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 1);
+        $this->assertSame(['test@gmail.com'], $group->getAddresses());
+
+        $group->setAddresses(['test@gmail.com']);
+
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 1);
+        $this->assertSame(['test@gmail.com'], $group->getAddresses());
+
+        $group->setAddresses([]);
+
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 2);
+        $this->assertSame([], $group->getAddresses());
+
+        $group->setAddresses(['test1@gmail.com', 'test2@gmail.com'], true);
+
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 2);
+        $this->assertSame(['test1@gmail.com', 'test2@gmail.com'], $group->getAddresses());
+
+        $group->setAddresses(['test1@gmail.com', 'test3@gmail.com']);
+
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 3);
+        $this->assertSame(['test1@gmail.com', 'test3@gmail.com'], $group->getAddresses());
+
+        $group->delete();
+        $group->setAddresses(['test1@gmail.com']);
+
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 3);
+        $this->assertSame(['test1@gmail.com'], $group->getAddresses());
+    }
+
+    /**
      * Tests for Group::assignToWallet()
      */
     public function testAssignToWallet(): void
@@ -84,7 +125,6 @@ class GroupTest extends TestCase
         $this->assertSame('group-test@kolabnow.com', $group->email);
         $this->assertSame('group-test', $group->name);
         $this->assertMatchesRegularExpression('/^[0-9]{1,20}$/', (string) $group->id);
-        $this->assertSame([], $group->members);
         $this->assertTrue($group->isNew());
         $this->assertFalse($group->isActive());
 

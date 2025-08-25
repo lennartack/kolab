@@ -38,6 +38,25 @@ class GroupsController extends RelationController
     protected $deleteBeforeCreate;
 
     /**
+     * Prepare a resource object for the UI.
+     *
+     * @param object $object An object
+     * @param bool   $full   Include all object properties
+     *
+     * @return array Object information
+     */
+    protected function objectToClient($object, bool $full = false): array
+    {
+        $result = parent::objectToCLient($object, $full);
+
+        if ($full) {
+            $result['members'] = $object->getAddresses();
+        }
+
+        return $result;
+    }
+
+    /**
      * Group status (extended) information
      *
      * @param Group $group Group object
@@ -126,9 +145,9 @@ class GroupsController extends RelationController
         $group = new Group();
         $group->name = $request->input('name');
         $group->email = $email;
-        $group->members = $members;
         $group->save();
 
+        $group->setAddresses($members, true);
         $group->assignToWallet($wallet);
 
         DB::commit();
@@ -203,8 +222,8 @@ class GroupsController extends RelationController
 
         // SkusController::updateEntitlements($group, $request->skus);
 
-        $group->members = $members;
         $group->save();
+        $group->setAddresses($members);
 
         return response()->json([
             'status' => 'success',

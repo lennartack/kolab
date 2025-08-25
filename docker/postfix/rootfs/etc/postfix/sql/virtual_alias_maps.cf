@@ -2,4 +2,5 @@ hosts = DB_HOST
 user = DB_USERNAME
 password = DB_PASSWORD
 dbname = DB_DATABASE
-query = SELECT users.email FROM users left join user_aliases ON users.id = user_aliases.user_id WHERE (users.email = '%s' OR user_aliases.alias = '%s') AND users.status & 2 AND NOT users.status & 4 AND NOT users.status & 8 LIMIT 1
+query = SELECT u.email FROM users u LEFT JOIN user_aliases a ON u.id = a.user_id
+    WHERE (u.email = '%s' OR a.alias = '%s') AND u.status & 2 AND NOT u.status & 4 AND u.deleted_at IS NULL

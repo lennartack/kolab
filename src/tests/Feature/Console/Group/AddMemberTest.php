@@ -58,7 +58,7 @@ class AddMemberTest extends TestCase
 
         $this->assertSame(0, $code);
         $this->assertSame('', $output);
-        $this->assertSame(['member@gmail.com'], $group->refresh()->members);
+        $this->assertSame(['member@gmail.com'], $group->getAddresses());
 
         // Existing group
         $code = \Artisan::call("group:add-member {$group->email} member2@gmail.com");
@@ -66,7 +66,7 @@ class AddMemberTest extends TestCase
 
         $this->assertSame(0, $code);
         $this->assertSame('', $output);
-        $this->assertSame(['member2@gmail.com', 'member@gmail.com'], $group->refresh()->members);
+        $this->assertSame(['member@gmail.com', 'member2@gmail.com'], $group->getAddresses());
 
         // Add a member that already exists
         $code = \Artisan::call("group:add-member {$group->email} member@gmail.com");
@@ -74,7 +74,7 @@ class AddMemberTest extends TestCase
 
         $this->assertSame(1, $code);
         $this->assertSame("member@gmail.com: Already exists in the group.", $output);
-        $this->assertSame(['member2@gmail.com', 'member@gmail.com'], $group->refresh()->members);
+        $this->assertSame(['member@gmail.com', 'member2@gmail.com'], $group->getAddresses());
 
         // Adding a local-domain member that does not exist
         $john = $this->getTestUser('john@kolab.org');
@@ -86,6 +86,6 @@ class AddMemberTest extends TestCase
 
         $this->assertSame(1, $code);
         $this->assertSame("member-unknown@kolab.org: The specified email address does not exist.", $output);
-        $this->assertSame([], $group->refresh()->members);
+        $this->assertSame([], $group->getAddresses());
     }
 }

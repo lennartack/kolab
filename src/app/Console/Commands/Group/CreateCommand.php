@@ -77,10 +77,10 @@ class CreateCommand extends Command
         // Create the group
         $group = new Group();
         $group->email = $email;
-        $group->members = $members;
         $group->tenant_id = $domain->tenant_id;
         $group->save();
 
+        $group->setAddresses($members, true);
         $group->assignToWallet($owner->wallets->first());
 
         DB::commit();

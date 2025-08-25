@@ -201,7 +201,7 @@ class DistlistTest extends TestCaseDusk
                 ->assertElementsCount('@table tbody tr', 1);
 
             $group = Group::where('email', 'group-test@kolab.org')->first();
-            $this->assertSame(['test1@gmail.com'], $group->members);
+            $this->assertSame(['test1@gmail.com'], $group->getAddresses());
 
             // Test group deletion
             $browser->click('@table tr:nth-child(1) td:first-child a')

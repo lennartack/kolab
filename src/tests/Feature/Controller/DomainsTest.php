@@ -340,7 +340,7 @@ class DomainsTest extends TestCase
         $this->assertSame([], $json['config']['spf_whitelist']);
         $this->assertCount(4, $json['mx']);
         $this->assertTrue(str_contains(implode("\n", $json['mx']), $domain->namespace));
-        $this->assertCount(8, $json['dns']);
+        $this->assertCount(1, $json['dns']);
         $this->assertTrue(str_contains(implode("\n", $json['dns']), $domain->namespace));
         $this->assertTrue(str_contains(implode("\n", $json['dns']), $domain->hash()));
         $this->assertTrue(is_array($json['statusInfo']));

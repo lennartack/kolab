@@ -45,8 +45,7 @@ class InfoTest extends TestCase
         $this->assertSame($expected, $output);
 
         // Group with members
-        $group->members = ['test@member.com'];
-        $group->save();
+        $group->setAddresses(['test@member.com']);
 
         $expected .= "\nMember: test@member.com";
 

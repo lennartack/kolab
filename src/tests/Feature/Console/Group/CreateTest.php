@@ -67,7 +67,7 @@ class CreateTest extends TestCase
 
         $this->assertSame(0, $code);
         $this->assertSame((string) $group->id, $output);
-        $this->assertSame([], $group->members);
+        $this->assertSame([], $group->getAddresses());
         $this->assertSame($user->wallets->first()->id, $group->wallet()->id);
 
         // Existing email (of a group)
@@ -90,7 +90,7 @@ class CreateTest extends TestCase
         $group = Group::where('email', 'group-testm@kolab.org')->first();
         $this->assertSame(0, $code);
         $this->assertSame((string) $group->id, $output);
-        $this->assertSame(['member1@kolabnow.com', 'member2@gmail.com'], $group->members);
+        $this->assertSame(['member1@kolabnow.com', 'member2@gmail.com'], $group->getAddresses());
         $this->assertSame($user->wallets->first()->id, $group->wallet()->id);
     }
 }

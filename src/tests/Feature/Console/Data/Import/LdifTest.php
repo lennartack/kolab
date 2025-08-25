@@ -172,7 +172,7 @@ class LdifTest extends TestCase
         $this->assertCount(1, $groups);
         $this->assertSame('Group', $groups[0]->name);
         $this->assertSame('group@kolab3.com', $groups[0]->email);
-        $this->assertSame(['owner@kolab3.com', 'user@kolab3.com'], $groups[0]->members);
+        $this->assertSame(['owner@kolab3.com', 'user@kolab3.com'], $groups[0]->getAddresses());
         $this->assertSame('["sender@gmail.com","-"]', $groups[0]->getSetting('sender_policy'));
 
         // Resources

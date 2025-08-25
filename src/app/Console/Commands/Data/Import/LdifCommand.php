@@ -376,10 +376,10 @@ class LdifCommand extends Command
             $group = new Group();
             $group->name = $data->name;
             $group->email = $data->email;
-            $group->members = $members;
             $group->tenant_id = $this->tenantId;
             $group->save();
 
+            $group->setAddresses($members, true);
             $group->assignToWallet($this->wallet);
 
             // Sender policy

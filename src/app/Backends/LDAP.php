@@ -947,8 +947,9 @@ class LDAP
         $groupDomain = explode('@', $group->email, 2)[1];
         $domainBaseDN = self::baseDN($ldap, $groupDomain);
         $validMembers = [];
+        $members = $group->getAddresses();
 
-        foreach ($group->members as $member) {
+        foreach ($members as $member) {
             [$local, $domainName] = explode('@', $member);
 
             $memberDN = "uid={$member},ou=People,{$domainBaseDN}";
@@ -982,9 +983,8 @@ class LDAP
 
         // Update members in sql (some might have been removed),
         // skip model events to not invoke another update job
-        if ($group->members !== $validMembers) {
-            $group->members = $validMembers;
-            $group->saveQuietly();
+        if ($members !== $validMembers) {
+            $group->setAddresses($validMembers, true);
         }
     }
 

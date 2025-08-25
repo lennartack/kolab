@@ -1,0 +1,6 @@
+hosts = DB_HOST
+user = DB_USERNAME
+password = DB_PASSWORD
+dbname = DB_DATABASE
+query = SELECT f.email FROM shared_folders f LEFT JOIN shared_folder_aliases a ON f.id = a.shared_folder_id
+    WHERE (f.email = '%s' OR a.alias = '%s') AND f.type = 'mail' AND f.status & 2 AND NOT f.status & 4 AND f.deleted_at IS NULL

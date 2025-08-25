@@ -67,7 +67,7 @@ class CreateTest extends TestCase
 
         // Test mailbox exists case
         $user->status ^= User::STATUS_IMAP_READY;
-        $user->save();
+        $user->saveQuietly();
         IMAP::shouldReceive('createUser')->once()->with($user)->andThrow(new MailboxExistsException());
 
         $job = (new CreateJob($user->id))->withFakeQueueInteractions();

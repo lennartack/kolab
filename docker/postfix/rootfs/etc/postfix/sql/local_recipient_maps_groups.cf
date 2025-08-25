@@ -1,0 +1,5 @@
+hosts = DB_HOST
+user = DB_USERNAME
+password = DB_PASSWORD
+dbname = DB_DATABASE
+query = SELECT email FROM groups WHERE email = '%u@%d' AND status & 2 AND NOT status & 4 AND deleted_at IS NULL

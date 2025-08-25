@@ -245,7 +245,7 @@ class GroupsTest extends TestCase
         $this->assertSame($group->id, $json['id']);
         $this->assertSame($group->email, $json['email']);
         $this->assertSame($group->name, $json['name']);
-        $this->assertSame($group->members, $json['members']);
+        $this->assertSame([], $json['members']);
         $this->assertTrue(!empty($json['statusInfo']));
         $this->assertArrayHasKey('isDeleted', $json);
         $this->assertArrayHasKey('isSuspended', $json);
@@ -507,7 +507,7 @@ class GroupsTest extends TestCase
         $group = Group::where('email', 'group-test@kolab.org')->first();
         $this->assertInstanceOf(Group::class, $group);
         $this->assertSame($post['email'], $group->email);
-        $this->assertSame($post['members'], $group->members);
+        $this->assertSame($post['members'], $group->getAddresses());
         $this->assertTrue($john->groups()->get()->contains($group));
 
         // Group name must be unique within a domain
@@ -619,7 +619,7 @@ class GroupsTest extends TestCase
         $group->refresh();
 
         $this->assertSame($post['name'], $group->name);
-        $this->assertSame($post['members'], $group->members);
+        $this->assertSame($post['members'], $group->getAddresses());
     }
 
     /**

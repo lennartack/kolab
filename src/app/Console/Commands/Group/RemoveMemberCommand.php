@@ -37,19 +37,19 @@ class RemoveMemberCommand extends Command
         }
 
         $members = [];
+        $existing = $group->getAddresses();
 
-        foreach ($group->members as $m) {
+        foreach ($existing as $m) {
             if ($m !== $member) {
                 $members[] = $m;
             }
         }
 
-        if (count($members) == count($group->members)) {
+        if (count($members) == count($existing)) {
             $this->error("Member {$member} not found in the group.");
             return 1;
         }
 
-        $group->members = $members;
-        $group->save();
+        $group->setAddresses($members);
     }
 }

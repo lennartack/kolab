@@ -162,8 +162,7 @@ class LDAPTest extends TestCase
         }
 
         // Update members
-        $group->members = ['member3@testldap.com'];
-        $group->save();
+        $group->setAddresses(['member3@testldap.com'], true);
         $group->setSetting('sender_policy', '["test.com","Test.com","-"]');
 
         LDAP::updateGroup($group);
@@ -178,11 +177,11 @@ class LDAPTest extends TestCase
             $this->assertSame($value, $ldap_group[$attr] ?? null, "Group {$attr} attribute");
         }
 
-        $this->assertSame(['member3@testldap.com'], $group->fresh()->members);
+        $this->assertSame(['member3@testldap.com'], $group->getAddresses());
 
         // Update members (add non-existing local member, expect it to be aot-removed from the group)
         // Update group name and sender_policy
-        $group->members = ['member3@testldap.com', 'member-local@kolab.org'];
+        $group->setAddresses(['member3@testldap.com', 'member-local@kolab.org'], true);
         $group->name = 'Te(=ść)1';
         $group->save();
         $group->setSetting('sender_policy', null);
@@ -201,7 +200,7 @@ class LDAPTest extends TestCase
             $this->assertSame($value, $ldap_group[$attr] ?? null, "Group {$attr} attribute");
         }
 
-        $this->assertSame(['member3@testldap.com'], $group->fresh()->members);
+        $this->assertSame(['member3@testldap.com'], $group->getAddresses());
 
         // We called save() twice, and setSettings() three times,
         // this is making sure that there's no job executed by the LDAP backend

@@ -37,7 +37,9 @@ class AddMemberCommand extends Command
             return 1;
         }
 
-        if (in_array($member, $group->members)) {
+        $existing = $group->getAddresses();
+
+        if (in_array($member, $existing)) {
             $this->error("{$member}: Already exists in the group.");
             return 1;
         }
@@ -49,8 +51,7 @@ class AddMemberCommand extends Command
             return 1;
         }
 
-        // We can't modify the property indirectly, therefor array_merge()
-        $group->members = array_merge($group->members, [$member]);
-        $group->save();
+        $existing[] = $member;
+        $group->setAddresses($existing);
     }
 }

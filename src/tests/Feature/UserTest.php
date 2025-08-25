@@ -965,22 +965,16 @@ class UserTest extends TestCase
         $userB = $this->getTestUser('UserAccountB@UserAccount.com');
         $userA->assignPackage($package_kolab, $userB);
         $group = $this->getTestGroup('test-group@UserAccount.com');
-        $group->members = ['test@gmail.com', $userB->email];
+        $group->setAddresses(['test@gmail.com', $userB->email], true);
         $group->assignToWallet($userA->wallets->first());
-        $group->save();
 
-        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 1);
-
-        $userGroups = $userA->groups()->get();
-        $this->assertSame(1, $userGroups->count());
-        $this->assertSame($group->id, $userGroups->first()->id);
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 0);
 
         $userB->delete();
 
-        $this->assertSame(['test@gmail.com'], $group->fresh()->members);
+        $this->assertSame(['test@gmail.com'], $group->getAddresses());
 
-        // Twice, one for save() and one for delete() above
-        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 2);
+        Queue::assertPushed(\App\Jobs\Group\UpdateJob::class, 1);
     }
 
     /**

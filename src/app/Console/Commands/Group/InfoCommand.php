@@ -41,7 +41,7 @@ class InfoCommand extends Command
 
         // TODO: Print owner/wallet
 
-        foreach ($group->members as $member) {
+        foreach ($group->getAddresses() as $member) {
             $this->info('Member: ' . $member);
         }
     }

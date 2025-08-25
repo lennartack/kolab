@@ -2,4 +2,4 @@ hosts = DB_HOST
 user = DB_USERNAME
 password = DB_PASSWORD
 dbname = DB_DATABASE
-query = SELECT namespace FROM domains WHERE namespace = '%s' AND status & 2 AND status & 16 AND status & 32
+query = SELECT namespace FROM domains WHERE namespace = '%s' AND status & (2 + 16 + 32) AND deleted_at IS NULL

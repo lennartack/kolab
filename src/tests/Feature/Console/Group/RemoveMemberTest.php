@@ -39,10 +39,8 @@ class RemoveMemberTest extends TestCase
         $this->assertSame(1, $code);
         $this->assertSame("Group test@group.com does not exist.", $output);
 
-        $group = Group::create([
-            'email' => 'group-test@kolabnow.com',
-            'members' => ['member1@gmail.com', 'member2@gmail.com'],
-        ]);
+        $group = Group::create(['email' => 'group-test@kolabnow.com']);
+        $group->setAddresses(['member1@gmail.com', 'member2@gmail.com']);
 
         // Existing group, non-existing member
         $code = \Artisan::call("group:remove-member {$group->email} nonexisting@gmail.com");
@@ -57,7 +55,7 @@ class RemoveMemberTest extends TestCase
 
         $this->assertSame(0, $code);
         $this->assertSame('', $output);
-        $this->assertSame(['member2@gmail.com'], $group->refresh()->members);
+        $this->assertSame(['member2@gmail.com'], $group->getAddresses());
 
         // Existing group, the last existing member
         $code = \Artisan::call("group:remove-member {$group->email} member2@gmail.com");
@@ -65,6 +63,6 @@ class RemoveMemberTest extends TestCase
 
         $this->assertSame(0, $code);
         $this->assertSame('', $output);
-        $this->assertSame([], $group->refresh()->members);
+        $this->assertSame([], $group->getAddresses());
     }
 }

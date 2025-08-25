@@ -10,6 +10,7 @@ use App\Traits\SettingsTrait;
 use App\Traits\StatusPropertyTrait;
 use App\Traits\UuidIntKeyTrait;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -17,7 +18,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * @property int    $id        The group identifier
  * @property string $email     An email address
- * @property array  $members   A list of email addresses
  * @property string $name      The group name
  * @property int    $status    The group status
  * @property int    $tenant_id Tenant identifier
@@ -61,34 +61,52 @@ class Group extends Model
     /** @var list<string> The attributes that are mass assignable */
     protected $fillable = [
         'email',
-        'members',
         'name',
         'status',
     ];
 
     /**
-     * Group members propert accessor. Converts internal comma-separated list into an array
-     *
-     * @param string $members Comma-separated list of email addresses
-     *
-     * @return array Email addresses of the group members, as an array
+     * Returns list of group member email addresses.
      */
-    public function getMembersAttribute($members): array
+    public function getAddresses(): array
     {
-        return $members ? explode(',', $members) : [];
+        return $this->members()->orderBy('email')->pluck('email')->all();
     }
 
     /**
-     * Ensure the members are appropriately formatted.
+     * Replace members with a new list of members.
      *
      * @param array $members Email addresses of the group members
      */
-    public function setMembersAttribute(array $members): void
+    public function setAddresses(array $members, bool $silently = false): void
     {
         $members = array_unique(array_filter(array_map('strtolower', $members)));
 
-        sort($members);
+        $existing = $this->getAddresses();
+        $added = array_diff($members, $existing);
+        $removed = array_diff($existing, $members);
 
-        $this->attributes['members'] = implode(',', $members);
+        if (count($removed)) {
+            $this->members()->whereIn('email', $removed)->delete();
+        }
+
+        if (count($added)) {
+            $this->members()->createMany(array_map(fn ($member) => ['email' => $member], $added));
+        }
+
+        if (!$silently && !$this->trashed() && (count($removed) || count($added))) {
+            // Trigger an update job on the group, as we do not observe members
+            \App\Jobs\Group\UpdateJob::dispatch($this->id);
+        }
+    }
+
+    /**
+     * The relationship to members.
+     *
+     * @return HasMany<GroupMember, $this>
+     */
+    public function members()
+    {
+        return $this->hasMany(GroupMember::class);
     }
 }

@@ -5,7 +5,7 @@ namespace App\Observers;
 use App\Delegation;
 use App\Entitlement;
 use App\EventLog;
-use App\Group;
+use App\GroupMember;
 use App\Jobs\PGP\KeyCreateJob;
 use App\Jobs\PGP\KeyDeleteJob;
 use App\Jobs\User\CreateJob;
@@ -106,16 +106,13 @@ class UserObserver
         }
 
         // Remove the user from existing groups
-        $wallet = $user->wallet();
-        if ($wallet && $wallet->owner) {
-            $wallet->owner->groups()->each(static function ($group) use ($user) {
-                /** @var Group $group */
-                if (in_array($user->email, $group->members)) {
-                    $group->members = array_diff($group->members, [$user->email]);
-                    $group->save();
-                }
-            });
-        }
+        GroupMember::where('email', $user->email)->get()->each(static function ($member) {
+            $member->delete();
+            if ($member->group) {
+                // Trigger an update job on the group, as we do not observe members
+                \App\Jobs\Group\UpdateJob::dispatch($member->group->id);
+            }
+        });
 
         // Remove delegation relations
         $ids = Delegation::where('user_id', $user->id)->orWhere('delegatee_id', $user->id)->get()
