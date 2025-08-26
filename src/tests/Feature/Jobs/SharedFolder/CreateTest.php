@@ -16,12 +16,12 @@ class CreateTest extends TestCase
     {
         parent::setUp();
 
-        $this->deleteTestSharedFolder('folder-test@' . \config('app.domain'));
+        $this->deleteTestSharedFolder('folder-test@test.domain.tld');
     }
 
     protected function tearDown(): void
     {
-        $this->deleteTestSharedFolder('folder-test@' . \config('app.domain'));
+        $this->deleteTestSharedFolder('folder-test@test.domain.tld');
         $this->deleteTestDomain('test.domain.tld');
 
         parent::tearDown();
