@@ -17,6 +17,7 @@ class CreateTest extends TestCase
         parent::setUp();
 
         $this->deleteTestSharedFolder('folder-test@test.domain.tld');
+        $this->deleteTestDomain('test.domain.tld');
     }
 
     protected function tearDown(): void
