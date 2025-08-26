@@ -608,7 +608,7 @@ class AuthTest extends TestCase
         $post = [
             'grant_type' => 'authorization_code',
             'client_id' => $client->id,
-            'client_secret' => \config('auth.synapse.client_secret'),
+            'client_secret' => \config('auth.sso.client_secret'),
             'code' => $params['code'],
         ];
 
