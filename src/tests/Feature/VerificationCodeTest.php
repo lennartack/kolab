@@ -13,6 +13,7 @@ class VerificationCodeTest extends TestCase
         parent::setUp();
 
         $this->deleteTestUser('UserAccountA@UserAccount.com');
+        Carbon::setTestNow(Carbon::create(2021, 5, 5, 12));
     }
 
     protected function tearDown(): void
@@ -20,6 +21,7 @@ class VerificationCodeTest extends TestCase
         $this->deleteTestUser('UserAccountA@UserAccount.com');
 
         parent::tearDown();
+        Carbon::setTestNow();
     }
 
     /**
@@ -32,8 +34,6 @@ class VerificationCodeTest extends TestCase
             'user_id' => $user->id,
             'mode' => 'password-reset',
         ];
-
-        $now = new \DateTime('now');
 
         $code = VerificationCode::create($data);
 
