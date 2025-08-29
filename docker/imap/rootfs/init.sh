@@ -124,8 +124,12 @@ echo "$ID:x:$ID:$GID::/opt/app-root/:/bin/bash" > /etc/passwd
 
 runuser -u "$ID" -- /usr/sbin/saslauthd -m /run/saslauthd -a httpform &
 
-chown -R "$ID:$GID" /var/spool/imap/
-chown -R "$ID:$GID" /var/lib/imap/
+if [ "$SKIP_CHOWN" != "true" ]; then
+    #this becomes expensive with very large datasets
+    echo "Running chown on spool"
+    chown -R "$ID:$GID" /var/spool/imap/
+    chown -R "$ID:$GID" /var/lib/imap/
+fi
 
 runuser -u "$ID" -- mkdir -p /var/lib/imap/socket
 runuser -u "$ID" -- mkdir -p /var/lib/imap/db

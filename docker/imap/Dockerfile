@@ -80,6 +80,7 @@ ENV LD_LIBRARY_PATH=/usr/lib/
 # ENV WITH_TLS
 # ENV WITH_TAGS
 # ENV SYNC_HOST
+# ENV SKIP_CHOWN
 
 CMD ["/init.sh"]
 
