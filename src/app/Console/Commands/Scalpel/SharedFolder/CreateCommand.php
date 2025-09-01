@@ -11,6 +11,6 @@ class CreateCommand extends ObjectCreateCommand
 
     protected $commandPrefix = 'scalpel';
     protected $objectClass = SharedFolder::class;
-    protected $objectName = 'folder';
+    protected $objectName = 'shared-folder';
     protected $objectTitle = 'email';
 }
