@@ -35,7 +35,6 @@ class CreateTest extends TestCase
     {
         Queue::fake();
 
-
         $domain = $this->getTestDomain(
             'test.domain.tld',
             ['status' => Domain::STATUS_NEW, 'type' => Domain::TYPE_EXTERNAL]
