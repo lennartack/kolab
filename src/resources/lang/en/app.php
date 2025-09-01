@@ -25,6 +25,8 @@ return [
     'companion-create-success' => 'Companion app has been created.',
     'companion-delete-success' => 'Companion app has been removed.',
 
+    'device-claim-success' => 'The device has been claimed successfully.',
+
     'event-suspended' => 'Suspended',
     'event-unsuspended' => 'Unsuspended',
     'event-comment' => 'Commented',

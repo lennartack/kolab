@@ -40,7 +40,7 @@ class CreateJob extends UserJob
             return;
         }
 
-        if ($user->role == User::ROLE_SERVICE) {
+        if ($user->role == User::ROLE_SERVICE || $user->role == User::ROLE_DEVICE) {
             return;
         }
 

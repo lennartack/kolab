@@ -72,6 +72,7 @@ class User extends Authenticatable
     public const ROLE_ADMIN = 'admin';
     public const ROLE_RESELLER = 'reseller';
     public const ROLE_SERVICE = 'service';
+    public const ROLE_DEVICE = 'device';
 
     /** @var int The allowed states for this object used in StatusPropertyTrait */
     private int $allowed_states = self::STATUS_NEW

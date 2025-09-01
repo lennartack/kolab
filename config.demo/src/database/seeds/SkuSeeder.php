@@ -160,6 +160,16 @@ class SkuSeeder extends Seeder
                 'handler_class' => 'App\Handlers\Room',
                 'active' => true,
             ],
+            [
+                'title' => 'device',
+                'name' => 'User device',
+                'description' => 'Just a device',
+                'cost' => 100,
+                'units_free' => 0,
+                'period' => 'monthly',
+                'handler_class' => 'App\Handlers\Device',
+                'active' => true,
+            ],
         ];
 
         foreach ($skus as $sku) {

@@ -29,7 +29,7 @@ class UpdateJob extends UserJob implements ShouldBeUniqueUntilProcessing
             return;
         }
 
-        if ($user->role == User::ROLE_SERVICE) {
+        if ($user->role == User::ROLE_SERVICE || $user->role == User::ROLE_DEVICE) {
             // Admins/resellers don't reside in LDAP (for now)
             return;
         }

@@ -199,6 +199,10 @@ Route::group(
 
         Route::get('config/webmail', [API\V4\ConfigController::class, 'webmail']);
 
+        Route::post('device/{hash}/claim', [API\V4\DeviceController::class, 'claim']);
+        Route::get('device/{hash}', [API\V4\DeviceController::class, 'info'])
+            ->withoutMiddleware(['auth:api', 'scope:api']);
+
         Route::apiResource('domains', API\V4\DomainsController::class);
         Route::get('domains/{id}/confirm', [API\V4\DomainsController::class, 'confirm']);
         Route::get('domains/{id}/skus', [API\V4\DomainsController::class, 'skus']);
