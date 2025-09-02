@@ -342,6 +342,12 @@ kolab__imaptest() {
         kolab-imap:latest /init.sh validate
 }
 
+kolab__vectortest() {
+    $PODMAN run --rm -ti \
+        -v ./src:/src/kolabsrc.orig:ro \
+        vector:latest /config/runtests.sh
+}
+
 # Lint the kolab4 codebase
 kolab__lint() {
     $PODMAN run --rm -ti \

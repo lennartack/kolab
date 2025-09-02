@@ -94,7 +94,7 @@ tests:
       pod_node_name: dws07.kolabsys.com
       pod_owner: ReplicaSet/roundcube-74d95fdbf5
       pod_uid: 7625ef26-43e4-4398-956f-c8b9f10c38e8
-      log: "10.42.0.238 - - [20/Aug/2024:09:28:05 +0000] \"POST /webmail/71NpOUihc2TMCKJy/?_task=mail&_action=refresh HTTP/1.0\" 200 193 \"https://kolab.local/webmail/71NpOUihc2TMCKJy/?_task=mail&_mbox=INBOX\" \"Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0\""
+      log: "10.42.2.96 - - [02/Sep/2025:09:39:14 +0000] 3043 \"POST /Microsoft-Server-ActiveSync?Cmd=FolderSync&User=test3@kolab.nestle.com&DeviceId=device4&DeviceType=iphone HTTP/1.0\" 401 - \"-\" \"-\""
       source_type: kubernetes_logs
       stream: stderr
       timestamp: "2024-08-18T09:18:38.276041789Z"
@@ -103,7 +103,10 @@ tests:
     conditions:
     - type: "vrl"
       source: |
-        assert_eq!(.log, "10.42.0.238 - - [20/Aug/2024:09:28:05 +0000] \"POST /webmail/71NpOUihc2TMCKJy/?_task=mail&_action=refresh HTTP/1.0\" 200 193 \"https://kolab.local/webmail/71NpOUihc2TMCKJy/?_task=mail&_mbox=INBOX\" \"Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0\"")
+        assert_eq!(.log, "10.42.2.96 - - [02/Sep/2025:09:39:14 +0000] 3043 \"POST /Microsoft-Server-ActiveSync?Cmd=FolderSync&User=test3@kolab.nestle.com&DeviceId=device4&DeviceType=iphone HTTP/1.0\" 401 - \"-\" \"-\"")
+        assert_eq!(.host, "10.42.2.96")
+        assert_eq!(.status, "401")
+        assert_eq!(.duration, "3043")
         assert!(is_timestamp(.timestamp))
 - name: "Syncroton"
   inputs:

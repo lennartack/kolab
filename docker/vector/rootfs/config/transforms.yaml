@@ -23,7 +23,7 @@ transforms:
     inputs:
       - apps.roundcube
     source: |
-      structured = parse_apache_log(.log, format: "common") ?? parse_logfmt(.log) ?? {}
+      structured = parse_regex(.log, pattern: r'^(?<host>[^ ]+) (?<l>[^ ]+) (?<u>[^ ]+) \[(?<time>[^\]]+)\] (?<duration>[^ ]+) "(?<request>[^"]+)" (?<status>[^ ]+) .*$') ?? parse_logfmt(.log) ?? {}
       . = merge(., structured)
       .timestamp = parse_timestamp(.timestamp, "%Y/%m/%d %H:%M:%S %z") ?? now()
   parse_imap:
