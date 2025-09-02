@@ -89,20 +89,9 @@ return [
         ],
 
         'hosted' => [
-            'bind_dn' => env('LDAP_HOSTED_BIND_DN', null),
-            'bind_pw' => env('LDAP_HOSTED_BIND_PW', null),
             'root_dn' => env('LDAP_HOSTED_ROOT_DN', null),
         ],
 
-        'domain_owner' => [
-            // probably proxy credentials?
-        ],
-
-        'root_dn' => env('LDAP_ROOT_DN', null),
-        'service_bind_dn' => env('LDAP_SERVICE_BIND_DN', null),
-        'service_bind_pw' => env('LDAP_SERVICE_BIND_PW', null),
-        'login_filter' => env('LDAP_LOGIN_FILTER', '(&(objectclass=kolabinetorgperson)(uid=%s))'),
-        'filter' => env('LDAP_FILTER', '(&(objectclass=kolabinetorgperson)(uid=%s))'),
         'domain_name_attribute' => env('LDAP_DOMAIN_NAME_ATTRIBUTE', 'associateddomain'),
         'domain_base_dn' => env('LDAP_DOMAIN_BASE_DN', null),
         'domain_filter' => env('LDAP_DOMAIN_FILTER', '(associateddomain=%s)'),

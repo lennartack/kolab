@@ -24,7 +24,7 @@ class LDAP
     public static function connect(): void
     {
         if (empty(self::$ldap)) {
-            $config = self::getConfig('admin');
+            $config = self::getConfig();
             self::$ldap = self::initLDAP($config);
         }
     }
@@ -47,7 +47,7 @@ class LDAP
      */
     public static function healthcheck(): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $mgmtRootDN = \config('services.ldap.admin.root_dn');
@@ -73,7 +73,7 @@ class LDAP
      */
     public static function createDomain(Domain $domain): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $mgmtRootDN = \config('services.ldap.admin.root_dn');
@@ -234,7 +234,7 @@ class LDAP
      */
     public static function createGroup(Group $group): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $domainName = explode('@', $group->email, 2)[1];
@@ -275,7 +275,7 @@ class LDAP
      */
     public static function createResource(Resource $resource): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $domainName = explode('@', $resource->email, 2)[1];
@@ -318,7 +318,7 @@ class LDAP
      */
     public static function createSharedFolder(SharedFolder $folder): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $domainName = explode('@', $folder->email, 2)[1];
@@ -374,7 +374,7 @@ class LDAP
      */
     public static function createUser(User $user): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $entry = [
@@ -420,7 +420,7 @@ class LDAP
      */
     public static function deleteDomain(Domain $domain): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $domainBaseDN = self::baseDN($ldap, $domain->namespace);
@@ -463,7 +463,7 @@ class LDAP
      */
     public static function deleteGroup(Group $group): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         if (self::getGroupEntry($ldap, $group->email, $dn)) {
@@ -491,7 +491,7 @@ class LDAP
      */
     public static function deleteResource(Resource $resource): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         if (self::getResourceEntry($ldap, $resource->email, $dn)) {
@@ -519,7 +519,7 @@ class LDAP
      */
     public static function deleteSharedFolder(SharedFolder $folder): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         if (self::getSharedFolderEntry($ldap, $folder->email, $dn)) {
@@ -547,7 +547,7 @@ class LDAP
      */
     public static function deleteUser(User $user): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         if (self::getUserEntry($ldap, $user->email, $dn)) {
@@ -577,7 +577,7 @@ class LDAP
      */
     public static function getDomain(string $namespace)
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $ldapDomain = $ldap->find_domain($namespace);
@@ -604,7 +604,7 @@ class LDAP
      */
     public static function getGroup(string $email)
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $group = self::getGroupEntry($ldap, $email, $dn);
@@ -627,7 +627,7 @@ class LDAP
      */
     public static function getResource(string $email)
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $resource = self::getResourceEntry($ldap, $email, $dn);
@@ -650,7 +650,7 @@ class LDAP
      */
     public static function getSharedFolder(string $email)
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $folder = self::getSharedFolderEntry($ldap, $email, $dn);
@@ -673,7 +673,7 @@ class LDAP
      */
     public static function getUser(string $email)
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $user = self::getUserEntry($ldap, $email, $dn, true);
@@ -694,7 +694,7 @@ class LDAP
      */
     public static function updateDomain(Domain $domain): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $ldapDomain = $ldap->find_domain($domain->namespace);
@@ -738,7 +738,7 @@ class LDAP
      */
     public static function updateGroup(Group $group): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $newEntry = $oldEntry = self::getGroupEntry($ldap, $group->email, $dn);
@@ -775,7 +775,7 @@ class LDAP
      */
     public static function updateResource(Resource $resource): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $newEntry = $oldEntry = self::getResourceEntry($ldap, $resource->email, $dn);
@@ -812,7 +812,7 @@ class LDAP
      */
     public static function updateSharedFolder(SharedFolder $folder): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $newEntry = $oldEntry = self::getSharedFolderEntry($ldap, $folder->email, $dn);
@@ -849,7 +849,7 @@ class LDAP
      */
     public static function updateUser(User $user): void
     {
-        $config = self::getConfig('admin');
+        $config = self::getConfig();
         $ldap = self::initLDAP($config);
 
         $newEntry = $oldEntry = self::getUserEntry($ldap, $user->email, $dn, true);
@@ -894,7 +894,7 @@ class LDAP
     /**
      * Initialize connection to LDAP
      */
-    private static function initLDAP(array $config, string $privilege = 'admin')
+    private static function initLDAP(array $config)
     {
         if (self::$ldap) {
             return self::$ldap;
@@ -909,8 +909,8 @@ class LDAP
         }
 
         $bound = $ldap->bind(
-            \config("services.ldap.{$privilege}.bind_dn"),
-            \config("services.ldap.{$privilege}.bind_pw")
+            \config("services.ldap.admin.bind_dn"),
+            \config("services.ldap.admin.bind_pw")
         );
 
         if (!$bound) {
@@ -1134,7 +1134,7 @@ class LDAP
     /**
      * Get LDAP configuration for specified access level
      */
-    private static function getConfig(string $privilege)
+    private static function getConfig()
     {
         $config = [
             'domain_base_dn' => \config('services.ldap.domain_base_dn'),
