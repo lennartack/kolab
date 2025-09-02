@@ -26,11 +26,6 @@ RUN /build.sh && \
     chmod -R g=u /opt/app-root /tmp /etc/pki/ca-trust/extracted/ && \
     chmod -R 777 /etc/pki/ca-trust/extracted/
 
-RUN chgrp -R 0 /etc/ && \
-    chown -R 1001:0 /etc/ && \
-    chmod -R g=u /etc/ && \
-    chmod -R 777 /etc/
-
 COPY init.sh /init.sh
 COPY reload.sh /reload.sh
 COPY update.sh /update.sh
