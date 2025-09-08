@@ -14,7 +14,7 @@ return new class extends Migration {
             'devices',
             static function (Blueprint $table) {
                 $table->bigInteger('id')->unsigned()->primary();
-                $table->string('hash', 64)->unique();
+                $table->string('hash', 191)->unique();
                 $table->bigInteger('tenant_id')->unsigned()->nullable();
                 $table->timestamps();
                 $table->softDeletes();
