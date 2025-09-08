@@ -18,11 +18,11 @@ class DeviceController extends Controller
      */
     public function claim(string $hash)
     {
-        if (strlen($hash) != 64) {
+        if (strlen($hash) > 191) {
             return $this->errorResponse(404);
         }
 
-        $device = Device::where('hash', $hash)->first();
+        $device = Device::where('hash', strtoupper($hash))->first();
 
         if (empty($device)) {
             return $this->errorResponse(404);
@@ -47,7 +47,7 @@ class DeviceController extends Controller
      */
     public function info(string $hash)
     {
-        if (strlen($hash) != 64) {
+        if (strlen($hash) > 191) {
             return $this->errorResponse(404);
         }
 
@@ -56,7 +56,7 @@ class DeviceController extends Controller
         // Register a device
         if (!$device) {
             // Only possible if a signup token exists?
-            if (!SignupToken::where('id', $hash)->exists()) {
+            if (!SignupToken::where('id', strtoupper($hash))->exists()) {
                 return $this->errorResponse(404);
             }
 
