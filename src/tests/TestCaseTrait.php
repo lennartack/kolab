@@ -37,6 +37,13 @@ trait TestCaseTrait
     protected $domainHosted;
 
     /**
+     * A domain that is hosted.
+     *
+     * @var ?Domain
+     */
+    protected $domainHosted2;
+
+    /**
      * The hosted domain owner.
      *
      * @var ?User
@@ -712,7 +719,7 @@ trait TestCaseTrait
             ]
         );
 
-        $this->getTestDomain(
+        $this->domainHosted2 = $this->getTestDomain(
             'test2.domain2',
             [
                 'type' => Domain::TYPE_EXTERNAL,
@@ -793,6 +800,9 @@ trait TestCaseTrait
 
         if ($this->domainHosted) {
             $this->deleteTestDomain($this->domainHosted->namespace);
+        }
+        if ($this->domainHosted2) {
+            $this->deleteTestDomain($this->domainHosted2->namespace);
         }
 
         if ($this->publicDomainUser) {

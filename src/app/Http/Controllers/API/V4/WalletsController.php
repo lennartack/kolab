@@ -4,13 +4,14 @@ namespace App\Http\Controllers\API\V4;
 
 use App\Documents\Receipt;
 use App\Http\Controllers\ResourceController;
+use App\Http\Resources\WalletResource;
 use App\Payment;
-use App\Providers\PaymentProvider;
 use App\ReferralCode;
 use App\ReferralProgram;
 use App\Transaction;
 use App\Wallet;
-use Carbon\Carbon;
+use Dedoc\Scramble\Attributes\QueryParameter;
+use Dedoc\Scramble\Attributes\Response as ResponseDefinition;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -22,13 +23,11 @@ use Illuminate\Support\Facades\DB;
 class WalletsController extends ResourceController
 {
     /**
-     * Return data of the specified wallet.
+     * Wallet information.
      *
-     * @param string $id A wallet identifier
-     *
-     * @return JsonResponse The response
+     * @param string $id Wallet identifier
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $wallet = Wallet::find($id);
 
@@ -41,25 +40,17 @@ class WalletsController extends ResourceController
             return $this->errorResponse(403);
         }
 
-        $result = $wallet->toArray();
-
-        $provider = PaymentProvider::factory($wallet);
-
-        $result['provider'] = $provider->name();
-        $result['notice'] = $this->getWalletNotice($wallet);
-
-        return response()->json($result);
+        return (new WalletResource($wallet))->response();
     }
 
     /**
-     * Download a receipt in pdf format.
+     * Download a receipt.
      *
      * @param string $id      Wallet identifier
      * @param string $receipt Receipt identifier (YYYY-MM)
-     *
-     * @return Response
      */
-    public function receiptDownload($id, $receipt)
+    #[ResponseDefinition(status: 200, description: 'PDF file content', mediaType: 'application/pdf')]
+    public function receiptDownload($id, $receipt): Response
     {
         $wallet = Wallet::find($id);
 
@@ -102,12 +93,13 @@ class WalletsController extends ResourceController
     }
 
     /**
-     * Fetch wallet receipts list.
+     * List receipts.
      *
      * @param string $id Wallet identifier
      *
      * @return JsonResponse
      */
+    #[QueryParameter('page', description: 'List page', type: 'int')]
     public function receipts($id)
     {
         $wallet = Wallet::find($id);
@@ -153,15 +145,19 @@ class WalletsController extends ResourceController
 
         return response()->json([
             'status' => 'success',
+            // @var array{'period': string, 'amount': int, 'currency': string} List of receipts
             'list' => $result,
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var bool Indicates that there are more entries available
             'hasMore' => $hasMore,
+            // @var int Current page
             'page' => $page,
         ]);
     }
 
     /**
-     * Fetch active referral programs list.
+     * List active referral programs.
      *
      * @param string $id Wallet identifier
      *
@@ -216,6 +212,7 @@ class WalletsController extends ResourceController
         return response()->json([
             'status' => 'success',
             'list' => $result,
+            // @var int Number of list entries
             'count' => count($result),
             'hasMore' => false,
             'page' => 1,
@@ -223,12 +220,14 @@ class WalletsController extends ResourceController
     }
 
     /**
-     * Fetch wallet transactions.
+     * List transactions.
      *
      * @param string $id Wallet identifier
      *
      * @return JsonResponse
      */
+    #[QueryParameter('page', description: 'List page', type: 'int')]
+    #[QueryParameter('transaction', description: 'Parent  transaction', type: 'string')]
     public function transactions($id)
     {
         $wallet = Wallet::find($id);
@@ -298,71 +297,14 @@ class WalletsController extends ResourceController
 
         return response()->json([
             'status' => 'success',
+            // @var array<array> List of transactions (properties: id, createdAt, type, description, amount, currency, hasDetails, user)
             'list' => $result,
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var bool Indicates that there are more entries available
             'hasMore' => $hasMore,
+            // @var int Current page
             'page' => $page,
         ]);
-    }
-
-    /**
-     * Returns human readable notice about the wallet state.
-     *
-     * @param Wallet $wallet The wallet
-     */
-    protected function getWalletNotice(Wallet $wallet): ?string
-    {
-        // there is no credit
-        if ($wallet->balance < 0) {
-            return self::trans('app.wallet-notice-nocredit');
-        }
-
-        // the discount is 100%, no credit is needed
-        if ($wallet->discount && $wallet->discount->discount == 100) {
-            return null;
-        }
-
-        $plan = $wallet->plan();
-        $freeMonths = $plan ? $plan->free_months : 0;
-        $trialEnd = $freeMonths ? $wallet->owner->created_at->copy()->addMonthsWithoutOverflow($freeMonths) : null;
-
-        // the owner is still in the trial period
-        if ($trialEnd && $trialEnd > Carbon::now()) {
-            // notice of trial ending if less than 2 weeks left
-            if ($trialEnd < Carbon::now()->addWeeks(2)) {
-                return self::trans('app.wallet-notice-trial-end');
-            }
-
-            return self::trans('app.wallet-notice-trial');
-        }
-
-        if ($until = $wallet->balanceLastsUntil()) {
-            if ($until->isToday()) {
-                return self::trans('app.wallet-notice-today');
-            }
-
-            // Once in a while we got e.g. "3 weeks" instead of expected "4 weeks".
-            // It's because $until uses full seconds, but $now is more precise.
-            // We make sure both have the same time set.
-            $now = Carbon::now()->setTimeFrom($until);
-
-            $diffOptions = [
-                'syntax' => Carbon::DIFF_ABSOLUTE,
-                'parts' => 1,
-            ];
-
-            if ($now->diffAsDateInterval($until)->days > 31) {
-                $diffOptions['parts'] = 2;
-            }
-
-            $params = [
-                'date' => $until->toDateString(),
-                'days' => $now->diffForHumans($until, $diffOptions),
-            ];
-
-            return self::trans('app.wallet-notice-date', $params);
-        }
-
-        return null;
     }
 }

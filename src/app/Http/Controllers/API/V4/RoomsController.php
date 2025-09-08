@@ -48,7 +48,7 @@ class RoomsController extends RelationController
     }
 
     /**
-     * Listing of rooms that belong to the authenticated user.
+     * List rooms.
      *
      * @return JsonResponse
      */
@@ -78,7 +78,9 @@ class RoomsController extends RelationController
             });
 
         $result = [
+            // @var array List of rooms
             'list' => $rooms,
+            // @var int Number of entries in the list
             'count' => count($rooms),
         ];
 
@@ -119,9 +121,9 @@ class RoomsController extends RelationController
     }
 
     /**
-     * Display information of a room specified by $id.
+     * Get room information.
      *
-     * @param string $id the room to show information for
+     * @param string $id Room identifier
      *
      * @return JsonResponse
      */
@@ -196,13 +198,9 @@ class RoomsController extends RelationController
             return $this->errorResponse(403);
         }
 
-        // Validate the input
-        $v = Validator::make(
-            $request->all(),
-            [
-                'description' => 'nullable|string|max:191',
-            ]
-        );
+        $v = Validator::make($request->all(), [
+            'description' => 'nullable|string|max:191',
+        ]);
 
         if ($v->fails()) {
             return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
@@ -243,13 +241,9 @@ class RoomsController extends RelationController
             return $this->errorResponse($room);
         }
 
-        // Validate the input
-        $v = Validator::make(
-            request()->all(),
-            [
-                'description' => 'nullable|string|max:191',
-            ]
-        );
+        $v = Validator::make($request->all(), [
+            'description' => 'nullable|string|max:191',
+        ]);
 
         if ($v->fails()) {
             return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);

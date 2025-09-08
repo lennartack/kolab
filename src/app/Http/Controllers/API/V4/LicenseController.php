@@ -57,8 +57,12 @@ class LicenseController extends Controller
         });
 
         return response()->json([
+            'status' => 'success',
+            // @var array List of licenses (properties: key, type)
             'list' => $licenses,
+            // @var int Number of entries in the list
             'count' => count($licenses),
+            // @var bool Indicates that there are more entries available
             'hasMore' => false, // TODO
         ]);
     }

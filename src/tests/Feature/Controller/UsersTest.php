@@ -5,6 +5,7 @@ namespace Tests\Feature\Controller;
 use App\Discount;
 use App\Domain;
 use App\Http\Controllers\API\V4\UsersController;
+use App\Http\Resources\UserInfoResource;
 use App\Jobs\User\CreateJob;
 use App\Package;
 use App\Plan;
@@ -1418,14 +1419,15 @@ class UsersTest extends TestCase
     /**
      * Test user data response used in show and info actions
      */
-    public function testUserResponse(): void
+    public function testUserInfoResponse(): void
     {
         $provider = \config('services.payment_provider') ?: 'mollie';
         $john = $this->getTestUser('john@kolab.org');
         $wallet = $john->wallets()->first();
         $wallet->setSettings(['mollie_id' => null, 'stripe_id' => null]);
         $wallet->owner->setSettings(['plan_id' => null]);
-        $result = $this->invokeMethod(new UsersController(), 'userResponse', [$john]);
+
+        $result = (new UserInfoResource($john))->toArray(\request());
 
         $this->assertSame($john->id, $result['id']);
         $this->assertSame($john->email, $result['email']);
@@ -1460,7 +1462,8 @@ class UsersTest extends TestCase
         $wallet->owner->setSettings(['plan_id' => $plan->id]);
         $ned = $this->getTestUser('ned@kolab.org');
         $ned_wallet = $ned->wallets()->first();
-        $result = $this->invokeMethod(new UsersController(), 'userResponse', [$ned]);
+
+        $result = (new UserInfoResource($ned))->toArray(\request());
 
         $this->assertSame($ned->id, $result['id']);
         $this->assertSame($ned->email, $result['email']);
@@ -1492,7 +1495,7 @@ class UsersTest extends TestCase
         $wallet->setSetting($mod_provider . '_id', 123);
         $john->refresh();
 
-        $result = $this->invokeMethod(new UsersController(), 'userResponse', [$john]);
+        $result = (new UserInfoResource($john))->toArray(\request());
 
         $this->assertSame($john->id, $result['id']);
         $this->assertSame($discount->id, $result['wallet']['discount_id']);
@@ -1509,7 +1512,8 @@ class UsersTest extends TestCase
         $jack = $this->getTestUser('jack@kolab.org');
         $jack->status |= User::STATUS_ACTIVE;
         $jack->save();
-        $result = $this->invokeMethod(new UsersController(), 'userResponse', [$jack]);
+
+        $result = (new UserInfoResource($jack))->toArray(\request());
 
         $this->assertFalse($result['statusInfo']['enableDomains']);
         $this->assertFalse($result['statusInfo']['enableWallets']);
@@ -1524,7 +1528,8 @@ class UsersTest extends TestCase
         // Test locked user
         $john->status &= ~User::STATUS_ACTIVE;
         $john->save();
-        $result = $this->invokeMethod(new UsersController(), 'userResponse', [$john]);
+
+        $result = (new UserInfoResource($john))->toArray(\request());
 
         $this->assertTrue($result['isLocked']);
     }

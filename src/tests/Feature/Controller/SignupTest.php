@@ -134,11 +134,13 @@ class SignupTest extends TestCase
         $this->assertSame($individual->title, $json['plans'][0]['title']);
         $this->assertSame($individual->name, $json['plans'][0]['name']);
         $this->assertSame($individual->description, $json['plans'][0]['description']);
+        $this->assertSame(990, $json['plans'][0]['cost']);
         $this->assertFalse($json['plans'][0]['isDomain']);
         $this->assertArrayHasKey('button', $json['plans'][0]);
         $this->assertSame($group->title, $json['plans'][1]['title']);
         $this->assertSame($group->name, $json['plans'][1]['name']);
         $this->assertSame($group->description, $json['plans'][1]['description']);
+        $this->assertSame(990, $json['plans'][1]['cost']);
         $this->assertTrue($json['plans'][1]['isDomain']);
         $this->assertArrayHasKey('button', $json['plans'][1]);
     }
@@ -678,7 +680,7 @@ class SignupTest extends TestCase
         $this->assertSame('bearer', $json['token_type']);
         $this->assertTrue(!empty($json['expires_in']) && is_int($json['expires_in']) && $json['expires_in'] > 0);
         $this->assertNotEmpty($json['access_token']);
-        $this->assertSame($identity, $json['email']);
+        $this->assertSame($identity, $json['user']['email']);
 
         Queue::assertPushed(CreateJob::class, 1);
 
@@ -813,7 +815,7 @@ class SignupTest extends TestCase
         $this->assertSame('bearer', $result['token_type']);
         $this->assertTrue(!empty($result['expires_in']) && is_int($result['expires_in']) && $result['expires_in'] > 0);
         $this->assertNotEmpty($result['access_token']);
-        $this->assertSame("{$login}@{$domain}", $result['email']);
+        $this->assertSame("{$login}@{$domain}", $result['user']['email']);
 
         Queue::assertPushed(\App\Jobs\Domain\CreateJob::class, 1);
 
@@ -916,8 +918,8 @@ class SignupTest extends TestCase
         $response->assertStatus(200);
         $this->assertSame('success', $json['status']);
         $this->assertNotEmpty($json['access_token']);
-        $this->assertSame('test-inv@kolabnow.com', $json['email']);
-        $this->assertTrue($json['isLocked']);
+        $this->assertSame('test-inv@kolabnow.com', $json['user']['email']);
+        $this->assertTrue($json['user']['isLocked']);
         $user = User::where('email', 'test-inv@kolabnow.com')->first();
         $this->assertNotEmpty($user);
         $this->assertSame($plan->id, $user->getSetting('plan_id'));
@@ -965,7 +967,7 @@ class SignupTest extends TestCase
         $this->assertSame('bearer', $result['token_type']);
         $this->assertTrue(!empty($result['expires_in']) && is_int($result['expires_in']) && $result['expires_in'] > 0);
         $this->assertNotEmpty($result['access_token']);
-        $this->assertSame('test-inv@kolabnow.com', $result['email']);
+        $this->assertSame('test-inv@kolabnow.com', $result['user']['email']);
 
         // Check if the user has been created
         $user = User::where('email', 'test-inv@kolabnow.com')->first();
@@ -1028,7 +1030,7 @@ class SignupTest extends TestCase
         $json = $response->json();
 
         $this->assertSame('success', $json['status']);
-        $this->assertSame('test-inv@kolabnow.com', $json['email']);
+        $this->assertSame('test-inv@kolabnow.com', $json['user']['email']);
 
         // Check if the user has been created
         $user = User::where('email', 'test-inv@kolabnow.com')->first();
@@ -1100,7 +1102,7 @@ class SignupTest extends TestCase
         $this->assertNotEmpty($json['access_token']);
 
         // Check the reference to the code and discount
-        $user = User::where('email', $json['email'])->first();
+        $user = User::where('email', $json['user']['email'])->first();
         $this->assertSame(1, $referral_code->referrals()->where('user_id', $user->id)->count());
         $this->assertSame($discount->id, $user->wallets()->first()->discount_id);
     }

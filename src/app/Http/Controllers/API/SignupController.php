@@ -6,6 +6,7 @@ use App\Discount;
 use App\Domain;
 use App\Group;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PlanResource;
 use App\Jobs\Mail\SignupVerificationJob;
 use App\Payment;
 use App\Plan;
@@ -24,6 +25,7 @@ use App\Tenant;
 use App\User;
 use App\Utils;
 use App\VatRate;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,11 +38,13 @@ use Illuminate\Support\Str;
 class SignupController extends Controller
 {
     /**
-     * Returns plans definitions for signup.
+     * List of plans for signup.
      *
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
     public function plans(Request $request)
     {
@@ -48,49 +52,51 @@ class SignupController extends Controller
         // But prefer monthly on left, yearly on right
         $plans = Plan::withEnvTenantContext()->where('hidden', false)
             ->orderBy('months')->orderByDesc('title')
-            ->get()
-            ->map(static function ($plan) {
-                $button = self::trans("app.planbutton-{$plan->title}");
-                if (str_contains($button, 'app.planbutton')) {
-                    $button = self::trans('app.planbutton', ['plan' => $plan->name]);
-                }
+            ->get();
 
-                return [
-                    'title' => $plan->title,
-                    'name' => $plan->name,
-                    'button' => $button,
-                    'description' => $plan->description,
-                    'mode' => $plan->mode ?: Plan::MODE_EMAIL,
-                    'isDomain' => $plan->hasDomain(),
-                ];
-            })
-            ->all();
-
-        return response()->json(['status' => 'success', 'plans' => $plans]);
+        return response()->json([
+            'status' => 'success',
+            // List of plans available for signup
+            'plans' => PlanResource::collection($plans),
+        ]);
     }
 
     /**
-     * Returns list of public domains for signup.
+     * List of public domains for signup.
      *
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
     public function domains(Request $request)
     {
-        return response()->json(['status' => 'success', 'domains' => Domain::getPublicDomains()]);
+        return response()->json([
+            'status' => 'success',
+            // @var array<string> List of domain namespaces available for signup
+            'domains' => Domain::getPublicDomains(),
+        ]);
     }
 
     /**
      * Starts signup process.
      *
-     * Verifies user name and email/phone, sends verification email/sms message.
-     * Returns the verification code.
+     * Verifies user name and email, sends verification message. Returns the verification code.
      *
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
+    #[BodyParameter('plan', description: 'Plan identifier', type: 'string', required: true)]
+    #[BodyParameter('first_name', description: 'First name', type: 'string')]
+    #[BodyParameter('last_name', description: 'Last name', type: 'string')]
+    #[BodyParameter('email', description: 'External email address for verification (required for non-token signup)', type: 'string')]
+    #[BodyParameter('referral', description: 'Referral program code', type: 'string')]
+    #[BodyParameter('voucher', description: 'Voucher code', type: 'string')]
+    #[BodyParameter('token', description: 'Signup token (required for token-mode signup)', type: 'string')]
     public function init(Request $request)
     {
         // Don't allow URLs in user names preventing abuse of signup email
@@ -136,10 +142,16 @@ class SignupController extends Controller
 
         $response = [
             'status' => 'success',
+            // Verification code
             'code' => $code->code,
+            // Plan mode
             'mode' => $plan->mode ?: 'email',
+            // List of domain namespaces available for signup
             'domains' => Domain::getPublicDomains(),
+            // @var bool Indicates that the plan is viable for a custom domain signup
             'is_domain' => $plan->hasDomain(),
+            // @var string|null Short verification code (for token signups only)
+            'short_code' => null,
         ];
 
         if ($plan->mode == Plan::MODE_TOKEN) {
@@ -148,17 +160,20 @@ class SignupController extends Controller
         } else {
             // External email verification, send an email message
             SignupVerificationJob::dispatch($code);
+            unset($response['short_code']);
         }
 
         return response()->json($response);
     }
 
     /**
-     * Returns signup invitation information.
+     * Signup invitation information.
      *
      * @param string $id Signup invitation identifier
      *
      * @return JsonResponse|void
+     *
+     * @unauthenticated
      */
     public function invitation($id)
     {
@@ -168,9 +183,10 @@ class SignupController extends Controller
             return $this->errorResponse(404);
         }
 
-        $result = ['id' => $id];
-
-        return response()->json($result);
+        return response()->json([
+            // Signup invitation identifier
+            'id' => $id,
+        ]);
     }
 
     /**
@@ -180,7 +196,11 @@ class SignupController extends Controller
      * @param bool    $update  Update the signup code record
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
+    #[BodyParameter('code', description: 'Verification code', type: 'string', required: true)]
+    #[BodyParameter('short_code', description: 'Short code', type: 'string', required: true)]
     public function verify(Request $request, $update = true)
     {
         // Validate the request args
@@ -224,14 +244,17 @@ class SignupController extends Controller
             $code->save();
         }
 
-        // Return user name and email/phone/voucher from the codes database,
-        // domains list for selection and "plan type" flag
         return response()->json([
             'status' => 'success',
+            // User email address to sign up for
             'email' => $code->email,
+            // First name
             'first_name' => $code->first_name,
+            // Last name
             'last_name' => $code->last_name,
+            // Voucher code
             'voucher' => $code->voucher,
+            // @var bool Indicates that the plan is viable for a custom domain signup
             'is_domain' => $plan->hasDomain(),
         ]);
     }
@@ -242,7 +265,18 @@ class SignupController extends Controller
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
+    #[BodyParameter('login', description: 'User login', type: 'string', required: true)]
+    #[BodyParameter('domain', description: 'User domain namespace', type: 'string', required: true)]
+    #[BodyParameter('password', description: 'User password', type: 'string', required: true)]
+    #[BodyParameter('voucher', description: 'Voucher code', type: 'string')]
+    #[BodyParameter('plan', description: 'Plan identifier (required when not using a verification code)', type: 'string')]
+    #[BodyParameter('invitation', description: 'Signup invitation identifier', type: 'string')]
+    #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
+    #[BodyParameter('first_name', description: 'First name', type: 'string')]
+    #[BodyParameter('last_name', description: 'Last name', type: 'string')]
     public function signupValidate(Request $request)
     {
         $rules = [
@@ -353,12 +387,25 @@ class SignupController extends Controller
     }
 
     /**
-     * Finishes the signup process by creating the user account.
+     * Finishes the signup process.
+     *
+     * On success creates a new account and returns authentication token(s) and user information.
      *
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
+    #[BodyParameter('login', description: 'User login', type: 'string', required: true)]
+    #[BodyParameter('domain', description: 'User domain namespace', type: 'string', required: true)]
+    #[BodyParameter('password', description: 'User password', type: 'string', required: true)]
+    #[BodyParameter('voucher', description: 'Voucher code', type: 'string')]
+    #[BodyParameter('plan', description: 'Plan identifier (required when not using a verification code)', type: 'string')]
+    #[BodyParameter('invitation', description: 'Signup invitation identifier', type: 'string')]
+    #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
+    #[BodyParameter('first_name', description: 'First name', type: 'string')]
+    #[BodyParameter('last_name', description: 'Last name', type: 'string')]
     public function signup(Request $request)
     {
         $v = $this->signupValidate($request);
@@ -455,6 +502,7 @@ class SignupController extends Controller
 
         if ($request->plan->mode == Plan::MODE_MANDATE) {
             $data = $response->getData(true);
+            // TODO: Make it visible in the API Doc
             $data['checkout'] = $this->mandateForPlan($request->plan, $request->discount, $user);
             $response->setData($data);
         }

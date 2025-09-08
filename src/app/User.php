@@ -29,13 +29,13 @@ use League\OAuth2\Server\Exception\OAuthServerException;
 /**
  * The eloquent definition of a User.
  *
- * @property string  $email
- * @property int     $id
- * @property string  $password
- * @property string  $password_ldap
- * @property ?string $role
- * @property int     $status
- * @property int     $tenant_id
+ * @property string  $email         User email address
+ * @property int     $id            User identifier
+ * @property string  $password      User password
+ * @property string  $password_ldap User LDAP password
+ * @property ?string $role          User role
+ * @property int     $status        User status
+ * @property int     $tenant_id     Tenant identifier
  */
 class User extends Authenticatable
 {

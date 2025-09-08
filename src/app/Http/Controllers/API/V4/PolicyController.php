@@ -10,6 +10,7 @@ use App\Policy\RateLimit;
 use App\Policy\SmtpAccess;
 use App\Policy\SPF;
 use App\User;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,7 +21,11 @@ class PolicyController extends Controller
      * Validate the password regarding the defined policies.
      *
      * @return JsonResponse
+     *
+     * @unauthenticated
      */
+    #[BodyParameter('user', description: 'User identifier', type: 'string')]
+    #[BodyParameter('password', description: 'User password', type: 'string', required: true)]
     public function checkPassword(Request $request)
     {
         $userId = $request->input('user');
@@ -37,8 +42,11 @@ class PolicyController extends Controller
         );
 
         return response()->json([
+            // Policy check status
             'status' => count($passed) == count($status) ? 'success' : 'error',
+            // @var array Policy check result by rule
             'list' => array_values($status),
+            // @var int Number of rules in the result list
             'count' => count($status),
         ]);
     }
@@ -94,8 +102,11 @@ class PolicyController extends Controller
         }
 
         return response()->json([
+            // @var array Password policies
             'password' => array_values($password_policy),
+            // @var array Mail delivery policies
             'mailDelivery' => $mail_delivery_policy,
+            // @var array Current account configuration
             'config' => $policy_config,
         ]);
     }

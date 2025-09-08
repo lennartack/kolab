@@ -45,7 +45,7 @@ class ResourcesController extends RelationController
     }
 
     /**
-     * Create a new resource record.
+     * Create a new resource.
      *
      * @param Request $request the API request
      *

@@ -4,15 +4,13 @@ namespace App\Http\Controllers\API\V4;
 
 use App\Auth\OAuth;
 use App\Domain;
-use App\Entitlement;
 use App\Group;
 use App\Http\Controllers\API\V4\User\DelegationTrait;
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\UserInfoExtendedResource;
 use App\Jobs\User\CreateJob;
 use App\License;
 use App\Package;
-use App\Plan;
-use App\Providers\PaymentProvider;
 use App\Resource;
 use App\Rules\Password;
 use App\Rules\UserEmailLocal;
@@ -20,7 +18,6 @@ use App\SharedFolder;
 use App\Sku;
 use App\User;
 use App\VerificationCode;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,18 +29,6 @@ use Psr\Http\Message\ServerRequestInterface;
 class UsersController extends RelationController
 {
     use DelegationTrait;
-
-    /** @const array List of user setting keys available for modification in UI */
-    public const USER_SETTINGS = [
-        'billing_address',
-        'country',
-        'currency',
-        'external_email',
-        'first_name',
-        'last_name',
-        'organization',
-        'phone',
-    ];
 
     /**
      * On user create it is filled with a user or group object to force-delete
@@ -119,6 +104,7 @@ class UsersController extends RelationController
 
         $result = [
             'list' => $result,
+            // @var int
             'count' => count($result),
             'hasMore' => $hasMore,
         ];
@@ -218,9 +204,9 @@ class UsersController extends RelationController
     }
 
     /**
-     * Display information on the user account specified by $id.
+     * User information.
      *
-     * @param string $id the account to show information for
+     * @param string $id The user identifier
      *
      * @return JsonResponse
      */
@@ -236,22 +222,9 @@ class UsersController extends RelationController
             return $this->errorResponse(403);
         }
 
-        $response = $this->userResponse($user);
+        $response = new UserInfoExtendedResource($user);
 
-        $response['skus'] = Entitlement::objectEntitlementsSummary($user);
-        $response['config'] = $user->getConfig(true);
-        $response['aliases'] = $user->aliases()->pluck('alias')->all();
-        $response['canDelete'] = $this->guard()->user()->canDelete($user);
-
-        $code = $user->verificationcodes()->where('active', true)
-            ->where('expires_at', '>', Carbon::now())
-            ->first();
-
-        if ($code) {
-            $response['passwordLinkCode'] = $code->short_code . '-' . $code->code;
-        }
-
-        return response()->json($response);
+        return $response->response();
     }
 
     /**
@@ -445,63 +418,13 @@ class UsersController extends RelationController
     }
 
     /**
-     * Create a response data array for specified user.
-     *
-     * @param User $user User object
-     *
-     * @return array Response data
-     */
-    public static function userResponse(User $user): array
-    {
-        $response = array_merge($user->toArray(), self::objectState($user));
-
-        $wallet = $user->wallet();
-
-        // IsLocked flag to lock the user to the Wallet page only
-        $response['isLocked'] = !$user->isActive() && $wallet->plan()?->mode == Plan::MODE_MANDATE;
-
-        // Settings
-        $keys = array_merge(self::USER_SETTINGS, ['password_expired', 'debug']);
-        $response['settings'] = $user->settings()->whereIn('key', $keys)->pluck('value', 'key')->all();
-
-        // Status info
-        $response['statusInfo'] = self::statusInfo($user);
-
-        // Add more info to the wallet object output
-        $map_func = static function ($wallet) use ($user) {
-            $result = $wallet->toArray();
-
-            if ($wallet->discount) {
-                $result['discount'] = $wallet->discount->discount;
-                $result['discount_description'] = $wallet->discount->description;
-            }
-
-            if ($wallet->user_id != $user->id) {
-                $result['user_email'] = $wallet->owner->email;
-            }
-
-            $provider = PaymentProvider::factory($wallet);
-            $result['provider'] = $provider->name();
-
-            return $result;
-        };
-
-        // Information about wallets and accounts for access checks
-        $response['wallets'] = $user->wallets->map($map_func)->toArray();
-        $response['accounts'] = $user->accounts->map($map_func)->toArray();
-        $response['wallet'] = $map_func($wallet);
-
-        return $response;
-    }
-
-    /**
      * Prepare user statuses for the UI
      *
      * @param User $user User object
      *
      * @return array Statuses array
      */
-    protected static function objectState($user): array
+    public static function objectState($user): array
     {
         $state = parent::objectState($user);
 

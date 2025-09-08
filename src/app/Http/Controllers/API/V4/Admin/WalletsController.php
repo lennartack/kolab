@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\API\V4\Admin;
 
 use App\Discount;
-use App\Http\Controllers\API\V4\PaymentsController;
-use App\Providers\PaymentProvider;
+use App\Http\Resources\WalletResource;
 use App\User;
 use App\Wallet;
 use Illuminate\Http\JsonResponse;
@@ -18,10 +17,8 @@ class WalletsController extends \App\Http\Controllers\API\V4\WalletsController
      * Return data of the specified wallet.
      *
      * @param string $id A wallet identifier
-     *
-     * @return JsonResponse The response
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $wallet = Wallet::find($id);
 
@@ -29,25 +26,10 @@ class WalletsController extends \App\Http\Controllers\API\V4\WalletsController
             return $this->errorResponse(404);
         }
 
-        $result = $wallet->toArray();
+        $result = new WalletResource($wallet);
+        $result->extended = true;
 
-        $result['discount'] = 0;
-        $result['discount_description'] = '';
-
-        if ($wallet->discount) {
-            $result['discount'] = $wallet->discount->discount;
-            $result['discount_description'] = $wallet->discount->description;
-        }
-
-        $result['mandate'] = PaymentsController::walletMandate($wallet);
-
-        $provider = PaymentProvider::factory($wallet);
-
-        $result['provider'] = $provider->name();
-        $result['providerLink'] = $provider->customerLink($wallet);
-        $result['notice'] = $this->getWalletNotice($wallet); // for resellers
-
-        return response()->json($result);
+        return $result->response();
     }
 
     /**

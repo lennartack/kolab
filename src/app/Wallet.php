@@ -830,4 +830,34 @@ class Wallet extends Model
 
         return [(int) $cost, (int) $fee, $endDate];
     }
+
+    /**
+     * Returns auto-payment mandate info for the specified wallet
+     */
+    public function getMandate(): array
+    {
+        $provider = PaymentProvider::factory($this);
+        $settings = $this->getSettings(['mandate_disabled', 'mandate_balance', 'mandate_amount']);
+
+        // Get the Mandate info
+        $mandate = (array) $provider->getMandate($this);
+
+        $mandate['amount'] = $mandate['minAmount'] = round($this->getMinMandateAmount() / 100, 2);
+        $mandate['balance'] = 0;
+        $mandate['isDisabled'] = !empty($mandate['id']) && $settings['mandate_disabled'];
+        $mandate['isValid'] = !empty($mandate['isValid']);
+
+        foreach (['amount', 'balance'] as $key) {
+            if (($value = $settings["mandate_{$key}"]) !== null) {
+                $mandate[$key] = $value;
+            }
+        }
+
+        // Unrestrict the wallet owner if mandate is valid
+        if (!empty($mandate['isValid']) && $this->owner->isRestricted()) {
+            $this->owner->unrestrict();
+        }
+
+        return $mandate;
+    }
 }

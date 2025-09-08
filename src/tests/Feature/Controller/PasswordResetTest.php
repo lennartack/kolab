@@ -374,8 +374,8 @@ class PasswordResetTest extends TestCase
         $this->assertSame('bearer', $json['token_type']);
         $this->assertTrue(!empty($json['expires_in']) && is_int($json['expires_in']) && $json['expires_in'] > 0);
         $this->assertNotEmpty($json['access_token']);
-        $this->assertSame($user->email, $json['email']);
-        $this->assertSame($user->id, $json['id']);
+        $this->assertSame($user->email, $json['user']['email']);
+        $this->assertSame($user->id, $json['user']['id']);
 
         Queue::assertPushed(UpdateJob::class, 1);
 
@@ -430,8 +430,8 @@ class PasswordResetTest extends TestCase
         $json = $response->json();
 
         $this->assertNotEmpty($json['access_token']);
-        $this->assertSame($user->email, $json['email']);
-        $this->assertSame($user->id, $json['id']);
+        $this->assertSame($user->email, $json['user']['email']);
+        $this->assertSame($user->id, $json['user']['id']);
 
         $user->refresh();
         $this->assertTrue($user->validatePassword('ABC123456789'));
@@ -519,8 +519,8 @@ class PasswordResetTest extends TestCase
         $this->assertSame('bearer', $json['token_type']);
         $this->assertTrue(!empty($json['expires_in']) && is_int($json['expires_in']) && $json['expires_in'] > 0);
         $this->assertNotEmpty($json['access_token']);
-        $this->assertSame($user->email, $json['email']);
-        $this->assertSame($user->id, $json['id']);
+        $this->assertSame($user->email, $json['user']['email']);
+        $this->assertSame($user->id, $json['user']['id']);
 
         $user->refresh();
         $this->assertTrue($user->validatePassword($new_pass));
@@ -557,8 +557,8 @@ class PasswordResetTest extends TestCase
         $json = $response->json();
 
         $this->assertNotEmpty($json['access_token']);
-        $this->assertSame($user->email, $json['email']);
-        $this->assertSame($user->id, $json['id']);
+        $this->assertSame($user->email, $json['user']['email']);
+        $this->assertSame($user->id, $json['user']['id']);
 
         $user->refresh();
         $this->assertTrue($user->validatePassword($new_pass));

@@ -37,7 +37,6 @@ Route::group(
             ['middleware' => ['auth:api', 'scope:api']],
             static function () {
                 Route::get('info', [API\AuthController::class, 'info']);
-                Route::post('info', [API\AuthController::class, 'info']);
                 Route::get('location', [API\AuthController::class, 'location']);
                 Route::post('logout', [API\AuthController::class, 'logout']);
                 Route::post('refresh', [API\AuthController::class, 'refresh']);

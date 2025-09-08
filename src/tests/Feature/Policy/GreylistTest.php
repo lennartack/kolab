@@ -30,7 +30,7 @@ class GreylistTest extends TestCase
             'type' => Domain::TYPE_EXTERNAL,
             'status' => Domain::STATUS_ACTIVE | Domain::STATUS_CONFIRMED | Domain::STATUS_VERIFIED,
         ]);
-        $this->getTestDomain('test2.domain2', [
+        $domainHosted2 = $this->getTestDomain('test2.domain2', [
             'type' => Domain::TYPE_EXTERNAL,
             'status' => Domain::STATUS_ACTIVE | Domain::STATUS_CONFIRMED | Domain::STATUS_VERIFIED,
         ]);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Dedoc\Scramble\Attributes\ExcludeRouteFromDocs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse
      */
+    #[ExcludeRouteFromDocs]
     public function create()
     {
         return $this->errorResponse(404);
@@ -24,6 +26,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse The response
      */
+    #[ExcludeRouteFromDocs]
     public function destroy($id)
     {
         return $this->errorResponse(404);
@@ -36,6 +39,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse
      */
+    #[ExcludeRouteFromDocs]
     public function edit($id)
     {
         return $this->errorResponse(404);
@@ -48,6 +52,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse
      */
+    #[ExcludeRouteFromDocs]
     public function index()
     {
         return $this->errorResponse(404);
@@ -60,6 +65,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse
      */
+    #[ExcludeRouteFromDocs]
     public function show($id)
     {
         return $this->errorResponse(404);
@@ -72,6 +78,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse The response
      */
+    #[ExcludeRouteFromDocs]
     public function store(Request $request)
     {
         return $this->errorResponse(404);
@@ -85,6 +92,7 @@ class ResourceController extends Controller
      *
      * @return JsonResponse The response
      */
+    #[ExcludeRouteFromDocs]
     public function update(Request $request, $id)
     {
         return $this->errorResponse(404);

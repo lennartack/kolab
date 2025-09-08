@@ -85,7 +85,8 @@ class SharedFoldersTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
+        $this->assertCount(5, $json);
+        $this->assertSame('success', $json['status']);
         $this->assertSame(0, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("0 shared folders have been found.", $json['message']);
@@ -100,7 +101,6 @@ class SharedFoldersTest extends TestCase
         $folder = SharedFolder::where('name', 'Library')->first();
         $count = in_array('event', config('app.shared_folder_types')) ? 3 : 1;
 
-        $this->assertCount(4, $json);
         $this->assertSame($count, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("{$count} shared folders have been found.", $json['message']);
@@ -122,7 +122,6 @@ class SharedFoldersTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertSame($count, $json['count']);
     }
 

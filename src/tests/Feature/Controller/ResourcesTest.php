@@ -86,7 +86,8 @@ class ResourcesTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
+        $this->assertCount(5, $json);
+        $this->assertSame('success', $json['status']);
         $this->assertSame(0, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("0 resources have been found.", $json['message']);
@@ -100,7 +101,6 @@ class ResourcesTest extends TestCase
 
         $resource = Resource::where('name', 'Conference Room #1')->first();
 
-        $this->assertCount(4, $json);
         $this->assertSame(2, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("2 resources have been found.", $json['message']);
@@ -121,7 +121,6 @@ class ResourcesTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertSame(2, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("2 resources have been found.", $json['message']);

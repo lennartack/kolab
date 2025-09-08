@@ -10,6 +10,7 @@ use App\User;
 use App\Utils;
 use Tests\Browser;
 use Tests\Browser\Components\Dialog;
+use Tests\Browser\Components\Dropdown;
 use Tests\Browser\Components\Toast;
 use Tests\Browser\Pages\Admin\User as UserPage;
 use Tests\Browser\Pages\Dashboard;
@@ -27,6 +28,7 @@ class UserTest extends TestCaseDusk
         $john->setSettings([
             'phone' => '+48123123123',
             'external_email' => 'john.doe.external@gmail.com',
+            'greylist_policy' => null,
         ]);
         if ($john->isSuspended()) {
             User::where('email', $john->email)->update(['status' => $john->status - User::STATUS_SUSPENDED]);
@@ -531,9 +533,10 @@ class UserTest extends TestCaseDusk
             $john = $this->getTestUser('john@kolab.org');
 
             $browser->visit(new UserPage($john->id))
-                ->assertVisible('@user-info #button-suspend')
-                ->assertMissing('@user-info #button-unsuspend')
-                ->click('@user-info #button-suspend')
+                ->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                    $browser->assertButton('Actions', 'btn-outline-primary')
+                        ->clickDropdownItem('#button-suspend', 'Suspend');
+                })
                 ->with(new Dialog('#suspend-dialog'), static function (Browser $browser) {
                     $browser->assertSeeIn('@title', 'Suspend')
                         ->assertSeeIn('@button-cancel', 'Cancel')
@@ -542,13 +545,15 @@ class UserTest extends TestCaseDusk
                         ->click('@button-action');
                 })
                 ->assertToast(Toast::TYPE_SUCCESS, 'User suspended successfully.')
-                ->assertSeeIn('@user-info #status span.text-warning', 'Suspended')
-                ->assertMissing('@user-info #button-suspend');
+                ->assertSeeIn('@user-info #status span.text-warning', 'Suspended');
 
             $event = EventLog::where('type', EventLog::TYPE_SUSPENDED)->first();
             $this->assertSame('test suspend', $event->comment);
 
-            $browser->click('@user-info #button-unsuspend')
+            $browser->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
+                $browser->assertButton('Actions', 'btn-outline-primary')
+                    ->clickDropdownItem('#button-unsuspend', 'Unsuspend');
+                })
                 ->with(new Dialog('#suspend-dialog'), static function (Browser $browser) {
                     $browser->assertSeeIn('@title', 'Unsuspend')
                         ->assertSeeIn('@button-cancel', 'Cancel')
@@ -556,9 +561,7 @@ class UserTest extends TestCaseDusk
                         ->click('@button-action');
                 })
                 ->assertToast(Toast::TYPE_SUCCESS, 'User unsuspended successfully.')
-                ->assertSeeIn('@user-info #status span.text-success', 'Active')
-                ->assertVisible('@user-info #button-suspend')
-                ->assertMissing('@user-info #button-unsuspend');
+                ->assertSeeIn('@user-info #status span.text-success', 'Active');
 
             $event = EventLog::where('type', EventLog::TYPE_UNSUSPENDED)->first();
             $this->assertNull($event->comment);

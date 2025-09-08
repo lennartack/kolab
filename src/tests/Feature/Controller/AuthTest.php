@@ -82,24 +82,6 @@ class AuthTest extends TestCase
         $this->assertTrue(!isset($json['access_token']));
 
         // Note: Details of the content are tested in testUserResponse()
-
-        // Test token refresh via the info request
-        // First we log in to get the refresh token
-        $post = ['email' => 'john@kolab.org', 'password' => 'simple123'];
-        $user = $this->getTestUser('john@kolab.org');
-        $response = $this->post("api/auth/login", $post);
-        $json = $response->json();
-        $response = $this->actingAs($user)
-            ->post("api/auth/info?refresh=1", ['refresh_token' => $json['refresh_token']]);
-        $response->assertStatus(200);
-
-        $json = $response->json();
-
-        $this->assertSame('john@kolab.org', $json['email']);
-        $this->assertTrue(is_array($json['statusInfo']));
-        $this->assertTrue(is_array($json['settings']));
-        $this->assertTrue(!empty($json['access_token']));
-        $this->assertTrue(!empty($json['expires_in']));
     }
 
     /**
@@ -181,9 +163,9 @@ class AuthTest extends TestCase
         );
         $this->assertSame('bearer', $json['token_type']);
         $this->assertSame($user->id, $json['id']);
-        $this->assertSame($user->email, $json['email']);
-        $this->assertTrue(is_array($json['statusInfo']));
-        $this->assertTrue(is_array($json['settings']));
+        $this->assertSame($user->email, $json['user']['email']);
+        $this->assertTrue(is_array($json['user']['statusInfo']));
+        $this->assertTrue(is_array($json['user']['settings']));
 
         // Valid long password (255 chars)
         $password = str_repeat('123abc789E', 25) . '12345';
@@ -212,9 +194,7 @@ class AuthTest extends TestCase
 
         $this->assertTrue(!empty($json['id']));
         $this->assertTrue(!empty($json['access_token']));
-        $this->assertTrue(empty($json['settings']));
-        $this->assertTrue(empty($json['statusInfo']));
-        $this->assertTrue(empty($json['wallets']));
+        $this->assertTrue(empty($json['user']));
 
         // TODO: We have browser tests for 2FA but we should probably also test it here
 
@@ -335,13 +315,16 @@ class AuthTest extends TestCase
 
         $user = $this->getTestUser('john@kolab.org');
 
-        // Request with a valid token
-        $response = $this->actingAs($user)->post("api/auth/refresh", ['refresh_token' => $json['refresh_token']]);
+        // Request with a valid token (include user info in the response)
+        $post = ['refresh_token' => $json['refresh_token'], 'info' => 1];
+        $response = $this->actingAs($user)->post("api/auth/refresh", $post);
         $response->assertStatus(200);
 
         $json = $response->json();
 
-        $this->assertTrue(!empty($json['access_token']));
+        $this->assertSame('john@kolab.org', $json['user']['email']);
+        $this->assertTrue(is_array($json['user']['statusInfo']));
+        $this->assertTrue(is_array($json['user']['settings']));
         $this->assertTrue($json['access_token'] != $token);
         $this->assertTrue(
             ($this->expectedExpiry - 5) < $json['expires_in']

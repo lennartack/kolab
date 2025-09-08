@@ -11,28 +11,33 @@ use Illuminate\Support\Facades\Validator;
 class SupportController extends Controller
 {
     /**
-     * Submit contact request form.
+     * Submit support form.
      *
      * @return JsonResponse
+     *
+     * @unauthenticated
      */
     public function request(Request $request)
     {
-        $rules = [
-            'user' => 'string|nullable|max:256',
-            'name' => 'string|nullable|max:256',
-            'email' => 'required|email',
-            'summary' => 'required|string|max:512',
-            'body' => 'required|string',
-        ];
-
-        $params = $request->only(array_keys($rules));
-
         // Check required fields
-        $v = Validator::make($params, $rules);
+        $v = Validator::make($request->all(), $rules = [
+            // User identifier
+            'user' => 'string|nullable|max:256',
+            // User name
+            'name' => 'string|nullable|max:256',
+            // Contact email address
+            'email' => 'required|email',
+            // Request summary
+            'summary' => 'required|string|max:512',
+            // Request body
+            'body' => 'required|string',
+        ]);
 
         if ($v->fails()) {
             return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
         }
+
+        $params = $request->only(array_keys($rules));
 
         $to = \config('app.support_email');
 

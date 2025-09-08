@@ -74,8 +74,7 @@ class SkusTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(11, $json);
-
+        $this->assertCount(12, $json);
         $this->assertSame(100, $json[0]['prio']);
         $this->assertSame($sku->id, $json[0]['id']);
         $this->assertSame($sku->title, $json[0]['title']);

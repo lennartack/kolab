@@ -124,8 +124,8 @@ const app = new Vue({
             localStorage.setItem('token', response.access_token)
             localStorage.setItem('refreshToken', response.refresh_token)
 
-            if (response.email) {
-                this.authInfo = response
+            if (response.user) {
+                this.authInfo = response.user
             }
 
             routerState.isLocked = this.isUser && this.authInfo && this.authInfo.isLocked

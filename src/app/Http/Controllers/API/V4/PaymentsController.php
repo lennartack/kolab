@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\API\V4;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\WalletMandateResource;
 use App\Jobs\Wallet\ChargeJob;
 use App\Payment;
 use App\Providers\PaymentProvider;
 use App\Tenant;
 use App\Utils;
 use App\Wallet;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,19 +20,15 @@ class PaymentsController extends Controller
 {
     /**
      * Get the auto-payment mandate info.
-     *
-     * @return JsonResponse The response
      */
-    public function mandate()
+    public function mandate(): WalletMandateResource
     {
         $user = $this->guard()->user();
 
         // TODO: Wallet selection
         $wallet = $user->wallets()->first();
 
-        $mandate = self::walletMandate($wallet);
-
-        return response()->json($mandate);
+        return new WalletMandateResource($wallet->getMandate());
     }
 
     /**
@@ -40,6 +38,8 @@ class PaymentsController extends Controller
      *
      * @return JsonResponse The response
      */
+    #[BodyParameter('amount', description: 'Money amount', type: 'float', required: true)]
+    #[BodyParameter('balance', description: 'Wallet balance threshold', type: 'float', required: true)]
     public function mandateCreate(Request $request)
     {
         $user = $this->guard()->user();
@@ -78,9 +78,15 @@ class PaymentsController extends Controller
 
         $result = $provider->createMandate($wallet, $mandate);
 
-        $result['status'] = 'success';
-
-        return response()->json($result);
+        return response()->json([
+            'status' => 'success',
+            // Payment identifier
+            'id' => $result['id'],
+            // Payment checkout page location (Mollie)
+            'redirectUrl' => $result['redirectUrl'] ?? null,
+            // Payment checkout page location (Coinbase)
+            'newWindowUrl' => $result['newWindowUrl'] ?? null,
+        ]);
     }
 
     /**
@@ -114,6 +120,8 @@ class PaymentsController extends Controller
      *
      * @return JsonResponse The response
      */
+    #[BodyParameter('amount', description: 'Money amount', type: 'float', required: true)]
+    #[BodyParameter('balance', description: 'Wallet balance threshold', type: 'float', required: true)]
     public function mandateUpdate(Request $request)
     {
         $user = $this->guard()->user();
@@ -139,11 +147,13 @@ class PaymentsController extends Controller
             ChargeJob::dispatch($wallet->id);
         }
 
-        $result = self::walletMandate($wallet);
-        $result['status'] = 'success';
-        $result['message'] = self::trans('app.mandate-update-success');
+        $mandate = new WalletMandateResource($wallet->getMandate());
 
-        return response()->json($result);
+        return response()->json([
+            'status' => 'success',
+            'message' => self::trans('app.mandate-update-success'),
+            'mandate' => $mandate,
+        ]);
     }
 
     /**
@@ -174,9 +184,15 @@ class PaymentsController extends Controller
 
         $result = $provider->createMandate($wallet, $mandate);
 
-        $result['status'] = 'success';
-
-        return response()->json($result);
+        return response()->json([
+            'status' => 'success',
+            // Payment identifier
+            'id' => $result['id'],
+            // Payment checkout page location (Mollie)
+            'redirectUrl' => $result['redirectUrl'] ?? null,
+            // Payment checkout page location (Coinbase)
+            'newWindowUrl' => $result['newWindowUrl'] ?? null,
+        ]);
     }
 
     /**
@@ -248,10 +264,15 @@ class PaymentsController extends Controller
         }
 
         return response()->json([
+            // Payment identifier
             'id' => $payment->id,
+            // Payment status
             'status' => $payment->status,
+            // Payment type
             'type' => $payment->type,
+            // Payment status message
             'statusMessage' => self::trans($label),
+            // Payment description
             'description' => $payment->description,
         ]);
     }
@@ -270,12 +291,11 @@ class PaymentsController extends Controller
         // TODO: Wallet selection
         $wallet = $user->wallets()->first();
 
-        $rules = [
-            'amount' => 'required|numeric',
-        ];
-
         // Check required fields
-        $v = Validator::make($request->all(), $rules);
+        $v = Validator::make($request->all(), $rules = [
+            // Money amount to pay
+            'amount' => 'required|numeric',
+        ]);
 
         // TODO: allow comma as a decimal point?
 
@@ -306,42 +326,16 @@ class PaymentsController extends Controller
 
         $result = $provider->payment($wallet, $request);
 
-        $result['status'] = 'success';
-
-        return response()->json($result);
+        return response()->json([
+            'status' => 'success',
+            // Payment identifier
+            'id' => $result['id'],
+            // Payment checkout page location (Mollie)
+            'redirectUrl' => $result['redirectUrl'] ?? null,
+            // Payment checkout page location (Coinbase)
+            'newWindowUrl' => $result['newWindowUrl'] ?? null,
+        ]);
     }
-
-    /**
-     * Delete a pending payment.
-     *
-     * @return JsonResponse The response
-     */
-    // TODO currently unused
-    // public function cancel(Request $request)
-    // {
-    //     $user = $this->guard()->user();
-
-    //     // TODO: Wallet selection
-    //     $wallet = $user->wallets()->first();
-
-    //     $paymentId = $request->payment;
-
-    //     $user_owns_payment = Payment::where('id', $paymentId)
-    //         ->where('wallet_id', $wallet->id)
-    //         ->exists();
-
-    //     if (!$user_owns_payment) {
-    //         return $this->errorResponse(404);
-    //     }
-
-    //     $provider = PaymentProvider::factory($wallet);
-    //     if ($provider->cancel($wallet, $paymentId)) {
-    //         $result = ['status' => 'success'];
-    //         return response()->json($result);
-    //     }
-
-    //     return $this->errorResponse(404);
-    // }
 
     /**
      * Update payment status (and balance).
@@ -362,41 +356,7 @@ class PaymentsController extends Controller
     }
 
     /**
-     * Returns auto-payment mandate info for the specified wallet
-     *
-     * @param Wallet $wallet A wallet object
-     *
-     * @return array A mandate metadata
-     */
-    public static function walletMandate(Wallet $wallet): array
-    {
-        $provider = PaymentProvider::factory($wallet);
-        $settings = $wallet->getSettings(['mandate_disabled', 'mandate_balance', 'mandate_amount']);
-
-        // Get the Mandate info
-        $mandate = (array) $provider->getMandate($wallet);
-
-        $mandate['amount'] = $mandate['minAmount'] = round($wallet->getMinMandateAmount() / 100, 2);
-        $mandate['balance'] = 0;
-        $mandate['isDisabled'] = !empty($mandate['id']) && $settings['mandate_disabled'];
-        $mandate['isValid'] = !empty($mandate['isValid']);
-
-        foreach (['amount', 'balance'] as $key) {
-            if (($value = $settings["mandate_{$key}"]) !== null) {
-                $mandate[$key] = $value;
-            }
-        }
-
-        // Unrestrict the wallet owner if mandate is valid
-        if (!empty($mandate['isValid']) && $wallet->owner->isRestricted()) {
-            $wallet->owner->unrestrict();
-        }
-
-        return $mandate;
-    }
-
-    /**
-     * List supported payment methods.
+     * List payment methods.
      *
      * @param Request $request the API request
      *
@@ -410,8 +370,6 @@ class PaymentsController extends Controller
         $wallet = $user->wallets()->first();
 
         $methods = PaymentProvider::paymentMethods($wallet, $request->type);
-
-        \Log::debug("Provider methods" . var_export(json_encode($methods), true));
 
         return response()->json($methods);
     }
@@ -430,8 +388,7 @@ class PaymentsController extends Controller
         // TODO: Wallet selection
         $wallet = $user->wallets()->first();
 
-        $exists = Payment::where('wallet_id', $wallet->id)
-            ->where('type', Payment::TYPE_ONEOFF)
+        $exists = $wallet->payments()->where('type', Payment::TYPE_ONEOFF)
             ->whereIn('status', [
                 Payment::STATUS_OPEN,
                 Payment::STATUS_PENDING,
@@ -441,6 +398,7 @@ class PaymentsController extends Controller
 
         return response()->json([
             'status' => 'success',
+            // @var bool Indicates existence of pending payments
             'hasPending' => $exists,
         ]);
     }
@@ -452,6 +410,7 @@ class PaymentsController extends Controller
      *
      * @return JsonResponse The response
      */
+    #[BodyParameter('page', description: 'List page', type: 'int')]
     public function payments(Request $request)
     {
         $user = $this->guard()->user();
@@ -462,8 +421,7 @@ class PaymentsController extends Controller
         $pageSize = 10;
         $page = (int) (request()->input('page')) ?: 1;
         $hasMore = false;
-        $result = Payment::where('wallet_id', $wallet->id)
-            ->where('type', Payment::TYPE_ONEOFF)
+        $result = $wallet->payments()->where('type', Payment::TYPE_ONEOFF)
             ->whereIn('status', [
                 Payment::STATUS_OPEN,
                 Payment::STATUS_PENDING,
@@ -500,10 +458,14 @@ class PaymentsController extends Controller
 
         return response()->json([
             'status' => 'success',
+            // @var array List of pending one-off payments
             'list' => $result,
+            // @var int Number of list entries
             'count' => count($result),
-            'hasMore' => $hasMore,
+            // @var int Current page number
             'page' => $page,
+            // @var bool
+            'hasMore' => $hasMore,
         ]);
     }
 }

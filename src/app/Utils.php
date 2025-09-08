@@ -49,10 +49,8 @@ class Utils
      *
      * @param string $ip       IP address
      * @param string $fallback Fallback country code
-     *
-     * @return string
      */
-    public static function countryForIP($ip, $fallback = 'CH')
+    public static function countryForIP($ip, $fallback = 'CH'): string
     {
         if (!str_contains($ip, ':')) {
             // Skip the query if private network

@@ -2,11 +2,8 @@
 
 namespace Tests\Feature\Controller;
 
-use App\Discount;
-use App\Http\Controllers\API\V4\WalletsController;
 use App\Package;
 use App\Payment;
-use App\Plan;
 use App\ReferralProgram;
 use App\Transaction;
 use Carbon\Carbon;
@@ -28,73 +25,6 @@ class WalletsTest extends TestCase
         ReferralProgram::query()->delete();
 
         parent::tearDown();
-    }
-
-    /**
-     * Test for getWalletNotice() method
-     */
-    public function testGetWalletNotice(): void
-    {
-        $user = $this->getTestUser('wallets-controller@kolabnow.com');
-        $plan = Plan::withObjectTenantContext($user)->where('title', 'individual')->first();
-        $user->assignPlan($plan);
-        $wallet = $user->wallets()->first();
-
-        $controller = new WalletsController();
-        $method = new \ReflectionMethod($controller, 'getWalletNotice');
-        $method->setAccessible(true);
-
-        // User/entitlements created today, balance=0
-        $notice = $method->invoke($controller, $wallet);
-
-        $this->assertSame('You are in your free trial period.', $notice);
-
-        $wallet->owner->created_at = Carbon::now()->subWeeks(3);
-        $wallet->owner->save();
-
-        $notice = $method->invoke($controller, $wallet);
-
-        $this->assertSame('Your free trial is about to end, top up to continue.', $notice);
-
-        // User/entitlements created today, balance=-10 CHF
-        $wallet->balance = -1000;
-        $notice = $method->invoke($controller, $wallet);
-
-        $this->assertSame('You are out of credit, top up your balance now.', $notice);
-
-        // User/entitlements created slightly more than a month ago, balance=9,99 CHF (monthly)
-        $this->backdateEntitlements($wallet->entitlements, Carbon::now()->subMonthsWithoutOverflow(1)->subDays(1));
-        $wallet->refresh();
-
-        // test "1 month"
-        $wallet->balance = 990;
-        $notice = $method->invoke($controller, $wallet);
-
-        $this->assertMatchesRegularExpression('/\((1 month|4 weeks|3 weeks)\)/', $notice);
-
-        // test "2 months"
-        $wallet->balance = 990 * 2.6;
-        $notice = $method->invoke($controller, $wallet);
-
-        $this->assertMatchesRegularExpression('/\(1 month 4 weeks\)/', $notice);
-
-        // Change locale to make sure the text is localized by Carbon
-        \app()->setLocale('de');
-
-        // test "almost 2 years"
-        $wallet->balance = 990 * 23.5;
-        $notice = $method->invoke($controller, $wallet);
-
-        $this->assertMatchesRegularExpression('/\(1 Jahr 10 Monate\)/', $notice);
-
-        // Old entitlements, 100% discount
-        $this->backdateEntitlements($wallet->entitlements, Carbon::now()->subDays(40));
-        $discount = Discount::withObjectTenantContext($user)->where('discount', 100)->first();
-        $wallet->discount()->associate($discount);
-
-        $notice = $method->invoke($controller, $wallet->refresh());
-
-        $this->assertNull($notice);
     }
 
     /**

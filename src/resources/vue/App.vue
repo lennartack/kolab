@@ -29,9 +29,9 @@
             const token = localStorage.getItem('token')
 
             if (token) {
-                const post = { refresh_token: localStorage.getItem("refreshToken") }
+                const post = { refresh_token: localStorage.getItem("refreshToken"), info: 1 }
 
-                axios.post('/api/auth/info?refresh=1', post, { ignoreErrors: true, loader: true })
+                axios.post('/api/auth/refresh', post, { ignoreErrors: true, loader: true })
                     .then(response => {
                         this.$root.loginUser(response.data, false)
                     })

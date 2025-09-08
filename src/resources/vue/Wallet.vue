@@ -327,7 +327,7 @@
                             // an update
                             if (response.data.status == 'success') {
                                 this.$refs.paymentDialog.hide();
-                                this.mandate = response.data
+                                this.mandate = response.data.mandate
                                 this.$toast.success(response.data.message)
                             }
                         }

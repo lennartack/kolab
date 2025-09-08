@@ -7,6 +7,7 @@ use App\Handlers\Mailbox;
 use App\Http\Controllers\ResourceController;
 use App\Sku;
 use App\Wallet;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,6 +18,7 @@ class SkusController extends ResourceController
      *
      * @return JsonResponse
      */
+    #[QueryParameter('type', description: 'SKU type', type: 'string')]
     public function index()
     {
         $type = request()->input('type');

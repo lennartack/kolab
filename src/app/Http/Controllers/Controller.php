@@ -41,6 +41,7 @@ class Controller extends BaseController
 
         $response = [
             'status' => 'error',
+            // @var string
             'message' => $message ?: ($errors[$code] ?? "Server error"),
         ];
 

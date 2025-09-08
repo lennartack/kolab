@@ -93,7 +93,8 @@ class GroupsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
+        $this->assertCount(5, $json);
+        $this->assertSame('success', $json['status']);
         $this->assertSame(0, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("0 distribution lists have been found.", $json['message']);
@@ -105,7 +106,6 @@ class GroupsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertSame(1, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("1 distribution lists have been found.", $json['message']);
@@ -126,7 +126,6 @@ class GroupsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertSame(1, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("1 distribution lists have been found.", $json['message']);

@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Http\Resources\PlanResource;
 use App\Traits\BelongsToTenantTrait;
 use App\Traits\EntitleableTrait;
 use App\Traits\UuidIntKeyTrait;
@@ -55,11 +56,18 @@ class Device extends Model
      */
     public function info(): array
     {
+        $plans = Plan::withObjectTenantContext($this)->where('mode', 'token')
+            ->orderByDesc('months')->orderByDesc('title')
+            ->get();
+
         $result = [
+            // Device registration date-time
             'created_at' => (string) $this->created_at,
+            // Plans available for signup via a device token
+            'plans' => PlanResource::collection($plans),
         ];
 
-        // TODO: Include other information about the wallet/payments state
+        // TODO: Include other information about the plan/wallet/payments state
 
         return $result;
     }

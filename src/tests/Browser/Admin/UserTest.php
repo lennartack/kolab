@@ -52,7 +52,7 @@ class UserTest extends TestCaseDusk
         $john->setSettings([
             'phone' => null,
             'external_email' => 'john.doe.external@gmail.com',
-            'password_expired' => '2020-01-01 10:10:10',
+            'password_expired' => null,
         ]);
         if ($john->isSuspended()) {
             User::where('email', $john->email)->update(['status' => $john->status - User::STATUS_SUSPENDED]);

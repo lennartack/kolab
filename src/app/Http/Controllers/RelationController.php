@@ -50,7 +50,7 @@ class RelationController extends ResourceController
 
         return response()->json([
             'status' => 'success',
-            'message' => \trans("app.{$this->label}-delete-success"),
+            'message' => self::trans("app.{$this->label}-delete-success"),
         ]);
     }
 
@@ -77,7 +77,7 @@ class RelationController extends ResourceController
     }
 
     /**
-     * Listing of resources belonging to the authenticated user.
+     * List resources.
      *
      * The resource entitlements billed to the current user wallet(s)
      *
@@ -105,10 +105,15 @@ class RelationController extends ResourceController
             });
 
         $result = [
+            'status' => 'success',
+            // @var string Response message
+            'message' => self::trans("app.search-foundx{$this->label}s", ['x' => count($result)]),
+            // @var array List of resources
             'list' => $result,
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var bool Indicates that there are more entries available
             'hasMore' => false,
-            'message' => \trans("app.search-foundx{$this->label}s", ['x' => count($result)]),
         ];
 
         return response()->json($result);
@@ -121,7 +126,7 @@ class RelationController extends ResourceController
      *
      * @return array Statuses array
      */
-    protected static function objectState($resource): array
+    public static function objectState($resource): array
     {
         $state = [];
 
@@ -202,7 +207,7 @@ class RelationController extends ResourceController
 
             $step = [
                 'label' => $step_name,
-                'title' => \trans("app.process-{$step_name}"),
+                'title' => self::trans("app.process-{$step_name}"),
             ];
 
             if (is_array($state)) {
@@ -288,12 +293,12 @@ class RelationController extends ResourceController
             $suffix = $success ? 'success' : 'error-' . $last_step;
 
             $response['status'] = $success ? 'success' : 'error';
-            $response['message'] = \trans('app.process-' . $suffix);
+            $response['message'] = self::trans('app.process-' . $suffix);
 
             if ($async && !$success) {
                 $response['processState'] = 'waiting';
                 $response['status'] = 'success';
-                $response['message'] = \trans('app.process-async');
+                $response['message'] = self::trans('app.process-async');
             }
         }
 
@@ -305,7 +310,7 @@ class RelationController extends ResourceController
      *
      * @param int $id Resource identifier
      *
-     * @return JsonResponse|void
+     * @return JsonResponse
      */
     public function setConfig($id)
     {
@@ -333,14 +338,14 @@ class RelationController extends ResourceController
 
         return response()->json([
             'status' => 'success',
-            'message' => \trans("app.{$this->label}-setconfig-success"),
+            'message' => self::trans("app.{$this->label}-setconfig-success"),
         ]);
     }
 
     /**
-     * Display information of a resource specified by $id.
+     * Get resource information
      *
-     * @param string $id the resource to show information for
+     * @param string $id Resource identifier
      *
      * @return JsonResponse
      */

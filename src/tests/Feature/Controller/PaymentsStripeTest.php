@@ -245,8 +245,8 @@ class PaymentsStripeTest extends TestCase
         $this->assertSame('The auto-payment has been updated.', $json['message']);
         $this->assertSame('30.1', $wallet->getSetting('mandate_amount'));
         $this->assertSame('10', $wallet->getSetting('mandate_balance'));
-        $this->assertSame('AAA', $json['id']);
-        $this->assertFalse($json['isDisabled']);
+        $this->assertSame('AAA', $json['mandate']['id']);
+        $this->assertFalse($json['mandate']['isDisabled']);
 
         // Test updating a disabled mandate (invalid input)
         $wallet->setSetting('mandate_disabled', 1);
@@ -276,8 +276,8 @@ class PaymentsStripeTest extends TestCase
 
         $this->assertSame('success', $json['status']);
         $this->assertSame('The auto-payment has been updated.', $json['message']);
-        $this->assertSame('AAA', $json['id']);
-        $this->assertFalse($json['isDisabled']);
+        $this->assertSame('AAA', $json['mandate']['id']);
+        $this->assertFalse($json['mandate']['isDisabled']);
 
         Bus::assertDispatchedTimes(ChargeJob::class, 1);
         Bus::assertDispatched(ChargeJob::class, function ($job) use ($wallet) {

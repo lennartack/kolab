@@ -93,7 +93,7 @@ class DomainTest extends TestCaseDusk
             // Assert Configuration tab
             $browser->assertSeeIn('@nav #tab-config', 'Configuration')
                 ->with('@domain-config', static function (Browser $browser) {
-                    $browser->assertSeeIn('pre#dns-confirm', 'kolab-verify.kolab.org.')
+                    $browser->assertSeeIn('pre#dns-confirm', 'kolab.org.')
                         ->assertSeeIn('pre#dns-config', 'kolab.org.');
                 });
         });

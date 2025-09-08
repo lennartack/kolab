@@ -3,7 +3,6 @@
 namespace App\Console\Commands\Wallet;
 
 use App\Console\Command;
-use App\Http\Controllers\API\V4\PaymentsController;
 
 class MandateCommand extends Command
 {
@@ -35,7 +34,7 @@ class MandateCommand extends Command
             return 1;
         }
 
-        $mandate = PaymentsController::walletMandate($wallet);
+        $mandate = $wallet->getMandate();
 
         if (!empty($mandate['id'])) {
             $disabled = $mandate['isDisabled'] ? 'Yes' : 'No';

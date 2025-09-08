@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\V4;
 use App\Http\Controllers\Controller;
 use App\User;
 use App\UserSetting;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,17 +19,17 @@ use Illuminate\Support\Facades\DB;
 class SearchController extends Controller
 {
     /**
-     * Search request for user's contacts
+     * Find user's contacts
      *
      * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function searchContacts(Request $request)
+    #[QueryParameter('search', description: 'Search string', type: 'string', required: true)]
+    #[QueryParameter('limit', description: 'Records limit', type: 'int', default: 15)]
+    public function searchContacts(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
-        $search = trim(request()->input('search'));
-        $limit = (int) request()->input('limit');
+        $search = trim($request->input('search'));
+        $limit = (int) $request->input('limit');
 
         if ($limit <= 0) {
             $limit = 15;
@@ -62,24 +63,29 @@ class SearchController extends Controller
             });
 
         return response()->json([
+            // @var array{'email': string, 'name': string} List of contacts
             'list' => $result,
+            // @var int Number of entries in the list
             'count' => count($result),
         ]);
     }
 
     /**
-     * Search request for user's email addresses
+     * Find user's email addresses
      *
      * @param Request $request the API request
      *
      * @return JsonResponse The response
      */
+    #[QueryParameter('search', description: 'Search string', type: 'string', required: true)]
+    #[QueryParameter('limit', description: 'Records limit', type: 'int', default: 15)]
+    #[QueryParameter('alias', description: 'Include aliases', type: 'bool')]
     public function searchSelf(Request $request)
     {
         $user = $this->guard()->user();
-        $search = trim(request()->input('search'));
-        $with_aliases = !empty(request()->input('alias'));
-        $limit = (int) request()->input('limit');
+        $search = trim($request->input('search'));
+        $with_aliases = !empty($request->input('alias'));
+        $limit = (int) $request->input('limit');
 
         if ($limit <= 0) {
             $limit = 15;
@@ -107,18 +113,23 @@ class SearchController extends Controller
         $result = $this->resultFormat($result);
 
         return response()->json([
+            // @var array{'email': string, 'name': string} List of users
             'list' => $result,
+            // @var int Number of entries in the list
             'count' => count($result),
         ]);
     }
 
     /**
-     * Search request for addresses of all users (in an account)
+     * Find email addresses of all users (in an account)
      *
      * @param Request $request the API request
      *
      * @return JsonResponse The response
      */
+    #[QueryParameter('search', description: 'Search string', type: 'string', required: true)]
+    #[QueryParameter('limit', description: 'Records limit', type: 'int', default: 15)]
+    #[QueryParameter('alias', description: 'Include aliases', type: 'bool')]
     public function searchUser(Request $request)
     {
         if (!\config('app.with_user_search')) {
@@ -126,9 +137,9 @@ class SearchController extends Controller
         }
 
         $user = $this->guard()->user();
-        $search = trim(request()->input('search'));
-        $with_aliases = !empty(request()->input('alias'));
-        $limit = (int) request()->input('limit');
+        $search = trim($request->input('search'));
+        $with_aliases = !empty($request->input('alias'));
+        $limit = (int) $request->input('limit');
 
         if ($limit <= 0) {
             $limit = 15;
@@ -177,7 +188,9 @@ class SearchController extends Controller
         $result = $this->resultFormat($result);
 
         return response()->json([
+            // @var array{'email': string, 'name': string} List of users
             'list' => $result,
+            // @var int Number of entries in the list
             'count' => count($result),
         ]);
     }

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\API;
 use App\Auth\OAuth;
 use App\AuthAttempt;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AuthErrorResource;
+use App\Http\Resources\AuthResource;
+use App\Http\Resources\UserInfoResource;
 use App\User;
 use App\Utils;
 use Illuminate\Http\JsonResponse;
@@ -19,21 +22,17 @@ use Symfony\Component\HttpFoundation\Response;
 class AuthController extends Controller
 {
     /**
-     * Get the authenticated User
+     * Get user information.
+     *
+     * Note that the same information is by default included in the `auth/login` response.
      *
      * @return JsonResponse
      */
     public function info()
     {
-        $user = $this->guard()->user();
+        $response = new UserInfoResource($this->guard()->user());
 
-        if (!empty(request()->input('refresh'))) {
-            return $this->refreshAndRespond(request(), $user);
-        }
-
-        $response = V4\UsersController::userResponse($user);
-
-        return response()->json($response);
+        return $response->response();
     }
 
     /**
@@ -57,6 +56,7 @@ class AuthController extends Controller
             'scope' => 'api',
             'secondfactor' => $secondFactor,
         ]);
+
         $proxyRequest->headers->set('X-Client-IP', request()->ip());
 
         $tokenResponse = app()->handle($proxyRequest);
@@ -65,11 +65,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Get an oauth token via given credentials.
+     * Log in a user.
      *
-     * @param Request $request the API request
+     * Returns an authentication token(s) and user information.
+     *
+     * @param Request $request The API request
      *
      * @return JsonResponse
+     *
+     * @unauthenticated
      */
     public function login(Request $request)
     {
@@ -101,7 +105,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Approval request for the oauth authorization endpoint
+     * OAuth (SSO) authorization.
      *
      * * The user is authenticated via the regular login page
      * * We assume implicit consent in the Authorization page
@@ -137,16 +141,20 @@ class AuthController extends Controller
     }
 
     /**
-     * Get the user (geo) location
+     * Get geo-location
      *
      * @return JsonResponse
+     *
+     * @unauthenticated
      */
     public function location()
     {
         $ip = request()->ip();
 
         $response = [
+            // Client IP address
             'ipAddress' => $ip,
+            // Client country code (derived from the IP address)
             'countryCode' => Utils::countryForIP($ip, ''),
         ];
 
@@ -154,7 +162,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Log the user out (Invalidate the token)
+     * Logout a user.
+     *
+     * Revokes the authentication token.
      *
      * @return JsonResponse
      */
@@ -177,25 +187,25 @@ class AuthController extends Controller
     }
 
     /**
-     * Refresh a token.
+     * Refresh a session token.
      *
      * @return JsonResponse
      */
     public function refresh(Request $request)
     {
-        return self::refreshAndRespond($request);
-    }
+        $v = Validator::make($request->all(), [
+            // Request user information in the response
+            'info' => 'bool',
+            // A refresh token
+            'refresh_token' => 'string|required',
+        ]);
 
-    /**
-     * Refresh the token and respond with it.
-     *
-     * @param Request $request the API request
-     * @param ?User   $user    The user being authenticated
-     *
-     * @return JsonResponse
-     */
-    protected static function refreshAndRespond(Request $request, $user = null)
-    {
+        if ($v->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
+        }
+
+        $user = $request->info ? $this->guard()->user() : null;
+
         $proxyRequest = Request::create('/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',
             'refresh_token' => $request->refresh_token,
@@ -214,10 +224,8 @@ class AuthController extends Controller
      * @param Response $tokenResponse the response containing the token
      * @param ?User    $user          The user being authenticated
      * @param ?bool    $mode          Response mode: 'fast' - return minimum set of user data
-     *
-     * @return JsonResponse
      */
-    protected static function respondWithToken($tokenResponse, $user = null, $mode = null)
+    protected static function respondWithToken($tokenResponse, $user = null, $mode = null): JsonResponse
     {
         $data = json_decode($tokenResponse->getContent());
 
@@ -227,39 +235,34 @@ class AuthController extends Controller
                 return response()->json(['status' => 'error', 'errors' => $errors], 422);
             }
 
-            $response = ['status' => 'error', 'message' => self::trans('auth.failed')];
+            $response = new AuthErrorResource(null);
+            $response->message = self::trans('auth.failed');
 
             if (isset($data->error) && $data->error == AuthAttempt::REASON_PASSWORD_EXPIRED) {
-                $response['message'] = $data->error_description;
-                $response['password_expired'] = true;
+                $response->message = $data->error_description;
+                $response->password_expired = true;
 
                 if ($user) {
                     // At this point we know the password is correct, but expired.
                     // So, it should be safe to send the user ID back. It will be used
                     // for the new password policy checks.
-                    $response['id'] = $user->id;
+                    $response->user_id = $user->id;
                 }
             }
 
             return response()->json($response, 401);
         }
 
-        $response = [];
+        $response = new AuthResource($data);
 
         if ($user) {
             if ($mode == 'fast') {
-                $response['id'] = $user->id;
+                $response->user_id = $user->id;
             } else {
-                $response = V4\UsersController::userResponse($user);
+                $response->withUserInfo(new UserInfoResource($user));
             }
         }
 
-        $response['status'] = 'success';
-        $response['access_token'] = $data->access_token;
-        $response['refresh_token'] = $data->refresh_token;
-        $response['token_type'] = 'bearer';
-        $response['expires_in'] = $data->expires_in;
-
-        return response()->json($response);
+        return $response->response();
     }
 }

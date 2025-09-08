@@ -26,6 +26,8 @@ class PasswordResetController extends Controller
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
     public function init(Request $request)
     {
@@ -72,6 +74,8 @@ class PasswordResetController extends Controller
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
     public function verify(Request $request)
     {
@@ -118,6 +122,8 @@ class PasswordResetController extends Controller
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
     public function reset(Request $request)
     {
@@ -147,6 +153,8 @@ class PasswordResetController extends Controller
      * @param Request $request HTTP request
      *
      * @return JsonResponse JSON response
+     *
+     * @unauthenticated
      */
     public function resetExpired(Request $request)
     {

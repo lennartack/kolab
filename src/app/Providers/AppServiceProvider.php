@@ -61,8 +61,13 @@ use App\UserAlias;
 use App\UserSetting;
 use App\VerificationCode;
 use App\Wallet;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use GuzzleHttp\TransferStats;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -153,6 +158,33 @@ class AppServiceProvider extends ServiceProvider
 
         Schema::defaultStringLength(191);
 
+        Blade::precompiler(static function ($str) {
+            // For Scramble (API documentation) we replace external js/css resources with locally stored
+            if (str_starts_with(\request()->path(), 'docs/api')) {
+                if (preg_match_all('~(src|href)="(https://unpkg.com/[^"]+)~', $str, $matches)) {
+                    if (!file_exists(\public_path('vendor/scramble'))) {
+                        mkdir(\public_path('vendor/scramble'));
+                    }
+
+                    foreach ($matches[2] as $href) {
+                        $file = 'vendor/scramble/' . md5($href) . '.' . pathinfo($href, \PATHINFO_BASENAME);
+                        if (!file_exists(\public_path($file))) {
+                            $content = \file_get_contents($href);
+                            if (!$content) {
+                                break;
+                            }
+
+                            \file_put_contents(\public_path($file), $content);
+                        }
+
+                        $str = str_replace($href, "/{$file}", $str);
+                    }
+                }
+            }
+
+            return $str;
+        });
+
         // Register some template helpers
         Blade::directive(
             'theme_asset',
@@ -232,6 +264,22 @@ class AppServiceProvider extends ServiceProvider
 
             return Http::getFacadeRoot();
         });
+
+        JsonResource::withoutWrapping();
+
+        Scramble::configure()
+            ->routes(static function (Route $route) {
+                // Exclude admin/reseller/webhooks groups for now
+                // TODO: Find a way to separate or describe access
+                return empty($route->action['domain'])
+                    && str_starts_with($route->uri, 'api/')
+                    && $route->action['prefix'] != 'api/webhooks';
+            })
+            ->withDocumentTransformers(static function (OpenApi $openApi) {
+                $openApi->secure(
+                    SecurityScheme::http('bearer')
+                );
+            });
 
         $this->applyOverrideConfig();
     }

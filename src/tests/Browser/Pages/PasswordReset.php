@@ -22,7 +22,8 @@ class PasswordReset extends Page
      */
     public function assert($browser)
     {
-        $browser->assertPathBeginsWith('/password-reset');
+        $browser->assertPathBeginsWith('/password-reset')
+            ->waitUntilMissing('.app-loader');
     }
 
     /**

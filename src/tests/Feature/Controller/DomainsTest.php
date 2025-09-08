@@ -183,7 +183,8 @@ class DomainsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
+        $this->assertCount(5, $json);
+        $this->assertSame('success', $json['status']);
         $this->assertSame(0, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("0 domains have been found.", $json['message']);
@@ -197,7 +198,7 @@ class DomainsTest extends TestCase
         $response->assertStatus(200);
 
         $json = $response->json();
-        $this->assertCount(4, $json);
+
         $this->assertSame(1, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame("1 domains have been found.", $json['message']);
@@ -221,7 +222,6 @@ class DomainsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertCount(1, $json['list']);
         $this->assertSame('kolab.org', $json['list'][0]['namespace']);
     }

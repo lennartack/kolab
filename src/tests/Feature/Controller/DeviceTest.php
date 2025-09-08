@@ -58,6 +58,7 @@ class DeviceTest extends TestCase
         $json = $response->json();
 
         $this->assertStringContainsString(date('Y-m-d'), $json['created_at']);
+        $this->assertSame([], $json['plans']);
 
         $device = Device::where('hash', $this->hash)->first();
         $this->assertTrue(!empty($device));
