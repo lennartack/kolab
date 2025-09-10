@@ -49,6 +49,10 @@ $config['configuration-overlays']['2fa'] = [
 ];
 
 $config['configuration-overlays']['groupware'] = [
+    'plugins' => ['calendar', 'kolab_files', 'kolab_addressbook', 'kolab_tags', 'tasklist']
+];
+
+$config['configuration-overlays']['groupware-kolabobjects'] = [
     'plugins' => ['calendar', 'kolab_files', 'kolab_addressbook', 'kolab_tags', 'kolab_notes', 'tasklist']
 ];
 

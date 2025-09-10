@@ -45,7 +45,11 @@ class ConfigController extends Controller
         }
 
         if (in_array('groupware', $skus)) {
-            $config['kolab-configuration-overlays'][] = 'groupware';
+            if ((bool) $user->getSetting('kolabobjects_storage')) {
+                $config['kolab-configuration-overlays'][] = 'groupware-kolabobjects';
+            } else {
+                $config['kolab-configuration-overlays'][] = 'groupware';
+            }
         }
 
         if ($debug_setting = $user->settings()->where('key', 'debug')->first()) {
