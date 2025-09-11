@@ -15,7 +15,7 @@ transforms:
     inputs:
       - apps.kolab
     source: |
-      if is_empty(.log) {
+      if is_empty(string!(.log)) {
         abort
       }
       structured = parse_logfmt(.log) ?? {}

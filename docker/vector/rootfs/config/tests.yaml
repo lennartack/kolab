@@ -319,4 +319,50 @@ tests:
       source: |
         assert_eq!(.log, "saslauthd[471] :auth success: [user=admin] [service=smtp] [realm=single.k3s.klab.cc] [mech=httpform]")
         assert!(is_timestamp(.timestamp))
-
+- name: "Kolab empty line"
+  inputs:
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      file: /var/log/pods/kolab_kolab-78bd5fccb-lssj6_cc681420-f781-4332-b966-73812b372801/kolab/0.log
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_image: localhost:5000/kolab:latest
+      container_image_id: localhost:5000/kolab@sha256:01b87d337ef0fe7e15943b38dc2b4023638ef0a06dabbc0ac387128bc744e879
+      container_name: kolab
+      pod_name: kolab-78bd5fccb-lssj6
+      pod_namespace: kolab
+      pod_node_name: dws07.kolabsys.com
+      pod_owner: ReplicaSet/kolab-78bd5fccb
+      pod_uid: cc681420-f781-4332-b966-73812b372801
+      log: ''
+      source_type: kubernetes_logs
+      stream: stderr
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  no_outputs_from:
+  - "parse_kolab"
+- name: "Kolab Authentication attempt"
+  inputs:
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      file: /var/log/pods/kolab_kolab-78bd5fccb-lssj6_cc681420-f781-4332-b966-73812b372801/kolab/0.log
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_image: localhost:5000/kolab:latest
+      container_image_id: localhost:5000/kolab@sha256:01b87d337ef0fe7e15943b38dc2b4023638ef0a06dabbc0ac387128bc744e879
+      container_name: kolab
+      pod_name: kolab-78bd5fccb-lssj6
+      pod_namespace: kolab
+      pod_node_name: dws07.kolabsys.com
+      pod_owner: ReplicaSet/kolab-78bd5fccb
+      pod_uid: cc681420-f781-4332-b966-73812b372801
+      log: '   INFO  [2025-09-11 12:15:24] production.DEBUG: Authentication attempt succeeded for admin@kolab.nestle.com .'
+      source_type: kubernetes_logs
+      stream: stderr
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  outputs:
+  - extract_from: "parse_kolab"
+    conditions:
+    - type: "vrl"
+      source: |
+        assert_eq!(.log, "   INFO  [2025-09-11 12:15:24] production.DEBUG: Authentication attempt succeeded for admin@kolab.nestle.com .")
+        assert!(is_timestamp(.timestamp))
