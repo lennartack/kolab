@@ -15,20 +15,16 @@ class DomainsController extends \App\Http\Controllers\API\V4\DomainsController
      * Remove the specified domain.
      *
      * @param string $id Domain identifier
-     *
-     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         return $this->errorResponse(404);
     }
 
     /**
      * Search for domains
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));
@@ -71,10 +67,8 @@ class DomainsController extends \App\Http\Controllers\API\V4\DomainsController
 
     /**
      * Create a domain.
-     *
-     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         return $this->errorResponse(404);
     }
@@ -84,10 +78,8 @@ class DomainsController extends \App\Http\Controllers\API\V4\DomainsController
      *
      * @param Request $request the API request
      * @param string  $id      Domain identifier
-     *
-     * @return JsonResponse The response
      */
-    public function suspend(Request $request, $id)
+    public function suspend(Request $request, $id): JsonResponse
     {
         $domain = Domain::find($id);
 
@@ -116,10 +108,8 @@ class DomainsController extends \App\Http\Controllers\API\V4\DomainsController
      *
      * @param Request $request the API request
      * @param string  $id      Domain identifier
-     *
-     * @return JsonResponse The response
      */
-    public function unsuspend(Request $request, $id)
+    public function unsuspend(Request $request, $id): JsonResponse
     {
         $domain = Domain::find($id);
 

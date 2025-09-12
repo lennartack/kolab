@@ -15,11 +15,9 @@ class SkusController extends ResourceController
 {
     /**
      * Get a list of active SKUs.
-     *
-     * @return JsonResponse
      */
     #[QueryParameter('type', description: 'SKU type', type: 'string')]
-    public function index()
+    public function index(): JsonResponse
     {
         $type = request()->input('type');
 
@@ -60,10 +58,8 @@ class SkusController extends ResourceController
      * Return SKUs available to the specified entitleable object.
      *
      * @param object $object Entitleable object
-     *
-     * @return JsonResponse
      */
-    public static function objectSkus($object)
+    public static function objectSkus($object): JsonResponse
     {
         $response = [];
 

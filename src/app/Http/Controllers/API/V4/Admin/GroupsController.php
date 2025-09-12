@@ -13,10 +13,8 @@ class GroupsController extends \App\Http\Controllers\API\V4\GroupsController
 {
     /**
      * Search for groups
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));
@@ -50,12 +48,8 @@ class GroupsController extends \App\Http\Controllers\API\V4\GroupsController
 
     /**
      * Create a new group.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         return $this->errorResponse(404);
     }
@@ -65,10 +59,8 @@ class GroupsController extends \App\Http\Controllers\API\V4\GroupsController
      *
      * @param Request $request the API request
      * @param string  $id      Group identifier
-     *
-     * @return JsonResponse The response
      */
-    public function suspend(Request $request, $id)
+    public function suspend(Request $request, $id): JsonResponse
     {
         $group = Group::find($id);
 
@@ -97,10 +89,8 @@ class GroupsController extends \App\Http\Controllers\API\V4\GroupsController
      *
      * @param Request $request the API request
      * @param string  $id      Group identifier
-     *
-     * @return JsonResponse The response
      */
-    public function unsuspend(Request $request, $id)
+    public function unsuspend(Request $request, $id): JsonResponse
     {
         $group = Group::find($id);
 

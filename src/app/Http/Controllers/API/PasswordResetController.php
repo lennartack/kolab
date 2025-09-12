@@ -7,6 +7,7 @@ use App\Jobs\Mail\PasswordResetJob;
 use App\Rules\Password;
 use App\User;
 use App\VerificationCode;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,17 +20,13 @@ use Illuminate\Support\Str;
 class PasswordResetController extends Controller
 {
     /**
-     * Sends password reset code to the user's external email
+     * Initialize password reset via user's external email
      *
-     * Verifies user email, sends verification email message.
-     *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
+     * Verifies user email, creates a verification code and initiates a job to send an email message.
      *
      * @unauthenticated
      */
-    public function init(Request $request)
+    public function init(Request $request): JsonResponse
     {
         // Check required fields
         $v = Validator::make($request->all(), ['email' => 'required|email']);
@@ -65,25 +62,27 @@ class PasswordResetController extends Controller
         // Send email/sms message
         PasswordResetJob::dispatch($code);
 
-        return response()->json(['status' => 'success', 'code' => $code->code]);
+        return response()->json([
+            'status' => 'success',
+            // Verification code identifier
+            'code' => $code->code,
+        ]);
     }
 
     /**
      * Validation of the verification code.
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
-    public function verify(Request $request)
+    public function verify(Request $request): JsonResponse
     {
         // Validate the request args
         $v = Validator::make(
             $request->all(),
             [
+                // Verification code identifier
                 'code' => 'required',
+                // Validation code secret
                 'short_code' => 'required',
             ]
         );
@@ -111,7 +110,8 @@ class PasswordResetController extends Controller
 
         return response()->json([
             'status' => 'success',
-            // we need user's ID for e.g. password policy checks
+            // @var int User identifier
+            // We need user ID for e.g. password policy checks
             'userId' => $code->user_id,
         ]);
     }
@@ -119,13 +119,12 @@ class PasswordResetController extends Controller
     /**
      * Password reset (using an email verification code)
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
+     * On success user will be auto-logged-in with a response same as for `auth/login` call.
      *
      * @unauthenticated
      */
-    public function reset(Request $request)
+    #[BodyParameter('secondfactor', description: '2FA token (required if user enabled 2FA)', type: 'string')]
+    public function reset(Request $request): JsonResponse
     {
         $v = $this->verify($request);
         if ($v->status() !== 200) {
@@ -137,7 +136,10 @@ class PasswordResetController extends Controller
         // Validate the password
         $v = Validator::make(
             $request->all(),
-            ['password' => ['required', 'confirmed', new Password($user->walletOwner())]]
+            [
+                // New password
+                'password' => ['required', 'confirmed', new Password($user->walletOwner())],
+            ]
         );
 
         if ($v->fails()) {
@@ -150,13 +152,13 @@ class PasswordResetController extends Controller
     /**
      * Expired password change (using user credentials)
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
+     * On success user will be auto-logged-in with a response same as for `auth/login` call.
      *
      * @unauthenticated
      */
-    public function resetExpired(Request $request)
+    #[BodyParameter('email', description: 'User email address', type: 'string', required: true)]
+    #[BodyParameter('secondfactor', description: '2FA token (required if user enabled 2FA)', type: 'string')]
+    public function resetExpired(Request $request): JsonResponse
     {
         $user = User::where('email', $request->email)->first();
 
@@ -178,6 +180,7 @@ class PasswordResetController extends Controller
         $v = Validator::make(
             $request->all(),
             [
+                // New password
                 'new_password' => ['required', 'confirmed', new Password($user->walletOwner())],
             ]
         );
@@ -193,12 +196,8 @@ class PasswordResetController extends Controller
 
     /**
      * Create a verification code for the current user.
-     *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
      */
-    public function codeCreate(Request $request)
+    public function codeCreate(Request $request): JsonResponse
     {
         // Generate the verification code
         $code = new VerificationCode();
@@ -214,8 +213,11 @@ class PasswordResetController extends Controller
 
         return response()->json([
             'status' => 'success',
+            // Verification code identifier
             'code' => $code->code,
+            // Verification code secret
             'short_code' => $code->short_code,
+            // Code expiration date-time
             'expires_at' => $code->expires_at->toDateTimeString(),
         ]);
     }
@@ -223,11 +225,9 @@ class PasswordResetController extends Controller
     /**
      * Delete a verification code.
      *
-     * @param string $id Code identifier
-     *
-     * @return JsonResponse The response
+     * @param string $id Verification code identifier
      */
-    public function codeDelete($id)
+    public function codeDelete($id): JsonResponse
     {
         // Accept <short-code>-<code> input
         if (strpos($id, '-')) {

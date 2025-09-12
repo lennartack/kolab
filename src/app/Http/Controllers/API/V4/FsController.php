@@ -35,10 +35,8 @@ class FsController extends RelationController
      * Delete a file.
      *
      * @param string $id File identifier
-     *
-     * @return JsonResponse The response
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         // Only the file owner can do that, for now
         $file = $this->inputItem($id, null);
@@ -267,10 +265,8 @@ class FsController extends RelationController
 
     /**
      * Listing of files (and folders).
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $page = (int) (request()->input('page')) ?: 1;
@@ -342,10 +338,8 @@ class FsController extends RelationController
      * Fetch the specific file metadata or content.
      *
      * @param string $id the file identifier
-     *
-     * @return JsonResponse|StreamedResponse
      */
-    public function show($id)
+    public function show($id): JsonResponse|StreamedResponse
     {
         $file = $this->inputItem($id, self::READ);
 

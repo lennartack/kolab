@@ -14,10 +14,8 @@ class LicenseController extends Controller
      * Get the information on any license for the user.
      *
      * @param string $type License type
-     *
-     * @return JsonResponse The response
      */
-    public function license(Request $request, string $type)
+    public function license(Request $request, string $type): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -58,7 +56,7 @@ class LicenseController extends Controller
 
         return response()->json([
             'status' => 'success',
-            // @var array List of licenses (properties: key, type)
+            // @var array{'key': string, 'type': string} List of licenses
             'list' => $licenses,
             // @var int Number of entries in the list
             'count' => count($licenses),

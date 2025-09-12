@@ -113,6 +113,7 @@ class OAuth
 
         return response()->json([
             'status' => 'success',
+            // Client (e.g. webmail) location to redirect to
             'redirectUrl' => $response->getHeader('Location')[0],
         ]);
     }

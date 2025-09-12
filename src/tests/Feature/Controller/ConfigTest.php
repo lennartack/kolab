@@ -25,7 +25,7 @@ class ConfigTest extends TestCase
         $json = $response->json();
 
         $this->assertSame(['kolab4', 'groupware'], $json['kolab-configuration-overlays']);
-        $this->assertArrayNotHasKey('debug', $json);
+        $this->assertNull($json['debug']);
 
         // Ned has groupware, activesync and 2FA
         $response = $this->actingAs($ned)->get('api/v4/config/webmail');
@@ -54,7 +54,7 @@ class ConfigTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertArrayNotHasKey('debug', $json);
+        $this->assertNull($json['debug']);
         $this->assertNull($joe->getSetting('debug'));
     }
 }

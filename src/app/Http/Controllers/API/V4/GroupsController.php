@@ -10,6 +10,7 @@ use App\Rules\ExternalEmail;
 use App\Rules\GroupName;
 use App\Rules\UserEmailLocal;
 use App\User;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -76,12 +77,11 @@ class GroupsController extends RelationController
 
     /**
      * Create a new group record.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    #[BodyParameter('name', description: 'Group name', type: 'string', required: true)]
+    #[BodyParameter('email', description: 'Group email address', type: 'string', required: true)]
+    #[BodyParameter('members', description: 'Member email addresses', type: 'array<string>', required: true)]
+    public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
         $wallet = $current_user->wallet();
@@ -163,10 +163,10 @@ class GroupsController extends RelationController
      *
      * @param Request $request the API request
      * @param string  $id      Group identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    #[BodyParameter('name', description: 'Group name', type: 'string')]
+    #[BodyParameter('members', description: 'Member email addresses', type: 'array<string>', required: true)]
+    public function update(Request $request, $id): JsonResponse
     {
         $group = Group::find($id);
 

@@ -8,10 +8,8 @@ class WellKnownController extends Controller
 {
     /**
      * Return the mtaSts policy
-     *
-     * @return Response The response
      */
-    public function mtaSts()
+    public function mtaSts(): Response
     {
         $policy = \config('app.mta_sts');
 

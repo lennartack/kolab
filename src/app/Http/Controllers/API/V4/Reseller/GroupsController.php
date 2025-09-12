@@ -10,10 +10,8 @@ class GroupsController extends \App\Http\Controllers\API\V4\Admin\GroupsControll
 {
     /**
      * Search for groups
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));

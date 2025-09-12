@@ -13,11 +13,9 @@ class SupportController extends Controller
     /**
      * Submit support form.
      *
-     * @return JsonResponse
-     *
      * @unauthenticated
      */
-    public function request(Request $request)
+    public function request(Request $request): JsonResponse
     {
         // Check required fields
         $v = Validator::make($request->all(), $rules = [

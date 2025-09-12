@@ -47,7 +47,6 @@
 <script>
     import ListInput from '../Widgets/ListInput'
     import ModalDialog from '../Widgets/ModalDialog'
-    import StatusComponent from '../Widgets/Status'
     import SubscriptionSelect from '../Widgets/SubscriptionSelect'
 
     import { library } from '@fortawesome/fontawesome-svg-core'
@@ -61,7 +60,6 @@
         components: {
             ListInput,
             ModalDialog,
-            StatusComponent,
             SubscriptionSelect
         },
         beforeRouteUpdate (to, from, next) {
@@ -76,7 +74,6 @@
                 companion_id: null,
                 companion: {},
                 qrcode: "",
-                status: {}
             }
         },
         created() {
@@ -85,7 +82,6 @@
             axios.get('/api/v4/companions/' + this.companion_id, { loader: true })
                 .then(response => {
                     this.companion = response.data
-                    this.status = response.data.statusInfo
                 })
                 .catch(this.$root.errorHandler)
 
@@ -107,9 +103,6 @@
                             this.$router.push({ name: 'companions' })
                         }
                     })
-            },
-            statusUpdate(companion) {
-                this.companion = Object.assign({}, this.companion, companion)
             },
             submit() {
                 this.$root.clearFormValidation($('#general form'))

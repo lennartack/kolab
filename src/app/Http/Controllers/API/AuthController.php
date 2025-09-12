@@ -25,10 +25,8 @@ class AuthController extends Controller
      * Get user information.
      *
      * Note that the same information is by default included in the `auth/login` response.
-     *
-     * @return JsonResponse
      */
-    public function info()
+    public function info(): JsonResponse
     {
         $response = new UserInfoResource($this->guard()->user());
 
@@ -43,7 +41,7 @@ class AuthController extends Controller
      * @param string      $password     Plain text password
      * @param string|null $secondFactor Second factor code if available
      */
-    public static function logonResponse(User $user, string $password, ?string $secondFactor = null)
+    public static function logonResponse(User $user, string $password, ?string $secondFactor = null): JsonResponse
     {
         $mode = request()->mode; // have to be before we make a request below
 
@@ -69,13 +67,9 @@ class AuthController extends Controller
      *
      * Returns an authentication token(s) and user information.
      *
-     * @param Request $request The API request
-     *
-     * @return JsonResponse
-     *
      * @unauthenticated
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $v = Validator::make(
             $request->all(),
@@ -116,10 +110,8 @@ class AuthController extends Controller
      * @param ServerRequestInterface $psrRequest PSR request
      * @param Request                $request    The API request
      * @param AuthorizationServer    $server     Authorization server
-     *
-     * @return JsonResponse
      */
-    public function oauthApprove(ServerRequestInterface $psrRequest, Request $request, AuthorizationServer $server)
+    public function oauthApprove(ServerRequestInterface $psrRequest, Request $request, AuthorizationServer $server): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -128,10 +120,8 @@ class AuthController extends Controller
 
     /**
      * Get the authenticated User information (using access token claims)
-     *
-     * @return JsonResponse
      */
-    public function oauthUserInfo()
+    public function oauthUserInfo(): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -143,11 +133,9 @@ class AuthController extends Controller
     /**
      * Get geo-location
      *
-     * @return JsonResponse
-     *
      * @unauthenticated
      */
-    public function location()
+    public function location(): JsonResponse
     {
         $ip = request()->ip();
 
@@ -165,10 +153,8 @@ class AuthController extends Controller
      * Logout a user.
      *
      * Revokes the authentication token.
-     *
-     * @return JsonResponse
      */
-    public function logout()
+    public function logout(): JsonResponse
     {
         $tokenId = $this->guard()->user()->token()->id;
         $tokenRepository = app(TokenRepository::class);
@@ -188,10 +174,8 @@ class AuthController extends Controller
 
     /**
      * Refresh a session token.
-     *
-     * @return JsonResponse
      */
-    public function refresh(Request $request)
+    public function refresh(Request $request): JsonResponse
     {
         $v = Validator::make($request->all(), [
             // Request user information in the response

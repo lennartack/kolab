@@ -13,10 +13,8 @@ class DiscountsController extends Controller
      * Returns (active) discounts defined in the system for the user context.
      *
      * @param int $id User identifier
-     *
-     * @return JsonResponse JSON response
      */
-    public function userDiscounts($id)
+    public function userDiscounts($id): JsonResponse
     {
         $user = User::find($id);
 

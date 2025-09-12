@@ -14,19 +14,18 @@ use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PolicyController extends Controller
 {
     /**
      * Validate the password regarding the defined policies.
      *
-     * @return JsonResponse
-     *
      * @unauthenticated
      */
     #[BodyParameter('user', description: 'User identifier', type: 'string')]
     #[BodyParameter('password', description: 'User password', type: 'string', required: true)]
-    public function checkPassword(Request $request)
+    public function checkPassword(Request $request): JsonResponse
     {
         $userId = $request->input('user');
         $user = !empty($userId) ? User::find($userId) : null;
@@ -53,10 +52,8 @@ class PolicyController extends Controller
 
     /**
      * Take a greylist policy request
-     *
-     * @return JsonResponse
      */
-    public function greylist()
+    public function greylist(): JsonResponse
     {
         $response = Greylist::handle(\request()->input());
 
@@ -66,10 +63,8 @@ class PolicyController extends Controller
     /**
      * Fetch the account policies for the current user account.
      * The result includes all supported policy rules.
-     *
-     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -113,22 +108,14 @@ class PolicyController extends Controller
 
     /**
      * SMTP Content Filter
-     *
-     * @param Request $request the API request
-     *
-     * @return Response The response
      */
-    public function mailfilter(Request $request)
+    public function mailfilter(Request $request): Response|StreamedResponse
     {
         return Mailfilter::handle($request);
     }
 
-    /*
-     * Apply a sensible rate limitation to a request.
-     *
-     * @return JsonResponse
-     */
-    public function ratelimit()
+    // Apply a sensible rate limitation to a request.
+    public function ratelimit(): JsonResponse
     {
         $response = RateLimit::handle(\request()->input());
 
@@ -137,34 +124,24 @@ class PolicyController extends Controller
 
     /**
      * Validate a mail reception request (includes greylisting)
-     *
-     * @return JsonResponse
      */
-    public function reception()
+    public function reception(): JsonResponse
     {
         $response = SmtpAccess::reception(\request()->input());
 
         return $response->jsonResponse();
     }
 
-    /*
-     * Apply the sender policy framework to a request.
-     *
-     * @return JsonResponse
-     */
-    public function senderPolicyFramework()
+    // Apply the sender policy framework to a request.
+    public function senderPolicyFramework(): JsonResponse
     {
         $response = SPF::handle(\request()->input());
 
         return $response->jsonResponse();
     }
 
-    /*
-     * Validate sender/recipients in an SMTP submission request.
-     *
-     * @return JsonResponse
-     */
-    public function submission()
+    // Validate sender/recipients in an SMTP submission request.
+    public function submission(): JsonResponse
     {
         $response = SmtpAccess::submission(\request()->input());
 

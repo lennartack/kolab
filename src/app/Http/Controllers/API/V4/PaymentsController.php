@@ -33,14 +33,10 @@ class PaymentsController extends Controller
 
     /**
      * Create a new auto-payment mandate.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
     #[BodyParameter('amount', description: 'Money amount', type: 'float', required: true)]
     #[BodyParameter('balance', description: 'Wallet balance threshold', type: 'float', required: true)]
-    public function mandateCreate(Request $request)
+    public function mandateCreate(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -91,10 +87,8 @@ class PaymentsController extends Controller
 
     /**
      * Revoke the auto-payment mandate.
-     *
-     * @return JsonResponse The response
      */
-    public function mandateDelete()
+    public function mandateDelete(): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -115,14 +109,10 @@ class PaymentsController extends Controller
 
     /**
      * Update a new auto-payment mandate.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
     #[BodyParameter('amount', description: 'Money amount', type: 'float', required: true)]
     #[BodyParameter('balance', description: 'Wallet balance threshold', type: 'float', required: true)]
-    public function mandateUpdate(Request $request)
+    public function mandateUpdate(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -158,12 +148,8 @@ class PaymentsController extends Controller
 
     /**
      * Reset the auto-payment mandate, create a new payment for it.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function mandateReset(Request $request)
+    public function mandateReset(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -241,10 +227,8 @@ class PaymentsController extends Controller
 
     /**
      * Get status of the last payment.
-     *
-     * @return JsonResponse The response
      */
-    public function paymentStatus()
+    public function paymentStatus(): JsonResponse
     {
         $user = $this->guard()->user();
         $wallet = $user->wallets()->first();
@@ -279,12 +263,8 @@ class PaymentsController extends Controller
 
     /**
      * Create a new payment.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -341,10 +321,8 @@ class PaymentsController extends Controller
      * Update payment status (and balance).
      *
      * @param string $provider Provider name
-     *
-     * @return Response The response
      */
-    public function webhook($provider)
+    public function webhook($provider): Response
     {
         $code = 200;
 
@@ -357,12 +335,8 @@ class PaymentsController extends Controller
 
     /**
      * List payment methods.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function paymentMethods(Request $request)
+    public function paymentMethods(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -376,12 +350,8 @@ class PaymentsController extends Controller
 
     /**
      * Check for pending payments.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function hasPayments(Request $request)
+    public function hasPayments(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -405,13 +375,9 @@ class PaymentsController extends Controller
 
     /**
      * List pending payments.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
     #[BodyParameter('page', description: 'List page', type: 'int')]
-    public function payments(Request $request)
+    public function payments(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 

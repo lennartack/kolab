@@ -11,10 +11,8 @@ class SharedFoldersController extends \App\Http\Controllers\API\V4\SharedFolders
 {
     /**
      * Search for shared folders
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));
@@ -48,12 +46,8 @@ class SharedFoldersController extends \App\Http\Controllers\API\V4\SharedFolders
 
     /**
      * Create a new shared folder.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         return $this->errorResponse(404);
     }

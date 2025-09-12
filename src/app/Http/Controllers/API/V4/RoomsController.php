@@ -29,10 +29,8 @@ class RoomsController extends RelationController
      * Delete a room
      *
      * @param string $id Room identifier
-     *
-     * @return JsonResponse The response
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $room = $this->inputRoom($id);
         if (is_int($room)) {
@@ -49,10 +47,8 @@ class RoomsController extends RelationController
 
     /**
      * List rooms.
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -91,10 +87,8 @@ class RoomsController extends RelationController
      * Set the room configuration.
      *
      * @param int|string $id Room identifier (or name)
-     *
-     * @return JsonResponse|void
      */
-    public function setConfig($id)
+    public function setConfig($id): JsonResponse
     {
         $room = $this->inputRoom($id, Permission::ADMIN, $permission);
         if (is_int($room)) {
@@ -124,10 +118,8 @@ class RoomsController extends RelationController
      * Get room information.
      *
      * @param string $id Room identifier
-     *
-     * @return JsonResponse
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $room = $this->inputRoom($id, Permission::READ, $permission);
         if (is_int($room)) {
@@ -169,10 +161,8 @@ class RoomsController extends RelationController
      * Get a list of SKUs available to the room.
      *
      * @param int $id Room identifier
-     *
-     * @return JsonResponse
      */
-    public function skus($id)
+    public function skus($id): JsonResponse
     {
         $room = $this->inputRoom($id);
         if (is_int($room)) {
@@ -186,10 +176,8 @@ class RoomsController extends RelationController
      * Create a new room.
      *
      * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
         $wallet = $user->wallet();
@@ -231,10 +219,8 @@ class RoomsController extends RelationController
      *
      * @param Request $request the API request
      * @param string  $id      Room identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $room = $this->inputRoom($id, Permission::ADMIN);
         if (is_int($room)) {

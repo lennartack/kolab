@@ -7,14 +7,11 @@ use App\Plan;
 use App\Providers\PaymentProvider;
 use App\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * User information response
- *
- * @mixin User
  */
-class UserInfoResource extends JsonResource
+class UserInfoResource extends UserResource
 {
     /** @const array List of user setting keys available for modification in UI */
     public const USER_SETTINGS = [
@@ -43,7 +40,6 @@ class UserInfoResource extends JsonResource
         $settings = $this->resource->settings()->whereIn('key', $keys)->pluck('value', 'key')->all();
 
         // Status info
-        $state = UsersController::objectState($this->resource);
         $statusInfo = UsersController::statusInfo($this->resource);
 
         // Information about wallets and accounts for access checks
@@ -52,37 +48,10 @@ class UserInfoResource extends JsonResource
         $wallet = $this->walletPropsMap($wallet);
 
         return [
-            // User identifier
-            'id' => $this->resource->id,
-            // User email address
-            'email' => $this->resource->email,
-            // User status
-            'status' => $this->resource->status,
-            // User creation date-time
-            'created_at' => (string) $this->resource->created_at,
-            // User deletion date-time
-            'deleted_at' => (string) $this->resource->deleted_at,
+            $this->merge(parent::toArray($request)),
 
-            // @var bool Is user active?
-            'isActive' => $state['isActive'] ?? false,
-            // @var bool Is user deleted?
-            'isDeleted' => $state['isDeleted'] ?? false,
-            // @var bool Is user degraded?
-            'isDegraded' => $state['isDegraded'] ?? false,
-            // @var bool Is account owner degraded?
-            'isAccountDegraded' => $state['isAccountDegraded'] ?? false,
-            // @var bool Readiness state
-            'isReady' => $state['isReady'],
-            // @var bool IMAP readiness state
-            'isImapReady' => $state['isImapReady'] ?? false,
-            // @var bool LDAP readiness state
-            'isLdapReady' => $this->when(isset($state['isLdapReady']), $state['isLdapReady'] ?? false),
             // @var bool Is user locked?
             'isLocked' => $isLocked,
-            // @var bool Is user restricted?
-            'isRestricted' => $state['isRestricted'] ?? false,
-            // @var bool Is user suspended?
-            'isSuspended' => $state['isSuspended'] ?? false,
 
             // @var array<strig, mixed> User settings (first_name, last_name, phone, etc.)
             'settings' => $settings,

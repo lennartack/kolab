@@ -39,10 +39,8 @@ class StatsController extends Controller
      * Fetch chart data
      *
      * @param string $chart Name of the chart
-     *
-     * @return JsonResponse
      */
-    public function chart($chart)
+    public function chart($chart): JsonResponse
     {
         if (!preg_match('/^[a-z-]+$/', $chart)) {
             return $this->errorResponse(404);

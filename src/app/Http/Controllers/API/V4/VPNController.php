@@ -16,12 +16,8 @@ class VPNController extends Controller
 {
     /**
      * Token request from the vpn module
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function token(Request $request)
+    public function token(Request $request): JsonResponse
     {
         $signingKey = \config("app.vpn.token_signing_key");
         if (empty($signingKey)) {

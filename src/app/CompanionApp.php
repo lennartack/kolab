@@ -12,6 +12,14 @@ use Laravel\Passport\Client;
  * The eloquent definition of a CompanionApp.
  *
  * A CompanionApp is an kolab companion app that the user registered
+ *
+ * @property string  $device_id
+ * @property string  $id                 App identifier
+ * @property string  $name               App name
+ * @property ?string $notification_token Firebase notification token
+ * @property bool    $mfa_enabled
+ * @property string  $oauth_client_id    Oauth client identifier
+ * @property int     $user_id            User (owner) identifier
  */
 class CompanionApp extends Model
 {

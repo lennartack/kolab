@@ -38,10 +38,8 @@ class ContentController extends Controller
      * Get the list of FAQ entries for the specified page
      *
      * @param string $page Page path
-     *
-     * @return JsonResponse JSON response
      */
-    public function faqContent(string $page)
+    public function faqContent(string $page): JsonResponse
     {
         if (empty($page)) {
             return $this->errorResponse(404);

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controller;
 
 use App\Domain;
+use App\Enums\ProcessState;
 use App\Http\Controllers\API\V4\SharedFoldersController;
 use App\Jobs\SharedFolder\CreateJob;
 use App\SharedFolder;
@@ -325,7 +326,7 @@ class SharedFoldersTest extends TestCase
         $this->assertFalse($json['isReady']);
         $this->assertFalse($json['isDeleted']);
         $this->assertTrue($json['isActive']);
-        $this->assertSame('running', $json['processState']);
+        $this->assertSame(ProcessState::Running->value, $json['processState']);
         $this->assertTrue(empty($json['status']));
         $this->assertTrue(empty($json['message']));
         $this->assertSame('shared-folder-new', $json['process'][0]['label']);
@@ -362,7 +363,7 @@ class SharedFoldersTest extends TestCase
             $this->assertSame('shared-folder-imap-ready', $json['process'][2]['label']);
             $this->assertTrue($json['process'][2]['state']);
             $this->assertSame('Setup process has been pushed. Please wait.', $json['message']);
-            $this->assertSame('waiting', $json['processState']);
+            $this->assertSame(ProcessState::Waiting->value, $json['processState']);
 
             Queue::assertPushed(CreateJob::class, 1);
         } else {
@@ -370,7 +371,7 @@ class SharedFoldersTest extends TestCase
             $this->assertSame('shared-folder-imap-ready', $json['process'][1]['label']);
             $this->assertTrue($json['process'][1]['state']);
             $this->assertSame('Setup process finished successfully.', $json['message']);
-            $this->assertSame('done', $json['processState']);
+            $this->assertSame(ProcessState::Done->value, $json['processState']);
         }
         $this->assertSame('success', $json['status']);
 
@@ -398,7 +399,7 @@ class SharedFoldersTest extends TestCase
             $this->assertTrue($json['isReady']);
             $this->assertSame('shared-folder-imap-ready', $json['process'][1]['label']);
             $this->assertTrue($json['process'][1]['state']);
-            $this->assertSame('done', $json['processState']);
+            $this->assertSame(ProcessState::Done->value, $json['processState']);
         }
     }
 
@@ -419,7 +420,7 @@ class SharedFoldersTest extends TestCase
         $result = SharedFoldersController::statusInfo($folder);
 
         $this->assertFalse($result['isDone']);
-        $this->assertSame('running', $result['processState']);
+        $this->assertSame(ProcessState::Running, $result['processState']);
         $this->assertSame('shared-folder-new', $result['process'][0]['label']);
         $this->assertTrue($result['process'][0]['state']);
         if (\config('app.with_ldap')) {
@@ -432,7 +433,7 @@ class SharedFoldersTest extends TestCase
 
         $result = SharedFoldersController::statusInfo($folder);
 
-        $this->assertSame('failed', $result['processState']);
+        $this->assertSame(ProcessState::Failed, $result['processState']);
 
         $folder->status |= SharedFolder::STATUS_LDAP_READY | SharedFolder::STATUS_IMAP_READY;
         $folder->save();
@@ -440,7 +441,7 @@ class SharedFoldersTest extends TestCase
         $result = SharedFoldersController::statusInfo($folder);
 
         $this->assertTrue($result['isDone']);
-        $this->assertSame('done', $result['processState']);
+        $this->assertSame(ProcessState::Done, $result['processState']);
         $this->assertSame('shared-folder-new', $result['process'][0]['label']);
         $this->assertTrue($result['process'][0]['state']);
         if (\config('app.with_ldap')) {

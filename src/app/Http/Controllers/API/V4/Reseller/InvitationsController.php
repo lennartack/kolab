@@ -12,10 +12,8 @@ class InvitationsController extends Controller
 {
     /**
      * Show the form for creating a new resource.
-     *
-     * @return JsonResponse
      */
-    public function create()
+    public function create(): JsonResponse
     {
         return $this->errorResponse(404);
     }
@@ -24,10 +22,8 @@ class InvitationsController extends Controller
      * Remove the specified invitation.
      *
      * @param int $id Invitation identifier
-     *
-     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $invitation = SignupInvitation::withSubjectTenantContext()->find($id);
 
@@ -47,20 +43,16 @@ class InvitationsController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param int $id Invitation identifier
-     *
-     * @return JsonResponse
      */
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
         return $this->errorResponse(404);
     }
 
     /**
      * Display a listing of the resource.
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $pageSize = 10;
         $search = request()->input('search');
@@ -104,10 +96,8 @@ class InvitationsController extends Controller
      * Resend the specified invitation.
      *
      * @param int $id Invitation identifier
-     *
-     * @return JsonResponse
      */
-    public function resend($id)
+    public function resend($id): JsonResponse
     {
         $invitation = SignupInvitation::withSubjectTenantContext()->find($id);
 
@@ -130,10 +120,8 @@ class InvitationsController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $errors = [];
         $invitations = [];
@@ -216,10 +204,8 @@ class InvitationsController extends Controller
      * Display the specified resource.
      *
      * @param int $id Invitation identifier
-     *
-     * @return JsonResponse
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
         return $this->errorResponse(404);
     }
@@ -228,10 +214,8 @@ class InvitationsController extends Controller
      * Update the specified resource in storage.
      *
      * @param int $id
-     *
-     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         return $this->errorResponse(404);
     }

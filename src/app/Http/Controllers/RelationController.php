@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProcessState;
 use App\Group;
 use App\Resource;
 use App\SharedFolder;
 use App\User;
 use Carbon\Carbon;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
@@ -31,10 +33,8 @@ class RelationController extends ResourceController
      * Delete a resource.
      *
      * @param string $id Resource identifier
-     *
-     * @return JsonResponse The response
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $resource = $this->model::find($id);
 
@@ -80,10 +80,8 @@ class RelationController extends ResourceController
      * List resources.
      *
      * The resource entitlements billed to the current user wallet(s)
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -236,17 +234,20 @@ class RelationController extends ResourceController
             return $v['state'];
         }));
 
-        $state = $all === $checked ? 'done' : 'running';
+        $state = $all === $checked ? ProcessState::Done : ProcessState::Running;
 
         // After 180 seconds assume the process is in failed state,
         // this should unlock the Refresh button in the UI
         if ($all !== $checked && $object->created_at->diffInSeconds(Carbon::now()) > 180) {
-            $state = 'failed';
+            $state = ProcessState::Failed;
         }
 
         return [
+            // @var array<array{'label': string, 'title': string, 'state': bool, 'link': string}> Process information
             'process' => $process,
+            // @var ProcessState Current process state
             'processState' => $state,
+            // @var bool Indicates that the process ended successfully
             'isDone' => $all === $checked,
         ];
     }
@@ -296,7 +297,7 @@ class RelationController extends ResourceController
             $response['message'] = self::trans('app.process-' . $suffix);
 
             if ($async && !$success) {
-                $response['processState'] = 'waiting';
+                $response['processState'] = ProcessState::Waiting;
                 $response['status'] = 'success';
                 $response['message'] = self::trans('app.process-async');
             }
@@ -309,10 +310,8 @@ class RelationController extends ResourceController
      * Set the resource configuration.
      *
      * @param int $id Resource identifier
-     *
-     * @return JsonResponse
      */
-    public function setConfig($id)
+    public function setConfig($id): JsonResponse
     {
         $resource = $this->model::find($id);
 
@@ -333,7 +332,7 @@ class RelationController extends ResourceController
         $errors = $resource->setConfig(request()->input());
 
         if (!empty($errors)) {
-            return response()->json(['status' => 'error', 'errors' => $errors], 422);
+            return response()->json(['status' => 'error', /* @var array */ 'errors' => $errors], 422);
         }
 
         return response()->json([
@@ -346,8 +345,6 @@ class RelationController extends ResourceController
      * Get resource information
      *
      * @param string $id Resource identifier
-     *
-     * @return JsonResponse
      */
     public function show($id)
     {
@@ -388,10 +385,8 @@ class RelationController extends ResourceController
      * Get a list of SKUs available to the resource.
      *
      * @param int $id Resource identifier
-     *
-     * @return JsonResponse
      */
-    public function skus($id)
+    public function skus($id): JsonResponse
     {
         $resource = $this->model::find($id);
 
@@ -407,13 +402,12 @@ class RelationController extends ResourceController
     }
 
     /**
-     * Fetch resource status (and reload setup process)
+     * Get status (and reload setup process)
      *
      * @param int $id Resource identifier
-     *
-     * @return JsonResponse
      */
-    public function status($id)
+    #[QueryParameter('refresh', description: 'Trigger a refresh (push the process forward)', type: 'bool')]
+    public function status($id): JsonResponse
     {
         $resource = $this->model::find($id);
 

@@ -49,12 +49,8 @@ class SharedFoldersController extends RelationController
 
     /**
      * Create a new shared folder record.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
         $wallet = $current_user->wallet();
@@ -95,10 +91,8 @@ class SharedFoldersController extends RelationController
      *
      * @param Request $request the API request
      * @param string  $id      Shared folder identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $folder = SharedFolder::find($id);
 

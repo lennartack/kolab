@@ -40,13 +40,9 @@ class SignupController extends Controller
     /**
      * List of plans for signup.
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
-    public function plans(Request $request)
+    public function plans(Request $request): JsonResponse
     {
         // Use reverse order just to have individual on left, group on right ;)
         // But prefer monthly on left, yearly on right
@@ -64,13 +60,9 @@ class SignupController extends Controller
     /**
      * List of public domains for signup.
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
-    public function domains(Request $request)
+    public function domains(Request $request): JsonResponse
     {
         return response()->json([
             'status' => 'success',
@@ -84,10 +76,6 @@ class SignupController extends Controller
      *
      * Verifies user name and email, sends verification message. Returns the verification code.
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
     #[BodyParameter('plan', description: 'Plan identifier', type: 'string', required: true)]
@@ -97,7 +85,7 @@ class SignupController extends Controller
     #[BodyParameter('referral', description: 'Referral program code', type: 'string')]
     #[BodyParameter('voucher', description: 'Voucher code', type: 'string')]
     #[BodyParameter('token', description: 'Signup token (required for token-mode signup)', type: 'string')]
-    public function init(Request $request)
+    public function init(Request $request): JsonResponse
     {
         // Don't allow URLs in user names preventing abuse of signup email
         // FIXME: I suppose we could also not use "Dear <user name>" in email
@@ -171,11 +159,9 @@ class SignupController extends Controller
      *
      * @param string $id Signup invitation identifier
      *
-     * @return JsonResponse|void
-     *
      * @unauthenticated
      */
-    public function invitation($id)
+    public function invitation($id): JsonResponse
     {
         $invitation = SignupInvitation::withEnvTenantContext()->find($id);
 
@@ -195,13 +181,11 @@ class SignupController extends Controller
      * @param Request $request HTTP request
      * @param bool    $update  Update the signup code record
      *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
     #[BodyParameter('code', description: 'Verification code', type: 'string', required: true)]
     #[BodyParameter('short_code', description: 'Short code', type: 'string', required: true)]
-    public function verify(Request $request, $update = true)
+    public function verify(Request $request, $update = true): JsonResponse
     {
         // Validate the request args
         $v = Validator::make(
@@ -262,10 +246,6 @@ class SignupController extends Controller
     /**
      * Validates the input to the final signup request.
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
     #[BodyParameter('login', description: 'User login', type: 'string', required: true)]
@@ -277,7 +257,7 @@ class SignupController extends Controller
     #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
     #[BodyParameter('first_name', description: 'First name', type: 'string')]
     #[BodyParameter('last_name', description: 'Last name', type: 'string')]
-    public function signupValidate(Request $request)
+    public function signupValidate(Request $request): JsonResponse
     {
         $rules = [
             'login' => 'required|min:2',
@@ -391,10 +371,6 @@ class SignupController extends Controller
      *
      * On success creates a new account and returns authentication token(s) and user information.
      *
-     * @param Request $request HTTP request
-     *
-     * @return JsonResponse JSON response
-     *
      * @unauthenticated
      */
     #[BodyParameter('login', description: 'User login', type: 'string', required: true)]
@@ -406,7 +382,7 @@ class SignupController extends Controller
     #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
     #[BodyParameter('first_name', description: 'First name', type: 'string')]
     #[BodyParameter('last_name', description: 'Last name', type: 'string')]
-    public function signup(Request $request)
+    public function signup(Request $request): JsonResponse
     {
         $v = $this->signupValidate($request);
         if ($v->status() !== 200) {
@@ -620,9 +596,9 @@ class SignupController extends Controller
      *
      * @param Request $request HTTP request
      *
-     * @returns \App\Plan Plan object selected for current signup process
+     * @returns ?Plan Plan object selected for current signup process
      */
-    protected function getPlan(Request $request)
+    protected function getPlan(Request $request): ?Plan
     {
         if (!$request->plan instanceof Plan) {
             $plan = null;

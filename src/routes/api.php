@@ -47,8 +47,7 @@ Route::group(
 
 Route::group(
     [
-        'domain' => \config('app.website_domain'),
-        'middleware' => ['auth:api', 'scope:mfa,api'],
+        'middleware' => ['regularHosts', 'auth:api', 'scope:mfa,api'],
         'prefix' => 'v4',
     ],
     static function () {

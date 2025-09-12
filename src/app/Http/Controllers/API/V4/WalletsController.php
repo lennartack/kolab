@@ -96,11 +96,9 @@ class WalletsController extends ResourceController
      * List receipts.
      *
      * @param string $id Wallet identifier
-     *
-     * @return JsonResponse
      */
     #[QueryParameter('page', description: 'List page', type: 'int')]
-    public function receipts($id)
+    public function receipts($id): JsonResponse
     {
         $wallet = Wallet::find($id);
 
@@ -160,10 +158,8 @@ class WalletsController extends ResourceController
      * List active referral programs.
      *
      * @param string $id Wallet identifier
-     *
-     * @return JsonResponse
      */
-    public function referralPrograms($id)
+    public function referralPrograms($id): JsonResponse
     {
         $wallet = Wallet::find($id);
 
@@ -223,12 +219,10 @@ class WalletsController extends ResourceController
      * List transactions.
      *
      * @param string $id Wallet identifier
-     *
-     * @return JsonResponse
      */
     #[QueryParameter('page', description: 'List page', type: 'int')]
     #[QueryParameter('transaction', description: 'Parent  transaction', type: 'string')]
-    public function transactions($id)
+    public function transactions($id): JsonResponse
     {
         $wallet = Wallet::find($id);
 

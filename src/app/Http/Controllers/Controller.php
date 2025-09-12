@@ -23,10 +23,8 @@ class Controller extends BaseController
      * @param int    $code    Error code
      * @param string $message Error message
      * @param array  $data    Additional response data
-     *
-     * @return JsonResponse
      */
-    public static function errorResponse(int $code, string $message = '', array $data = [])
+    public static function errorResponse(int $code, string $message = '', array $data = []): JsonResponse
     {
         $errors = [
             400 => "Bad request",

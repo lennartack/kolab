@@ -114,12 +114,8 @@ class NGINXController extends Controller
 
     /**
      * Authentication request from the ngx_http_auth_request_module
-     *
-     * @param Request $request the API request
-     *
-     * @return Response The response
      */
-    public function httpauth(Request $request)
+    public function httpauth(Request $request): Response
     {
         /*
          * Php-Auth-Pw:               simple123
@@ -163,12 +159,8 @@ class NGINXController extends Controller
 
     /**
      * Authentication request from the cyrus sasl
-     *
-     * @param Request $request the API request
-     *
-     * @return Response The response
      */
-    public function cyrussasl(Request $request)
+    public function cyrussasl(Request $request): Response
     {
         $data = $request->getContent();
 
@@ -203,12 +195,8 @@ class NGINXController extends Controller
      *
      * @todo: Separate IMAP(+STARTTLS) from IMAPS, same for SMTP/submission. =>
      *   I suppose that's not necessary given that we have the information avialable in the headers?
-     *
-     * @param Request $request the API request
-     *
-     * @return Response The response
      */
-    public function authenticate(Request $request)
+    public function authenticate(Request $request): Response
     {
         /*
          *  Auth-Login-Attempt: 1
@@ -251,12 +239,8 @@ class NGINXController extends Controller
 
     /**
      * Authentication request for roundcube imap.
-     *
-     * @param Request $request the API request
-     *
-     * @return Response The response
      */
-    public function authenticateRoundcube(Request $request)
+    public function authenticateRoundcube(Request $request): Response
     {
         /*
          *  Auth-Login-Attempt: 1
@@ -301,10 +285,8 @@ class NGINXController extends Controller
      * @param Request $request  the API request
      * @param bool    $prefGuam whether or not Guam is enabled
      * @param string  $password the password to include in the response
-     *
-     * @return Response The response
      */
-    private function authenticateIMAP(Request $request, $prefGuam, $password)
+    private function authenticateIMAP(Request $request, $prefGuam, $password): Response
     {
         if ($prefGuam) {
             $port = \config('services.imap.guam_port');
@@ -329,10 +311,8 @@ class NGINXController extends Controller
      *
      * @param Request $request  the API request
      * @param string  $password the password to include in the response
-     *
-     * @return Response The response
      */
-    private function authenticateSMTP(Request $request, $password)
+    private function authenticateSMTP(Request $request, $password): Response
     {
         $response = response('')->withHeaders(
             [
@@ -351,10 +331,8 @@ class NGINXController extends Controller
      *
      * @param Request $request the API request
      * @param string  $reason  the reason for the failure
-     *
-     * @return Response The response
      */
-    private function byebye(Request $request, $reason = null)
+    private function byebye(Request $request, $reason = null): Response
     {
         \Log::debug("Byebye: {$reason}");
 

@@ -553,7 +553,7 @@ class UserTest extends TestCaseDusk
             $browser->with(new Dropdown('h1 div.dropdown'), static function (Browser $browser) {
                 $browser->assertButton('Actions', 'btn-outline-primary')
                     ->clickDropdownItem('#button-unsuspend', 'Unsuspend');
-                })
+            })
                 ->with(new Dialog('#suspend-dialog'), static function (Browser $browser) {
                     $browser->assertSeeIn('@title', 'Unsuspend')
                         ->assertSeeIn('@button-cancel', 'Cancel')

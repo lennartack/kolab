@@ -8,8 +8,8 @@ use App\Group;
 use App\Http\Controllers\API\V4\User\DelegationTrait;
 use App\Http\Controllers\RelationController;
 use App\Http\Resources\UserInfoExtendedResource;
+use App\Http\Resources\UserResource;
 use App\Jobs\User\CreateJob;
-use App\License;
 use App\Package;
 use App\Resource;
 use App\Rules\Password;
@@ -18,6 +18,8 @@ use App\SharedFolder;
 use App\Sku;
 use App\User;
 use App\VerificationCode;
+use Dedoc\Scramble\Attributes\BodyParameter;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,11 +55,12 @@ class UsersController extends RelationController
     /**
      * Listing of users.
      *
-     * The user-entitlements billed to the current user wallet(s)
-     *
-     * @return JsonResponse
+     * The list includes users billed to the current user wallet(s). It returns
+     * one page at a time. The page size is 20.
      */
-    public function index()
+    #[QueryParameter('search', description: 'Search string', type: 'string')]
+    #[QueryParameter('page', description: 'Page number', type: 'int', default: 1)]
+    public function index(): JsonResponse
     {
         $user = $this->guard()->user();
         $search = trim(request()->input('search'));
@@ -95,79 +98,16 @@ class UsersController extends RelationController
             $hasMore = true;
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($user) {
-                return $this->objectToClient($user);
-            }
-        );
-
         $result = [
-            'list' => $result,
-            // @var int
+            // List of users
+            'list' => UserResource::collection($result),
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var bool Indicates that there are more entries available
             'hasMore' => $hasMore,
         ];
 
         return response()->json($result);
-    }
-
-    /**
-     * Get a license information.
-     *
-     * @param string $id   The account to get licenses for
-     * @param string $type License type
-     *
-     * @return JsonResponse The response
-     */
-    public function licenses(string $id, string $type)
-    {
-        $user = User::find($id);
-
-        if (!$this->checkTenant($user)) {
-            return $this->errorResponse(404);
-        }
-
-        if (!$this->guard()->user()->canRead($user)) {
-            return $this->errorResponse(403);
-        }
-
-        $licenses = $user->licenses()->where('type', $type)->orderBy('created_at')->get();
-
-        // No licenses for the user, take one if available
-        if (!count($licenses)) {
-            DB::beginTransaction();
-
-            $license = License::withObjectTenantContext($user)
-                ->where('type', $type)
-                ->whereNull('user_id')
-                ->limit(1)
-                ->lockForUpdate()
-                ->first();
-
-            if ($license) {
-                $license->user_id = $user->id;
-                $license->save();
-
-                $licenses = \collect([$license]);
-            }
-
-            DB::commit();
-        }
-
-        // Slim down the result set
-        $licenses = $licenses->map(static function ($license) {
-            return [
-                'key' => $license->key,
-                'type' => $license->type,
-            ];
-        });
-
-        return response()->json([
-            'list' => $licenses,
-            'count' => count($licenses),
-            'hasMore' => false, // TODO
-        ]);
     }
 
     /**
@@ -177,10 +117,8 @@ class UsersController extends RelationController
      * @param ServerRequestInterface $psrRequest PSR request
      * @param Request                $request    The API request
      * @param AuthorizationServer    $server     Authorization server
-     *
-     * @return JsonResponse
      */
-    public function loginAs($id, ServerRequestInterface $psrRequest, Request $request, AuthorizationServer $server)
+    public function loginAs($id, ServerRequestInterface $psrRequest, Request $request, AuthorizationServer $server): JsonResponse
     {
         if (!\config('app.with_loginas')) {
             return $this->errorResponse(404);
@@ -207,8 +145,6 @@ class UsersController extends RelationController
      * User information.
      *
      * @param string $id The user identifier
-     *
-     * @return JsonResponse
      */
     public function show($id)
     {
@@ -222,9 +158,7 @@ class UsersController extends RelationController
             return $this->errorResponse(403);
         }
 
-        $response = new UserInfoExtendedResource($user);
-
-        return $response->response();
+        return new UserInfoExtendedResource($user);
     }
 
     /**
@@ -285,13 +219,23 @@ class UsersController extends RelationController
     }
 
     /**
-     * Create a new user record.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
+     * Create a new user.
      */
-    public function store(Request $request)
+    #[BodyParameter('email', description: 'Email address', type: 'string', required: true)]
+    #[BodyParameter('package', description: 'SKU package identifier', type: 'string', required: true)]
+    #[BodyParameter('external_email', description: 'External email address', type: 'string')]
+    #[BodyParameter('phone', description: 'Phone number', type: 'string')]
+    #[BodyParameter('first_name', description: 'First name', type: 'string')]
+    #[BodyParameter('last_name', description: 'Last name', type: 'string')]
+    #[BodyParameter('organization', description: 'Organization name', type: 'string')]
+    #[BodyParameter('billing_address', description: 'Billing address', type: 'string')]
+    #[BodyParameter('country', description: 'Country code', type: 'string')]
+    #[BodyParameter('currency', description: 'Currency code', type: 'string')]
+    #[BodyParameter('password', description: 'New password', type: 'string')]
+    #[BodyParameter('password_confirmation', description: 'New password confirmation', type: 'string')]
+    #[BodyParameter('passwordLinkCode', description: 'Code for a by-link password reset', type: 'string')]
+    #[BodyParameter('aliases', description: 'Email address aliases', type: 'array<string>')]
+    public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
         $wallet = $current_user->wallet();
@@ -302,8 +246,8 @@ class UsersController extends RelationController
 
         $this->deleteBeforeCreate = null;
 
-        if ($error_response = $this->validateUserRequest($request, null, $settings)) {
-            return $error_response;
+        if ($errors = $this->validateUserRequest($request, null, $settings)) {
+            return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 
         if (
@@ -358,10 +302,21 @@ class UsersController extends RelationController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    #[BodyParameter('external_email', description: 'External email address', type: 'string')]
+    #[BodyParameter('phone', description: 'Phone number', type: 'string')]
+    #[BodyParameter('first_name', description: 'First name', type: 'string')]
+    #[BodyParameter('last_name', description: 'Last name', type: 'string')]
+    #[BodyParameter('organization', description: 'Organization name', type: 'string')]
+    #[BodyParameter('billing_address', description: 'Billing address', type: 'string')]
+    #[BodyParameter('country', description: 'Country code', type: 'string')]
+    #[BodyParameter('currency', description: 'Currency code', type: 'string')]
+    #[BodyParameter('password', description: 'New password', type: 'string')]
+    #[BodyParameter('password_confirmation', description: 'New password confirmation', type: 'string')]
+    #[BodyParameter('passwordLinkCode', description: 'Code for a by-link password reset', type: 'string')]
+    #[BodyParameter('skus', description: 'Enabled SKUs', type: 'array')]
+    #[BodyParameter('aliases', description: 'Email address aliases', type: 'array<string>')]
+    public function update(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -379,8 +334,8 @@ class UsersController extends RelationController
             return $this->errorResponse(403);
         }
 
-        if ($error_response = $this->validateUserRequest($request, $user, $settings)) {
-            return $error_response;
+        if ($errors = $this->validateUserRequest($request, $user, $settings)) {
+            return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 
         DB::beginTransaction();
@@ -407,6 +362,8 @@ class UsersController extends RelationController
         $response = [
             'status' => 'success',
             'message' => self::trans('app.user-update-success'),
+            // @var array Extended status/permissions information
+            'statusInfo' => null,
         ];
 
         // For self-update refresh the statusInfo in the UI
@@ -418,31 +375,15 @@ class UsersController extends RelationController
     }
 
     /**
-     * Prepare user statuses for the UI
-     *
-     * @param User $user User object
-     *
-     * @return array Statuses array
-     */
-    public static function objectState($user): array
-    {
-        $state = parent::objectState($user);
-
-        $state['isAccountDegraded'] = $user->isDegraded(true);
-
-        return $state;
-    }
-
-    /**
      * Validate user input
      *
      * @param Request   $request  the API request
      * @param User|null $user     User identifier
      * @param array     $settings User settings (from the request)
      *
-     * @return JsonResponse|null The error response on error
+     * @return array|null The error response on error
      */
-    protected function validateUserRequest(Request $request, $user, &$settings = [])
+    protected function validateUserRequest(Request $request, $user, &$settings = []): ?array
     {
         $rules = [
             'external_email' => 'nullable|email',
@@ -534,7 +475,7 @@ class UsersController extends RelationController
         }
 
         if (!empty($errors)) {
-            return response()->json(['status' => 'error', 'errors' => $errors], 422);
+            return $errors;
         }
 
         // Update user settings

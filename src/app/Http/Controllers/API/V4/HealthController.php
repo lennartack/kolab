@@ -9,10 +9,8 @@ class HealthController extends Controller
 {
     /**
      * Liveness probe
-     *
-     * @return JsonResponse The response
      */
-    public function liveness()
+    public function liveness(): JsonResponse
     {
         $response = response()->json('success', 200);
         $response->noLogging = true; // @phpstan-ignore-line
@@ -21,10 +19,8 @@ class HealthController extends Controller
 
     /**
      * Readiness probe
-     *
-     * @return JsonResponse The response
      */
-    public function readiness()
+    public function readiness(): JsonResponse
     {
         $response = response()->json('success', 200);
         $response->noLogging = true; // @phpstan-ignore-line

@@ -48,10 +48,8 @@ class ResourcesController extends RelationController
      * Create a new resource.
      *
      * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
         $wallet = $current_user->wallet();
@@ -62,9 +60,13 @@ class ResourcesController extends RelationController
 
         $domain = request()->input('domain');
 
-        $rules = ['name' => ['required', 'string', new ResourceName($wallet->owner, $domain)]];
-
-        $v = Validator::make($request->all(), $rules);
+        $v = Validator::make(
+            $request->all(),
+            [
+                // Resource name
+                'name' => ['required', 'string', new ResourceName($wallet->owner, $domain)],
+            ]
+        );
 
         if ($v->fails()) {
             return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
@@ -93,10 +95,8 @@ class ResourcesController extends RelationController
      *
      * @param Request $request the API request
      * @param string  $id      Resource identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $resource = Resource::find($id);
 

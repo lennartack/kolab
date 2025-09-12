@@ -4,20 +4,20 @@ namespace App\Http\Controllers\API\V4;
 
 use App\AuthAttempt;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AuthAttemptResource;
 use App\Utils;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthAttemptsController extends Controller
 {
     /**
-     * Confirm the authentication attempt.
+     * Confirm an authentication attempt.
      *
-     * @param string $id Id of AuthAttempt attempt
-     *
-     * @return JsonResponse
+     * @param string $id Authentication attempt identifier
      */
-    public function confirm($id)
+    public function confirm($id): JsonResponse
     {
         $authAttempt = AuthAttempt::find($id);
         if (!$authAttempt) {
@@ -31,17 +31,16 @@ class AuthAttemptsController extends Controller
 
         \Log::debug("Confirm on {$authAttempt->id}");
         $authAttempt->accept();
+
         return response()->json([], 200);
     }
 
     /**
-     * Deny the authentication attempt.
+     * Deny an authentication attempt.
      *
-     * @param string $id Id of AuthAttempt attempt
-     *
-     * @return JsonResponse
+     * @param string $id Authentication attempt identifier
      */
-    public function deny($id)
+    public function deny($id): JsonResponse
     {
         $authAttempt = AuthAttempt::find($id);
         if (!$authAttempt) {
@@ -55,17 +54,16 @@ class AuthAttemptsController extends Controller
 
         \Log::debug("Deny on {$authAttempt->id}");
         $authAttempt->deny();
+
         return response()->json([], 200);
     }
 
     /**
-     * Return details of authentication attempt.
+     * Authentication attempt information.
      *
-     * @param string $id Id of AuthAttempt attempt
-     *
-     * @return JsonResponse
+     * @param string $id Authentication attempt identifier
      */
-    public function details($id)
+    public function details($id): JsonResponse
     {
         $authAttempt = AuthAttempt::find($id);
         if (!$authAttempt) {
@@ -79,20 +77,23 @@ class AuthAttemptsController extends Controller
 
         return response()->json([
             'status' => 'success',
+            // User email address
             'username' => $user->email,
+            // Country code (from the IP address of the authentication attempt)
             'country' => Utils::countryForIP($authAttempt->ip),
-            'entry' => $authAttempt->toArray(),
+            // Authentication attempt information
+            'entry' => new AuthAttemptResource($authAttempt),
         ]);
     }
 
     /**
-     * Listing of client authAttempts.
+     * List of authentication attempts.
      *
-     * All authAttempt attempts from the current user
-     *
-     * @return JsonResponse
+     * All authentication attempts from the current user clients.
+     * The list page contains up to 10 entries.
      */
-    public function index(Request $request)
+    #[QueryParameter('page', description: 'Page number', type: 'int', default: 1)]
+    public function index(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -111,10 +112,8 @@ class AuthAttemptsController extends Controller
             $hasMore = true;
         }
 
-        $result = $result->map(static function ($authAttempt) {
-            return $authAttempt->toArray();
-        });
+        // TODO: Change the response format to include 'list', 'count', 'hasMore' properties.
 
-        return response()->json($result);
+        return response()->json(AuthAttemptResource::collection($result));
     }
 }

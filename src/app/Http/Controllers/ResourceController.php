@@ -62,8 +62,6 @@ class ResourceController extends Controller
      * Display information of a resource specified by $id.
      *
      * @param string $id the resource to show information for
-     *
-     * @return JsonResponse
      */
     #[ExcludeRouteFromDocs]
     public function show($id)

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controller;
 
 use App\Domain;
+use App\Enums\ProcessState;
 use App\Group;
 use App\Http\Controllers\API\V4\GroupsController;
 use App\User;
@@ -405,7 +406,7 @@ class GroupsTest extends TestCase
             $this->assertSame('running', $result['processState']);
         } else {
             $this->assertTrue($result['isDone']);
-            $this->assertSame('done', $result['processState']);
+            $this->assertSame(ProcessState::Done, $result['processState']);
             $this->markTestSkipped();
         }
 
@@ -414,7 +415,7 @@ class GroupsTest extends TestCase
 
         $result = GroupsController::statusInfo($group);
 
-        $this->assertSame('failed', $result['processState']);
+        $this->assertSame(ProcessState::Failed, $result['processState']);
 
         $group->status |= Group::STATUS_LDAP_READY;
         $group->save();
@@ -427,7 +428,7 @@ class GroupsTest extends TestCase
         $this->assertTrue($result['process'][0]['state']);
         $this->assertSame('distlist-ldap-ready', $result['process'][1]['label']);
         $this->assertTrue($result['process'][2]['state']);
-        $this->assertSame('done', $result['processState']);
+        $this->assertSame(ProcessState::Done, $result['processState']);
     }
 
     /**

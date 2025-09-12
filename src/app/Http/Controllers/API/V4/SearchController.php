@@ -20,8 +20,6 @@ class SearchController extends Controller
 {
     /**
      * Find user's contacts
-     *
-     * @param Request $request the API request
      */
     #[QueryParameter('search', description: 'Search string', type: 'string', required: true)]
     #[QueryParameter('limit', description: 'Records limit', type: 'int', default: 15)]
@@ -72,15 +70,11 @@ class SearchController extends Controller
 
     /**
      * Find user's email addresses
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
     #[QueryParameter('search', description: 'Search string', type: 'string', required: true)]
     #[QueryParameter('limit', description: 'Records limit', type: 'int', default: 15)]
     #[QueryParameter('alias', description: 'Include aliases', type: 'bool')]
-    public function searchSelf(Request $request)
+    public function searchSelf(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
         $search = trim($request->input('search'));
@@ -122,15 +116,11 @@ class SearchController extends Controller
 
     /**
      * Find email addresses of all users (in an account)
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
     #[QueryParameter('search', description: 'Search string', type: 'string', required: true)]
     #[QueryParameter('limit', description: 'Records limit', type: 'int', default: 15)]
     #[QueryParameter('alias', description: 'Include aliases', type: 'bool')]
-    public function searchUser(Request $request)
+    public function searchUser(Request $request): JsonResponse
     {
         if (!\config('app.with_user_search')) {
             return $this->errorResponse(404);

@@ -13,10 +13,8 @@ class ConfigController extends Controller
 
     /**
      * Get the per-user webmail configuration.
-     *
-     * @return JsonResponse The response
      */
-    public function webmail(Request $request)
+    public function webmail(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
 
@@ -25,7 +23,10 @@ class ConfigController extends Controller
         }
 
         $config = [
+            // @var array<string> Webmail configuration overlays
             'kolab-configuration-overlays' => [],
+            // @var string|null Debug mode
+            'debug' => null,
         ];
 
         $skus = $user->skuTitles();
@@ -52,6 +53,11 @@ class ConfigController extends Controller
             }
         }
 
+        // TODO: Per-domain configuration, e.g. skin/logo
+        // $config['skin'] = 'apostrophy';
+        // $config['skin_logo'] = 'data:image/svg+xml;base64,'
+        //    . base64_encode(file_get_contents(storage_path('logo.svg')));
+
         if ($debug_setting = $user->settings()->where('key', 'debug')->first()) {
             /** @var UserSetting $debug_setting */
             // Make sure the setting didn't expire
@@ -61,11 +67,6 @@ class ConfigController extends Controller
                 $config['debug'] = $debug_setting->value;
             }
         }
-
-        // TODO: Per-domain configuration, e.g. skin/logo
-        // $config['skin'] = 'apostrophy';
-        // $config['skin_logo'] = 'data:image/svg+xml;base64,'
-        //    . base64_encode(file_get_contents(storage_path('logo.svg')));
 
         return response()->json($config);
     }

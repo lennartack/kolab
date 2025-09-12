@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V4\Reseller;
 
 use App\Domain;
 use App\Group;
+use App\Http\Resources\UserResource;
 use App\Resource;
 use App\SharedFolder;
 use App\SharedFolderAlias;
@@ -16,10 +17,8 @@ class UsersController extends \App\Http\Controllers\API\V4\Admin\UsersController
 {
     /**
      * Searching of user accounts.
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));
@@ -105,16 +104,12 @@ class UsersController extends \App\Http\Controllers\API\V4\Admin\UsersController
             }
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($user) {
-                return $this->objectToClient($user, true);
-            }
-        );
-
         $result = [
-            'list' => $result,
+            // List of users
+            'list' => UserResource::collection($result),
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var string Response message
             'message' => self::trans('app.search-foundxusers', ['x' => count($result)]),
         ];
 

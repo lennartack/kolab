@@ -4,6 +4,7 @@ namespace Tests\Feature\Controller;
 
 use App\Discount;
 use App\Domain;
+use App\Enums\ProcessState;
 use App\Http\Controllers\API\V4\UsersController;
 use App\Http\Resources\UserInfoResource;
 use App\Jobs\User\CreateJob;
@@ -599,7 +600,7 @@ class UsersTest extends TestCase
         }
         $this->assertSame('user-new', $result['process'][0]['label']);
         $this->assertTrue($result['process'][0]['state']);
-        $this->assertSame('running', $result['processState']);
+        $this->assertSame(ProcessState::Running, $result['processState']);
         $this->assertTrue($result['enableRooms']);
         $this->assertFalse($result['enableBeta']);
 
@@ -608,7 +609,7 @@ class UsersTest extends TestCase
 
         $result = UsersController::statusInfo($user);
 
-        $this->assertSame('failed', $result['processState']);
+        $this->assertSame(ProcessState::Failed, $result['processState']);
 
         $user->status |= User::STATUS_LDAP_READY | User::STATUS_IMAP_READY;
         $user->save();
@@ -616,7 +617,7 @@ class UsersTest extends TestCase
         $result = UsersController::statusInfo($user);
 
         $this->assertTrue($result['isDone']);
-        $this->assertSame('done', $result['processState']);
+        $this->assertSame(ProcessState::Done, $result['processState']);
         if (\config('app.with_ldap')) {
             $this->assertCount(3, $result['process']);
             $this->assertSame('user-ldap-ready', $result['process'][1]['label']);
@@ -1427,7 +1428,7 @@ class UsersTest extends TestCase
         $wallet->setSettings(['mollie_id' => null, 'stripe_id' => null]);
         $wallet->owner->setSettings(['plan_id' => null]);
 
-        $result = (new UserInfoResource($john))->toArray(\request());
+        $result = (array) (new UserInfoResource($john))->response()->getData(true);
 
         $this->assertSame($john->id, $result['id']);
         $this->assertSame($john->email, $result['email']);
@@ -1463,7 +1464,7 @@ class UsersTest extends TestCase
         $ned = $this->getTestUser('ned@kolab.org');
         $ned_wallet = $ned->wallets()->first();
 
-        $result = (new UserInfoResource($ned))->toArray(\request());
+        $result = (array) (new UserInfoResource($ned))->response()->getData(true);
 
         $this->assertSame($ned->id, $result['id']);
         $this->assertSame($ned->email, $result['email']);
@@ -1495,7 +1496,7 @@ class UsersTest extends TestCase
         $wallet->setSetting($mod_provider . '_id', 123);
         $john->refresh();
 
-        $result = (new UserInfoResource($john))->toArray(\request());
+        $result = (array) (new UserInfoResource($john))->response()->getData(true);
 
         $this->assertSame($john->id, $result['id']);
         $this->assertSame($discount->id, $result['wallet']['discount_id']);
@@ -1513,7 +1514,7 @@ class UsersTest extends TestCase
         $jack->status |= User::STATUS_ACTIVE;
         $jack->save();
 
-        $result = (new UserInfoResource($jack))->toArray(\request());
+        $result = (array) (new UserInfoResource($jack))->response()->getData(true);
 
         $this->assertFalse($result['statusInfo']['enableDomains']);
         $this->assertFalse($result['statusInfo']['enableWallets']);
@@ -1529,7 +1530,7 @@ class UsersTest extends TestCase
         $john->status &= ~User::STATUS_ACTIVE;
         $john->save();
 
-        $result = (new UserInfoResource($john))->toArray(\request());
+        $result = (array) (new UserInfoResource($john))->response()->getData(true);
 
         $this->assertTrue($result['isLocked']);
     }

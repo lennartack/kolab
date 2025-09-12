@@ -16,10 +16,8 @@ class MeetController extends Controller
      * joins (and effectively creates the session).
      *
      * @param string $id Room identifier (name)
-     *
-     * @return JsonResponse
      */
-    public function joinRoom($id)
+    public function joinRoom($id): JsonResponse
     {
         $room = Room::where('name', $id)->first();
 
@@ -145,12 +143,8 @@ class MeetController extends Controller
 
     /**
      * Webhook as triggered from the Meet server
-     *
-     * @param Request $request the API request
-     *
-     * @return Response The response
      */
-    public function webhook(Request $request)
+    public function webhook(Request $request): Response
     {
         \Log::debug($request->getContent());
 

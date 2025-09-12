@@ -7,6 +7,7 @@ use App\Http\Controllers\RelationController;
 use App\Jobs\Domain\CreateJob;
 use App\Package;
 use App\Rules\UserEmailDomain;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,13 +31,11 @@ class DomainsController extends RelationController
     protected $relationArgs = [true, false];
 
     /**
-     * Confirm ownership of the specified domain (via DNS check).
+     * Confirm domain ownership (via DNS check).
      *
      * @param int $id Domain identifier
-     *
-     * @return JsonResponse|void
      */
-    public function confirm($id)
+    public function confirm($id): JsonResponse
     {
         $domain = Domain::find($id);
 
@@ -63,13 +62,11 @@ class DomainsController extends RelationController
     }
 
     /**
-     * Remove the specified domain.
+     * Delete a domain.
      *
      * @param string $id Domain identifier
-     *
-     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $domain = Domain::find($id);
 
@@ -97,10 +94,9 @@ class DomainsController extends RelationController
 
     /**
      * Create a domain.
-     *
-     * @return JsonResponse
      */
-    public function store(Request $request)
+    #[BodyParameter('package', description: 'SKU package identifier', type: 'string', required: true)]
+    public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
         $wallet = $current_user->wallet();
@@ -113,6 +109,7 @@ class DomainsController extends RelationController
         $v = Validator::make(
             $request->all(),
             [
+                // Domain namespace
                 'namespace' => ['required', 'string', new UserEmailDomain()],
             ]
         );
@@ -172,13 +169,11 @@ class DomainsController extends RelationController
     }
 
     /**
-     * Get the information about the specified domain.
+     * Domain information.
      *
      * @param string $id Domain identifier
-     *
-     * @return JsonResponse|void
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $domain = Domain::find($id);
 

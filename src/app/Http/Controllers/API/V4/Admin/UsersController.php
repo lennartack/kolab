@@ -6,6 +6,7 @@ use App\Domain;
 use App\Entitlement;
 use App\EventLog;
 use App\Group;
+use App\Http\Resources\UserResource;
 use App\Payment;
 use App\Resource;
 use App\SharedFolder;
@@ -26,20 +27,16 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      * Delete a user.
      *
      * @param string $id User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         return $this->errorResponse(404);
     }
 
     /**
      * Searching of user accounts.
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));
@@ -147,16 +144,12 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
             }
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($user) {
-                return $this->objectToClient($user, true);
-            }
-        );
-
         $result = [
-            'list' => $result,
+            // List of users
+            'list' => UserResource::collection($result),
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var string Response message
             'message' => self::trans('app.search-foundxusers', ['x' => count($result)]),
         ];
 
@@ -168,10 +161,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function reset2FA(Request $request, $id)
+    public function reset2FA(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -202,10 +193,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function resetGeoLock(Request $request, $id)
+    public function resetGeoLock(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -230,10 +219,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function resync(Request $request, $id)
+    public function resync(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -261,10 +248,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      * @param Request $request the API request
      * @param string  $id      User identifier
      * @param string  $sku     SKU title
-     *
-     * @return JsonResponse The response
      */
-    public function setSku(Request $request, $id, $sku)
+    public function setSku(Request $request, $id, $sku): JsonResponse
     {
         // For now we allow adding the 'beta' SKU only
         if ($sku != 'beta') {
@@ -309,12 +294,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
 
     /**
      * Create a new user record.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         return $this->errorResponse(404);
     }
@@ -324,10 +305,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function suspend(Request $request, $id)
+    public function suspend(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -360,10 +339,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function unsuspend(Request $request, $id)
+    public function unsuspend(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -396,10 +373,8 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      *
      * @param Request $request the API request
      * @param string  $id      User identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -447,15 +422,17 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
      * Inspect what kolab4 sees from the request.
      *
      * Useful for testing proxy settings and making sure the X-Forwarded-For Header is picked up.
-     *
-     * @return JsonResponse The response
      */
-    public function inspectRequest(Request $request)
+    public function inspectRequest(Request $request): JsonResponse
     {
         return response()->json([
+            // Client IP address
             'ip' => $request->ip(),
+            // Client IP addresses
             'clientIps' => $request->getClientIps(),
+            // @var bool
             'isFromTrustedProxy' => $request->isFromTrustedProxy(),
+            // @var array Request headers
             'headers' => $request->headers->all(),
         ]);
     }

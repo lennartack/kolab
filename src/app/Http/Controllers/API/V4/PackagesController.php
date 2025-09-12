@@ -10,10 +10,8 @@ class PackagesController extends ResourceController
 {
     /**
      * Display a listing of packages.
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         // TODO: Packages should have an 'active' flag too, I guess
         $response = [];

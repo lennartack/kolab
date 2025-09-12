@@ -37,10 +37,8 @@ class WalletsController extends \App\Http\Controllers\API\V4\WalletsController
      *
      * @param Request $request the API request
      * @param string  $id      Wallet identifier
-     *
-     * @return JsonResponse The response
      */
-    public function oneOff(Request $request, $id)
+    public function oneOff(Request $request, $id): JsonResponse
     {
         $wallet = Wallet::find($id);
         $user = $this->guard()->user();
@@ -79,13 +77,12 @@ class WalletsController extends \App\Http\Controllers\API\V4\WalletsController
 
         DB::commit();
 
-        $response = [
+        return response()->json([
             'status' => 'success',
             'message' => self::trans("app.wallet-{$method}-success"),
+            // @var int Wallet balance (in cents)
             'balance' => $wallet->balance,
-        ];
-
-        return response()->json($response);
+        ]);
     }
 
     /**
@@ -93,10 +90,8 @@ class WalletsController extends \App\Http\Controllers\API\V4\WalletsController
      *
      * @param Request $request the API request
      * @param string  $id      Wallet identifier
-     *
-     * @return JsonResponse The response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $wallet = Wallet::find($id);
 

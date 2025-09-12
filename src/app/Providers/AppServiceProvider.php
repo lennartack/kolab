@@ -162,6 +162,9 @@ class AppServiceProvider extends ServiceProvider
             // For Scramble (API documentation) we replace external js/css resources with locally stored
             if (str_starts_with(\request()->path(), 'docs/api')) {
                 if (preg_match_all('~(src|href)="(https://unpkg.com/[^"]+)~', $str, $matches)) {
+                    if (!file_exists(\public_path('vendor'))) {
+                        mkdir(\public_path('vendor'));
+                    }
                     if (!file_exists(\public_path('vendor/scramble'))) {
                         mkdir(\public_path('vendor/scramble'));
                     }

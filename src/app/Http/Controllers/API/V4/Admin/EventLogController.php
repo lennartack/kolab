@@ -15,10 +15,8 @@ class EventLogController extends Controller
      * @param Request $request     HTTP Request
      * @param string  $object_type Object type
      * @param string  $object_id   Object id
-     *
-     * @return JsonResponse
      */
-    public function index(Request $request, string $object_type, string $object_id)
+    public function index(Request $request, string $object_type, string $object_id): JsonResponse
     {
         $object_type = "App\\" . ucfirst($object_type);
 

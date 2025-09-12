@@ -11,10 +11,8 @@ class ResourcesController extends \App\Http\Controllers\API\V4\ResourcesControll
 {
     /**
      * Search for resources
-     *
-     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
         $owner = trim(request()->input('owner'));
@@ -48,12 +46,8 @@ class ResourcesController extends \App\Http\Controllers\API\V4\ResourcesControll
 
     /**
      * Create a new resource.
-     *
-     * @param Request $request the API request
-     *
-     * @return JsonResponse The response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         return $this->errorResponse(404);
     }

@@ -13,10 +13,8 @@ class DeviceController extends Controller
      * User claims the device ownership.
      *
      * @param string $hash Device secret identifier
-     *
-     * @return JsonResponse The response
      */
-    public function claim(string $hash)
+    public function claim(string $hash): JsonResponse
     {
         if (strlen($hash) > 191) {
             return $this->errorResponse(404);
@@ -41,11 +39,9 @@ class DeviceController extends Controller
      *
      * @param string $hash Device secret identifier
      *
-     * @return JsonResponse The response
-     *
      * @unauthenticated
      */
-    public function info(string $hash)
+    public function info(string $hash): JsonResponse
     {
         if (strlen($hash) > 191) {
             return $this->errorResponse(404);
