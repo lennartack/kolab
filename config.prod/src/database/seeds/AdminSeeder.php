@@ -3,8 +3,8 @@
 namespace Database\Seeds;
 
 use App\Domain;
-use App\Sku;
 use App\Package;
+use App\Sku;
 use App\User;
 use Illuminate\Database\Seeder;
 
@@ -162,7 +162,7 @@ class AdminSeeder extends Seeder
         $userPackage->skus()->saveMany([
             $skuMailbox,
             $skuGroupware,
-            $skuStorage
+            $skuStorage,
         ]);
 
         // This package contains 2 units of the storage SKU, which just so happens to also

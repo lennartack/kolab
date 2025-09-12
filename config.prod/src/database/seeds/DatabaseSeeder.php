@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Seeder;
 use Database\Seeds;
+use Illuminate\Database\Seeder;
 
 // phpcs:ignore
 class DatabaseSeeder extends Seeder
