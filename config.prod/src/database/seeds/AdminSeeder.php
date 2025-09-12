@@ -173,8 +173,6 @@ class AdminSeeder extends Seeder
             false
         );
 
-
-
         // Create admin user
         $admin = User::create(
             [
@@ -197,7 +195,6 @@ class AdminSeeder extends Seeder
         $item->setProperties([
             'name' => "Files",
         ]);
-
 
         // Create primary domain
         $domain = Domain::create(
