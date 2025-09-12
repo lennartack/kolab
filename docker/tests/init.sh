@@ -57,7 +57,7 @@ elif [ "$1" == "quicktest" ]; then
 elif [ "$1" == "shell" ]; then
     exec /bin/bash
 elif [ "$1" == "lint" ]; then
-    php -dmemory_limit=-1 vendor/bin/phpcs -p
+    php vendor/bin/php-cs-fixer check --using-cache=no --diff --verbose
 
     php -dmemory_limit=-1 vendor/bin/phpstan analyse
 
