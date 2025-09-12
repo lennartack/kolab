@@ -562,6 +562,7 @@ smtpd_recipient_restrictions =
     reject_non_fqdn_sender,
     reject_non_fqdn_recipient,
     reject_unauth_destination,
+    #check_recipient_access static:HOLD,
     #reject_rhsbl_recipient dbl.spamhaus.org,
     check_policy_service unix:private/policy_reception,
     permit

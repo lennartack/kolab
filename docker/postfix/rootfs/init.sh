@@ -66,6 +66,12 @@ if [ "$BLOCK_OUTGOING_EMAILS" == "true" ]; then
     echo "default_transport = error:No outside emails." >> /etc/postfix/main.cf
 fi
 
+if [ "$HOLD_INCOMING_EMAILS" == "true" ]; then
+    sed -i -r \
+        -e "s|#check_recipient_access static:HOLD|check_recipient_access static:HOLD|g" \
+        /etc/postfix/main.cf
+fi
+
 sed -i -r \
     -e "s|SERVICES_HOST|http://$APP_SERVICES_DOMAIN:$SERVICES_PORT|g" \
     /usr/libexec/postfix/kolab_policy*
