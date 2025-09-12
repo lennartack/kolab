@@ -177,6 +177,7 @@ podman__run_proxy() {
         -e SIEVE_BACKEND="127.0.0.1:4190" \
         -e FREEBUSY_BACKEND="http://127.0.0.1:11080" \
         -e FREEBUSY_PATH="/freebusy" \
+        --health-cmd "kill -0 1 || exit 1" \
         kolab-proxy:latest $@
 }
 
@@ -252,7 +253,7 @@ podman__run_ldap() {
         -e LDAP_HOSTED_ROOT_DN="dc=hosted,dc=com" \
         -e IMAP_ADMIN_LOGIN \
         -e IMAP_ADMIN_PASSWORD \
-        --health-cmd "systemctl status dirsrv@kolab || exit 1" \
+        --health-cmd "(echo > /dev/tcp/127.0.0.1/389) || exit 1" \
         ldap:latest $@
 }
 
@@ -302,7 +303,7 @@ podman__run_imap() {
         -e IMAP_ADMIN_LOGIN \
         -e IMAP_ADMIN_PASSWORD \
         -e WITH_TAGS \
-        --health-cmd "test -e /run/saslauthd/mux && kill -0 \$(cat /var/run/master.pid)" \
+        --health-cmd "test -e /run/saslauthd/mux && kill -0 \$(cat /var/run/master.pid) && (echo > /dev/tcp/127.0.0.1/11080)" \
         kolab-imap:latest $@
 }
 
@@ -326,7 +327,7 @@ podman__run_postfix() {
         -e DB_DATABASE \
         -e LMTP_DESTINATION="localhost:11024" \
         -e WITH_CONTENTFILTER \
-        --health-cmd "test -e /run/saslauthd/mux && kill -0 \$(cat /var/spool/postfix/pid/master.pid)" \
+        --health-cmd "test -e /run/saslauthd/mux && kill -0 \$(cat /var/spool/postfix/pid/master.pid) && (echo > /dev/tcp/127.0.0.1/10587)" \
         kolab-postfix:latest $@
 }
 

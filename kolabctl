@@ -255,6 +255,9 @@ kolab__deploy() {
     podman__run_collabora
     podman__run_proxy
 
+    # To make sure selfcheck can run immediately afterwards
+    podman__healthcheck $POD-postfix
+    podman__healthcheck $POD-proxy
     echo "Deployment complete!"
 }
 
