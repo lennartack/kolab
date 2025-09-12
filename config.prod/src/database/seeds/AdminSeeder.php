@@ -3,9 +3,9 @@
 namespace Database\Seeds;
 
 use App\Domain;
-use App\User;
 use App\Sku;
 use App\Package;
+use App\User;
 use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
@@ -14,8 +14,6 @@ class AdminSeeder extends Seeder
      * Run the database seeds.
      *
      * Create a default user with dependencies
-     *
-     * @return void
      */
     public function run()
     {
@@ -177,11 +175,11 @@ class AdminSeeder extends Seeder
 
 
 
-        //Create admin user
+        // Create admin user
         $admin = User::create(
             [
                 'email' => 'admin@' . \config('app.domain'),
-                'password' => \App\Utils::generatePassphrase()
+                'password' => \App\Utils::generatePassphrase(),
             ]
         );
 
@@ -194,14 +192,14 @@ class AdminSeeder extends Seeder
 
         $admin->assignPackage($userPackage);
 
-        //Create a default file collection
+        // Create a default file collection
         $item = $admin->fsItems()->create(['type' => \App\Fs\Item::TYPE_COLLECTION]);
         $item->setProperties([
             'name' => "Files",
         ]);
 
 
-        //Create primary domain
+        // Create primary domain
         $domain = Domain::create(
             [
                 'namespace' => \config('app.domain'),
