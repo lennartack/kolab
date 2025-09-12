@@ -565,6 +565,7 @@ smtpd_recipient_restrictions =
     reject_non_fqdn_recipient,
     reject_unauth_destination,
     #check_recipient_access static:HOLD,
+    check_recipient_access texthash:/etc/postfix/recipient_access,
     #reject_rhsbl_recipient dbl.spamhaus.org,
     check_policy_service unix:private/policy_reception,
     permit
@@ -597,7 +598,7 @@ submission_relay_restrictions =
     reject_unauth_destination
 submission_recipient_restrictions =
     # FIXME These were lists of spammers to block by recipient, recipient mx and recipient domain
-    # check_recipient_access hash:/etc/postfix/recipient_access,
+    check_recipient_access texthash:/etc/postfix/recipient_access,
     # check_recipient_mx_access hash:/etc/postfix/recipient_mx_access,
     # check_recipient_ns_access hash:/etc/postfix/recipient_ns_access,
     # Hook to collect recipients
