@@ -3,10 +3,10 @@
 namespace App\Backends\DAV;
 
 use Illuminate\Support\Str;
+use Sabre\VObject\Document;
 use Sabre\VObject\Property;
 use Sabre\VObject\Reader;
 use Sabre\VObject\Writer;
-use Sabre\VObject\Document;
 
 class Vcard extends CommonObject
 {

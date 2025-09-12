@@ -1752,7 +1752,7 @@ class UserTest extends TestCase
         $user->setRawAttributes(array_merge($attrs, ['password_ldap' => null, 'password' => $hash]));
         $user->save();
         $user->refresh();
-        $this->assertTrue($user->password_ldap === null);
+        $this->assertNull($user->password_ldap);
         $this->assertTrue($user->validatePassword('test'));
         $this->assertTrue(strlen($user->password_ldap) == strlen($ldap)); // @phpstan-ignore-line
         $this->assertTrue(strlen($user->password) == strlen($hash)); // @phpstan-ignore-line
