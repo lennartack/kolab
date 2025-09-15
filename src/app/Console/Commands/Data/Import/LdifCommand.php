@@ -26,7 +26,7 @@ class LdifCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'data:import:ldif {file} {owner} {--force} {--tenant=}';
+    protected $signature = 'data:import:ldif {file} {owner} {--force} {--tenant=} {--updatePassword}';
 
     /**
      * The console command description.
@@ -591,6 +591,16 @@ class LdifCommand extends Command
         $user = User::withTrashed()->where('email', $data->email)->first();
 
         if ($user) {
+            if ($this->option('updatePassword')) {
+                $this->info("Updating password for {$user->email}");
+                $attrs = $user->getAttributes();
+                // Reset any non-ldap password
+                $attrs['password'] = null;
+                $user->setRawAttributes(array_merge($attrs, ['password_ldap' => $data->password]));
+                $user->save();
+                return;
+            }
+
             $this->setImportWarning($ldap_user->id, "User already exists");
             return;
         }
