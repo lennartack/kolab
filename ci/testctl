@@ -352,6 +352,7 @@ kolab__vectortest() {
 kolab__lint() {
     $PODMAN run --rm -ti \
         -v ./src:/src/kolabsrc.orig:ro \
+        -v ./$CONFIG/src:/src/overlay:ro \
         kolab-tests:latest /init.sh lint
 }
 
