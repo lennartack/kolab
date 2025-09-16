@@ -177,6 +177,7 @@ podman__run_proxy() {
         -e SIEVE_BACKEND="127.0.0.1:4190" \
         -e FREEBUSY_BACKEND="http://127.0.0.1:11080" \
         -e FREEBUSY_PATH="/freebusy" \
+        -e NEXTCLOUD_BACKEND="http://127.0.0.1:13080" \
         --health-cmd "kill -0 1 || exit 1" \
         kolab-proxy:latest $@
 }
@@ -364,6 +365,23 @@ podman__run_element() {
     podman__run element \
         -e APP_DOMAIN \
         element:latest $@
+}
+
+podman__run_nextcloud() {
+    podman__run nextcloud \
+        -e APP_DOMAIN \
+        -e SQLITE_DATABASE=nextcloud \
+        -e NEXTCLOUD_ADMIN_USER=admin \
+        -e NEXTCLOUD_ADMIN_PASSWORD=simple123 \
+        -e NEXTCLOUD_TRUSTED_DOMAINS=$APP_DOMAIN \
+        -e TRUSTED_PROXIES=127.0.0.1 \
+        -e OVERWRITEHOST=kolab.local \
+        -e OVERWRITEPROTOCOL=https \
+        -e OVERWRITECLIURL=http://127.0.0.1/ \
+        -e OVERWRITEWEBROOT=/nextcloud \
+        -e NEXTCLOUD_OAUTH_CLIENT_ID="${PASSPORT_NEXTCLOUD_OAUTH_CLIENT_ID:?"missing env variable"}" \
+        -e NEXTCLOUD_OAUTH_CLIENT_SECRET="${PASSPORT_NEXTCLOUD_OAUTH_CLIENT_SECRET:?"missing env variable"}" \
+        localhost/nextcloud:latest $@
 }
 
 podman__run_vector() {

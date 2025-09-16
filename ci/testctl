@@ -126,6 +126,8 @@ export PASSPORT_SYNAPSE_OAUTH_CLIENT_ID=2909ca4f-df7e-45fe-b355-e7c195aef112
 export PASSPORT_SYNAPSE_OAUTH_CLIENT_SECRET=2URb+3JGJM9wPuDnlUSTPOw2mqmHsoOV8NXanx9xwQM=
 export PASSPORT_WEBMAIL_SSO_CLIENT_ID=1909ca4f-df7e-45fe-b355-e7c195aef118
 export PASSPORT_WEBMAIL_SSO_CLIENT_SECRET=1URb+3JGJM9wPuDnlUSTPOw2mqmHsoOV8NXanx9xwQM=
+export PASSPORT_NEXTCLOUD_OAUTH_CLIENT_ID=2909ca4f-df7e-45fe-b355-e7c195aef112
+export PASSPORT_NEXTCLOUD_OAUTH_CLIENT_SECRET=2URb+3JGJM9wPuDnlUSTPOw2mqmHsoOV8NXanx9xwQM=
 export WEBMAIL_URL=/roundcubemail/
 
 # To replace parts of the filesytem in a container with a tmpfs that can be filled up (with dd) to simulate out of diskspace situations:

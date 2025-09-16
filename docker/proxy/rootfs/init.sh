@@ -117,6 +117,24 @@ cat <<EOF >> /etc/nginx/nginx.conf
 EOF
 fi
 
+if [[ "$NEXTCLOUD_BACKEND" != "" ]]; then
+cat <<EOF >> /etc/nginx/nginx.conf
+        location /nextcloud/ {
+            proxy_pass $NEXTCLOUD_BACKEND;
+            proxy_redirect   off;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Host \$host;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_no_cache 1;
+            proxy_cache_bypass 1;
+            client_max_body_size 10G;
+            proxy_request_buffering off;
+        }
+EOF
+fi
+
 cat <<EOF >> /etc/nginx/nginx.conf
         location / {
             proxy_pass       $WEBAPP_BACKEND;

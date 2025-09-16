@@ -37,6 +37,7 @@ ENV WEBMAIL_PATH /roundcubemail
 ENV SIEVE_BACKEND imap:4190
 # ENV MATRIX_BACKEND http://synapse:8008
 # ENV ELEMENT_BACKEND http://element:8880
+# ENV NEXTCLOUD_BACKEND http://nextcloud:13080
 
 USER 1001
 
