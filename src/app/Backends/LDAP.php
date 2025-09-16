@@ -396,7 +396,7 @@ class LDAP
                 self::throwException($ldap, "Failed to create user {$user->email} in LDAP (" . __LINE__ . ")");
             }
 
-            self::setUserAttributes($user, $entry);
+            self::setUserAttributes($user, $entry, true);
 
             self::addEntry(
                 $ldap,
@@ -1055,10 +1055,10 @@ class LDAP
     /**
      * Set common user attributes
      */
-    private static function setUserAttributes(User $user, array &$entry)
+    private static function setUserAttributes(User $user, array &$entry, $is_new = false)
     {
         $isDegraded = $user->isDegraded(true);
-        $settings = $user->getSettings(['first_name', 'last_name', 'organization']);
+        $settings = $user->getSettings(['first_name', 'last_name', 'organization', 'uid']);
 
         $firstName = $settings['first_name'];
         $lastName = $settings['last_name'];
@@ -1082,6 +1082,10 @@ class LDAP
             } else {
                 $lastName = "unknown";
             }
+        }
+
+        if ($is_new && !empty($settings['uid'])) {
+            $entry['nsuniqueid'] = $settings['uid'];
         }
 
         $entry['cn'] = $cn;

@@ -127,7 +127,7 @@ class OAuth
     {
         $response = [
             // Per OIDC spec. 'sub' must be always returned
-            'sub' => $user->id,
+            'sub' => $user->getSetting('uid') ?: $user->id,
         ];
 
         if ($user->tokenCan('email')) {

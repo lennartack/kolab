@@ -963,6 +963,7 @@ class LdifCommand extends Command
             'mailalternateaddress' => 'external_email',
             'mobile' => 'phone',
             'o' => 'organization',
+            'nsuniqueid' => 'uid',
             // 'address' => 'billing_address'
         ];
 

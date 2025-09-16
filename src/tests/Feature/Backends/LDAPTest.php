@@ -377,6 +377,7 @@ class LDAPTest extends TestCase
         Queue::fake();
 
         $user = $this->getTestUser('user-ldap-test@' . \config('app.domain'));
+        $user->setSetting('uid', '1111');
 
         LDAP::createUser($user);
 
@@ -405,6 +406,7 @@ class LDAPTest extends TestCase
             'mailquota' => null,
             'o' => '',
             'alias' => null,
+            'nsuniqueid' => '1111',
         ];
 
         foreach ($expected as $attr => $value) {
