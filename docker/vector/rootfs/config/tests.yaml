@@ -94,7 +94,7 @@ tests:
       pod_node_name: dws07.kolabsys.com
       pod_owner: ReplicaSet/roundcube-74d95fdbf5
       pod_uid: 7625ef26-43e4-4398-956f-c8b9f10c38e8
-      log: "10.42.2.96 - - [02/Sep/2025:09:39:14 +0000] 3043 \"POST /Microsoft-Server-ActiveSync?Cmd=FolderSync&User=test3@kolab.nestle.com&DeviceId=device4&DeviceType=iphone HTTP/1.0\" 401 - \"-\" \"-\""
+      log: "10.42.2.96 - - [02/Sep/2025:09:39:14 +0000] 3043 \"POST /Microsoft-Server-ActiveSync?Cmd=FolderSync&User=test3@kolab.example.com&DeviceId=device4&DeviceType=iphone HTTP/1.0\" 401 - \"-\" \"-\""
       source_type: kubernetes_logs
       stream: stderr
       timestamp: "2024-08-18T09:18:38.276041789Z"
@@ -103,7 +103,7 @@ tests:
     conditions:
     - type: "vrl"
       source: |
-        assert_eq!(.log, "10.42.2.96 - - [02/Sep/2025:09:39:14 +0000] 3043 \"POST /Microsoft-Server-ActiveSync?Cmd=FolderSync&User=test3@kolab.nestle.com&DeviceId=device4&DeviceType=iphone HTTP/1.0\" 401 - \"-\" \"-\"")
+        assert_eq!(.log, "10.42.2.96 - - [02/Sep/2025:09:39:14 +0000] 3043 \"POST /Microsoft-Server-ActiveSync?Cmd=FolderSync&User=test3@kolab.example.com&DeviceId=device4&DeviceType=iphone HTTP/1.0\" 401 - \"-\" \"-\"")
         assert_eq!(.host, "10.42.2.96")
         assert_eq!(.status, "401")
         assert_eq!(.duration, "3043")
@@ -355,7 +355,7 @@ tests:
       pod_node_name: dws07.kolabsys.com
       pod_owner: ReplicaSet/kolab-78bd5fccb
       pod_uid: cc681420-f781-4332-b966-73812b372801
-      log: '   INFO  [2025-09-11 12:15:24] production.DEBUG: Authentication attempt succeeded for admin@kolab.nestle.com .'
+      log: '   INFO  [2025-09-11 12:15:24] production.DEBUG: Authentication attempt succeeded for admin@kolab.example.com .'
       source_type: kubernetes_logs
       stream: stderr
       timestamp: "2024-08-19T20:19:06.317485633Z"
@@ -364,5 +364,86 @@ tests:
     conditions:
     - type: "vrl"
       source: |
-        assert_eq!(.log, "   INFO  [2025-09-11 12:15:24] production.DEBUG: Authentication attempt succeeded for admin@kolab.nestle.com .")
+        assert_eq!(.log, "   INFO  [2025-09-11 12:15:24] production.DEBUG: Authentication attempt succeeded for admin@kolab.example.com .")
+        assert!(is_timestamp(.timestamp))
+- name: "Horizon message"
+  inputs:
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_name: horizon
+      pod_name: horizon-78bd5fccb-lssj6
+      log: '  2025-09-02 15:35:18 App\Jobs\Domain\CreateJob ...................... RUNNING'
+      source_type: kubernetes_logs
+      stream: stderr
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  outputs:
+  - extract_from: "parse_kolab"
+    conditions:
+    - type: "vrl"
+      source: |
+        assert_eq!(.log, s'  2025-09-02 15:35:18 App\Jobs\Domain\CreateJob ...................... RUNNING')
+        assert!(is_timestamp(.timestamp))
+- name: "Kolab LDAP warning "
+  inputs:
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_name: horizon
+      pod_name: horizon-78bd5fccb-lssj6
+      log: '[2025-09-02 15:35:18] production.WARNING: [LDAP] LDAP: Failed to read associateddomain=kolab.example.com,ou=Domains,dc=kolab,dc=example,dc=com. Inappropriate authentication'
+      source_type: kubernetes_logs
+      stream: stderr
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  outputs:
+  - extract_from: "parse_kolab"
+    conditions:
+    - type: "vrl"
+      source: |
+        assert_eq!(.log, "[2025-09-02 15:35:18] production.WARNING: [LDAP] LDAP: Failed to read associateddomain=kolab.example.com,ou=Domains,dc=kolab,dc=example,dc=com. Inappropriate authentication")
+        assert!(is_timestamp(.timestamp))
+
+# This would be a more complete example of the exception:
+# [2025-09-02 15:35:18] production.ERROR: Failed to create domain kolab.example.com in LDAP (122): ldap_add(): Add: Inappropriate authentication {"exception":"[object] (Exception(code: 0): Failed to create domain kolab.example.com in LDAP (122): ldap_add(): Add: Inappropriate authentication at /opt/app-root/src/app/Backends/LDAP.php:1377)
+# [stacktrace]
+# #0 /opt/app-root/src/app/Backends/LDAP.php(1332): App\\Backends\\LDAP::throwException(Object(Net_LDAP3), 'Failed to creat...')
+# #1 /opt/app-root/src/app/Backends/LDAP.php(118): App\\Backends\\LDAP::addEntry(Object(Net_LDAP3), 'associateddomai...', Array, 'Failed to creat...')
+# #39 {main}
+# "}
+- name: "Kolab Exception"
+  inputs:
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_name: kolab
+      pod_name: kolab-78bd5fccb-lssj6
+      log: '[2025-09-02 15:35:18] production.ERROR: Failed to create domain kolab.example.com in LDAP (122): ldap_add(): Add: Inappropriate authentication {"exception":"[object] (Exception(code: 0): Failed to create domain kolab.example.com in LDAP (122): ldap_add(): Add: Inappropriate authentication at /opt/app-root/src/app/Backends/LDAP.php:1377)'
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_name: kolab
+      pod_name: kolab-78bd5fccb-lssj6
+      log: '[stacktrace]'
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      container_id: containerd://e3a3059ac016578c967f4034831feff7fea79c5152f92f0cfb523e779fdd0a0a
+      container_name: kolab
+      pod_name: kolab-78bd5fccb-lssj6
+      log: '"}'
+      timestamp: "2024-08-19T20:19:06.317485633Z"
+  outputs:
+  - extract_from: "parse_kolab"
+    conditions:
+    - type: "vrl"
+      source: |
+        assert_eq!(.log, s'[2025-09-02 15:35:18] production.ERROR: Failed to create domain kolab.example.com in LDAP (122): ldap_add(): Add: Inappropriate authentication {"exception":"[object] (Exception(code: 0): Failed to create domain kolab.example.com in LDAP (122): ldap_add(): Add: Inappropriate authentication at /opt/app-root/src/app/Backends/LDAP.php:1377)
+        [stacktrace]
+        "}')
         assert!(is_timestamp(.timestamp))

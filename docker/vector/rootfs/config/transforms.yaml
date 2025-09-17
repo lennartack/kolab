@@ -7,10 +7,10 @@ transforms:
     route:
       roundcube: contains!(.pod_name, "roundcube")
       proxy: contains!(.pod_name, "proxy")
-      kolab: contains!(.pod_name, "kolab")
+      kolab: contains!(.pod_name, "kolab") || contains!(.pod_name, "horizon")
       postfix: contains!(.pod_name, "postfix")
       imap: contains!(.pod_name, "imap")
-  parse_kolab:
+  parse_kolab_unreduced:
     type: remap
     inputs:
       - apps.kolab
@@ -21,6 +21,21 @@ transforms:
       structured = parse_logfmt(.log) ?? {}
       . = merge(., structured)
       .timestamp = parse_timestamp(.timestamp, "%Y/%m/%d %H:%M:%S %z") ?? now()
+  parse_kolab:
+    type: reduce
+    inputs:
+      - parse_kolab_unreduced
+    group_by:
+      - pod_name
+      - container_name
+    merge_strategies:
+      log: concat_newline
+      # pid: discard
+# We assume a new line always starts with a date in one of the following variations:
+#  2025-09-17 05:47:22 App\Jobs\User\UpdateJob .................. 758.28ms FAIL
+#[2025-09-17 05:47:22] production.ERROR: Failed to update mailbox for user test2@kolab.nestle.com. {"exception":"[object] (Exception(code: 0): Failed to update mailbox for user test2@kolab.nestle.com. at /opt/app-root/src/app/Jobs/User/UpdateJob.php:47)
+# INFO  [2025-09-16 19:48:09] production.INFO: C: GET https://10.42.2.225:8000/api/webhooks/metrics/swoole?kubernetes_pod_name=kolab-64f95d9f6b-l54gb [23.9M]: 0.0014 sec. 200 .
+    starts_when: match(string!(.log), r'^.*\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d')
   parse_roundcube:
     type: remap
     inputs:
@@ -70,3 +85,4 @@ transforms:
       - apps._unmatched
     source: |
       .timestamp = parse_timestamp(.timestamp, "%Y/%m/%d %H:%M:%S %z") ?? now()
+
