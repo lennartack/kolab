@@ -134,5 +134,27 @@ class InitCommand extends Command
             $client->id = \config('auth.synapse.client_id');
             $client->save();
         }
+
+        // Inject extra passport clients
+        if (!empty(\config('auth.extra_passport_clients'))) {
+            foreach (\config('auth.extra_passport_clients') as $clientConfig) {
+                if (!Passport::client()->where('id', $clientConfig['id'])->exists()) {
+                    \Log::info("Creating client ". $clientConfig['id']);
+                    $client = Passport::client()->forceFill([
+                        'user_id' => null,
+                        'name' => $clientConfig['name'],
+                        'secret' => $clientConfig['secret'],
+                        'provider' => $clientConfig['provider'],
+                        'redirect' => $clientConfig['redirect'],
+                        'personal_access_client' => $clientConfig['personal_access_client'],
+                        'password_client' => $clientConfig['password_client'],
+                        'revoked' => $clientConfig['revoked'],
+                        'allowed_scopes' => $clientConfig['allowed_scopes'],
+                    ]);
+                    $client->id = $clientConfig['id'];
+                    $client->save();
+                }
+            }
+        }
     }
 }
