@@ -64,7 +64,11 @@ return [
     'signer' => Sha256::class,
 
     // Optional associative array that will be used to set headers on the JWT
-    'token_headers' => [],
+    'token_headers' => [
+        // https://datatracker.ietf.org/doc/html/rfc7517#section-4.5
+        // This should be optional according to rfc, but is required by the nextcloud user_oidc plugin.
+        'kid' => 'key1'
+    ],
 
     // By default, microseconds are included.
     'use_microseconds' => true,
