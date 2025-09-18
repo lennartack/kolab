@@ -26,7 +26,7 @@ class LdifCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'data:import:ldif {file} {owner} {--force} {--tenant=} {--updatePassword}';
+    protected $signature = 'data:import:ldif {file} {owner} {--force} {--tenant=} {--updatePassword} {--updateUid}';
 
     /**
      * The console command description.
@@ -598,6 +598,12 @@ class LdifCommand extends Command
                 $attrs['password'] = null;
                 $user->setRawAttributes(array_merge($attrs, ['password_ldap' => $data->password]));
                 $user->save();
+                return;
+            }
+
+            if ($this->option('updateUid') && isset($data->settings->uid)) {
+                $this->info("Updating uid for {$user->email} to {$data->settings->uid}");
+                $user->setSetting('uid', $data->settings->uid);
                 return;
             }
 
