@@ -15,6 +15,7 @@ return [
             // 'address' => 'Information about your address',
             // 'login' => 'See your login information',
             'auth.token' => 'Kolab authentication token',
+            'uuid' => 'User unique identifier',
         ],
     ],
 
@@ -32,6 +33,7 @@ return [
         'auth.token' => [
             'auth.token',
         ],
+        'uuid' => ['uuid'],
     ],
 
     // You can override the repositories below.

@@ -20,6 +20,8 @@ return [
     'claim.unknown' => "Unknown claim",
     'claim.email' => "See your email address",
     'claim.auth.token' => "Have read and write access to all your data",
+    'claim.openid' => "See your email/id via a standard authorization token (OIDC)",
+    'claim.uuid' => "See your unique user identifier",
 
     'error.password' => "Invalid password",
     'error.password-expired' => "Expired password",
