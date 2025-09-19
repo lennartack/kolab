@@ -138,7 +138,8 @@ class InitCommand extends Command
         // Inject extra passport clients
         if (!empty(\config('auth.extra_passport_clients'))) {
             foreach (\config('auth.extra_passport_clients') as $clientConfig) {
-                if (!Passport::client()->where('id', $clientConfig['id'])->exists()) {
+                $client = Passport::client()->where('id', $clientConfig['id'])->first();
+                if (!$client) {
                     \Log::info("Creating client " . $clientConfig['id']);
                     $client = Passport::client()->forceFill([
                         'user_id' => null,
@@ -152,8 +153,15 @@ class InitCommand extends Command
                         'allowed_scopes' => $clientConfig['allowed_scopes'],
                     ]);
                     $client->id = $clientConfig['id'];
-                    $client->save();
+                } else {
+                    $client->revoked = $clientConfig['revoked'];
+                    $client->allowed_scopes = $clientConfig['allowed_scopes'];
+                    $client->redirect = $clientConfig['redirect'];
+                    $client->secret = $clientConfig['secret'];
+                    $client->name = $clientConfig['name'];
+                    $client->provider = $clientConfig['provider'];
                 }
+                $client->save();
             }
         }
     }
