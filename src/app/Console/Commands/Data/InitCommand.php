@@ -139,7 +139,7 @@ class InitCommand extends Command
         if (!empty(\config('auth.extra_passport_clients'))) {
             foreach (\config('auth.extra_passport_clients') as $clientConfig) {
                 if (!Passport::client()->where('id', $clientConfig['id'])->exists()) {
-                    \Log::info("Creating client ". $clientConfig['id']);
+                    \Log::info("Creating client " . $clientConfig['id']);
                     $client = Passport::client()->forceFill([
                         'user_id' => null,
                         'name' => $clientConfig['name'],
