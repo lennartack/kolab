@@ -117,7 +117,7 @@ class DeviceTest extends TestCase
             'mode' => Plan::MODE_TOKEN,
         ]);
 
-        $plan->signupTokens()->create(['id' => $this->hash]);
+        SignupToken::create(['id' => $this->hash, 'plans' => [$plan->id]]);
 
         // Getting list of plans
         $response = $this->get("api/v4/device/{$this->hash}/plans");
@@ -181,7 +181,7 @@ class DeviceTest extends TestCase
         $this->assertSame('error', $json['status']);
         $this->assertSame(['token' => ['The signup token is invalid.']], $json['errors']);
 
-        $plan->signupTokens()->create(['id' => $this->hash]);
+        SignupToken::create(['id' => $this->hash, 'plans' => [$plan->id]]);
 
         // Signup success
         $response = $this->post("api/v4/device/{$this->hash}/signup", $post);
