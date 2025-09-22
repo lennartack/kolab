@@ -738,7 +738,7 @@ class User extends Authenticatable
      */
     public function setRoleAttribute($role)
     {
-        if ($role !== null && !in_array($role, [self::ROLE_ADMIN, self::ROLE_RESELLER, self::ROLE_SERVICE])) {
+        if ($role !== null && !in_array($role, [self::ROLE_ADMIN, self::ROLE_RESELLER, self::ROLE_SERVICE, self::ROLE_DEVICE])) {
             throw new \Exception("Invalid role: {$role}");
         }
 

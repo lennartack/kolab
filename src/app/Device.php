@@ -2,7 +2,6 @@
 
 namespace App;
 
-use App\Http\Resources\PlanResource;
 use App\Traits\BelongsToTenantTrait;
 use App\Traits\EntitleableTrait;
 use App\Traits\UuidIntKeyTrait;
@@ -37,60 +36,129 @@ class Device extends Model
     ];
 
     /**
+     * Assign a package plan to a device.
+     *
+     * @param Plan   $plan   The plan to assign
+     * @param Wallet $wallet The wallet to use
+     *
+     * @throws \Exception
+     */
+    public function assignPlan(Plan $plan, Wallet $wallet): void
+    {
+        $device_packages = $plan->packages->filter(static function ($package) {
+            foreach ($package->skus as $sku) {
+                if ($sku->handler_class::entitleableClass() == self::class) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        // Before we do anything let's make sure that a device can be assigned only
+        // to a plan with a device SKU in a package
+        if ($device_packages->count() != 1) {
+            throw new \Exception("A device requires a plan with a device SKU");
+        }
+
+        foreach ($device_packages as $package) {
+            $this->assignPackageAndWallet($package, $wallet);
+        }
+    }
+
+    /**
      * Assign device to (another) real user account
      */
-    public function bindTo(User $user)
+    public function bindTo(User $user): void
     {
         $wallet = $user->wallets()->first();
 
         // TODO: What if the device is already used by another (real) user?
+        DB::beginTransaction();
 
-        $this->entitlements()->update(['wallet_id' => $wallet->id]);
+        // Remove existing user association
+        $this->entitlements()->delete();
 
-        // TODO: Update created_at/updated_at accordingly
-        // TODO: Delete the dummy user record?
+        $device_packages = [];
+
+        // Existing user's plan
+        if ($plan_id = $user->getSetting('plan_id')) {
+            $plan = Plan::withObjectTenantContext($user)->find($plan_id);
+
+            // Find packages with a device SKU in this plan
+            $device_packages = !$plan ? collect([]) : $plan->packages->filter(static function ($package) {
+                foreach ($package->skus as $sku) {
+                    if ($sku->handler_class::entitleableClass() == self::class) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+            if ($device_packages->count() != 1) {
+                throw new \Exception("A device requires a plan with a device SKU");
+            }
+        }
+
+        // TODO: Get "default" device package and assign if none found above, or just use the device SKU?
+
+        foreach ($device_packages as $package) {
+            $this->assignPackageAndWallet($package, $wallet);
+        }
+
+        // Push entitlements.updated_at to one year from the first registration
+        $threshold = (clone $this->created_at)->addYearWithoutOverflow();
+        if ($threshold > \now()) {
+            $this->entitlements()->each(static function ($entitlement) use ($threshold) {
+                $entitlement->updated_at = $threshold;
+                $entitlement->save();
+            });
+        }
+
+        DB::commit();
     }
 
     /**
-     * Get device information
+     * Signup a device
      */
-    public function info(): array
-    {
-        $plans = Plan::withObjectTenantContext($this)->where('mode', 'token')
-            ->orderByDesc('months')->orderByDesc('title')
-            ->get();
-
-        $result = [
-            // Device registration date-time
-            'created_at' => (string) $this->created_at,
-            // Plans available for signup via a device token
-            'plans' => PlanResource::collection($plans),
-        ];
-
-        // TODO: Include other information about the plan/wallet/payments state
-
-        return $result;
-    }
-
-    /**
-     * Register a device
-     */
-    public static function register(string $hash): self
+    public static function signup(string $token, Plan $plan, string $password): self
     {
         DB::beginTransaction();
 
         // Create a device record
-        $device = self::create(['hash' => $hash]);
+        $device = self::create(['hash' => $token]);
 
-        // Create a special account (and wallet)
-        $user = User::create([
-            'email' => $device->id . '@' . \config('app.domain'),
-            'password' => '',
-            'role' => User::ROLE_DEVICE,
+        // Create a special account
+        while (true) {
+            $user_id = Utils::uuidInt();
+            if (!User::withTrashed()->where('id', $user_id)->orWhere('email', $user_id . '@' . \config('app.domain'))->exists()) {
+                break;
+            }
+        }
+
+        $user = new User();
+        $user->id = $user_id;
+        $user->email = $user_id . '@' . \config('app.domain');
+        $user->password = $password;
+        $user->role = User::ROLE_DEVICE;
+        $user->save();
+
+        $user->settings()->insert([
+            ['key' => 'signup_token', 'value' => $token, 'user_id' => $user->id],
+            ['key' => 'plan_id', 'value' => $plan->id, 'user_id' => $user->id],
         ]);
 
-        // Assign an entitlement
-        $device->assignToWallet($user->wallets()->first(), 'device');
+        // Assign the device via an entitlement to the user's wallet
+        $device->assignPlan($plan, $wallet = $user->wallets()->first());
+
+        // Push entitlements.updated_at to one year in the future
+        $device->entitlements()->each(static function ($entitlement) {
+            $entitlement->updated_at = \now()->addYearWithoutOverflow();
+            $entitlement->save();
+        });
+
+        // TODO: Trigger payment mandate creation?
 
         DB::commit();
 

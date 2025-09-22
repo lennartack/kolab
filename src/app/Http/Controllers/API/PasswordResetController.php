@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AuthResource;
 use App\Jobs\Mail\PasswordResetJob;
 use App\Rules\Password;
 use App\User;
@@ -124,7 +125,7 @@ class PasswordResetController extends Controller
      * @unauthenticated
      */
     #[BodyParameter('secondfactor', description: '2FA token (required if user enabled 2FA)', type: 'string')]
-    public function reset(Request $request): JsonResponse
+    public function reset(Request $request)
     {
         $v = $this->verify($request);
         if ($v->status() !== 200) {
@@ -158,7 +159,7 @@ class PasswordResetController extends Controller
      */
     #[BodyParameter('email', description: 'User email address', type: 'string', required: true)]
     #[BodyParameter('secondfactor', description: '2FA token (required if user enabled 2FA)', type: 'string')]
-    public function resetExpired(Request $request): JsonResponse
+    public function resetExpired(Request $request)
     {
         $user = User::where('email', $request->email)->first();
 
@@ -269,7 +270,7 @@ class PasswordResetController extends Controller
         // could be possibly a bit simpler (no need for a DB transaction).
         $response = AuthController::logonResponse($user, $request->password, $request->secondfactor);
 
-        if ($response->status() == 200) {
+        if ($response instanceof AuthResource) {
             // Remove the verification code
             if ($request->code instanceof VerificationCode) {
                 $request->code->delete();
@@ -278,9 +279,7 @@ class PasswordResetController extends Controller
             DB::commit();
 
             // Add confirmation message to the 'success' response
-            $data = $response->getData(true);
-            $data['message'] = self::trans('app.password-reset-success');
-            $response->setData($data);
+            $response->message = self::trans('app.password-reset-success');
         } else {
             // If authentication failed (2FA or geo-lock), revert the password change
             DB::rollBack();

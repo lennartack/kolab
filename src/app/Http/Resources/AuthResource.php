@@ -11,7 +11,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class AuthResource extends JsonResource
 {
     public string $status = 'success';
+    public ?string $message = null;
     public ?int $user_id = null;
+    public ?array $checkout = null;
+    public ?array $credentials = null;
 
     private ?UserInfoResource $userinfo = null;
 
@@ -42,6 +45,12 @@ class AuthResource extends JsonResource
             'expires_in' => (int) $this->resource->expires_in,
             // Response status
             'status' => $this->status,
+            // @var string Response message
+            'message' => $this->when(isset($this->message), $this->message),
+            // @var array Payment checkout information (on signup)
+            'checkout' => $this->when(isset($this->checkout), $this->checkout),
+            // @var array New user credentials (on device signup)
+            'credentials' => $this->when(isset($this->credentials), $this->credentials),
             // @var int User identifier
             'id' => $this->user_id,
             // @var UserInfoResource User information

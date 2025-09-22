@@ -26,11 +26,9 @@ class AuthController extends Controller
      *
      * Note that the same information is by default included in the `auth/login` response.
      */
-    public function info(): JsonResponse
+    public function info()
     {
-        $response = new UserInfoResource($this->guard()->user());
-
-        return $response->response();
+        return new UserInfoResource($this->guard()->user());
     }
 
     /**
@@ -41,7 +39,7 @@ class AuthController extends Controller
      * @param string      $password     Plain text password
      * @param string|null $secondFactor Second factor code if available
      */
-    public static function logonResponse(User $user, string $password, ?string $secondFactor = null): JsonResponse
+    public static function logonResponse(User $user, string $password, ?string $secondFactor = null)
     {
         $mode = request()->mode; // have to be before we make a request below
 
@@ -69,7 +67,7 @@ class AuthController extends Controller
      *
      * @unauthenticated
      */
-    public function login(Request $request): JsonResponse
+    public function login(Request $request)
     {
         $v = Validator::make(
             $request->all(),
@@ -175,7 +173,7 @@ class AuthController extends Controller
     /**
      * Refresh a session token.
      */
-    public function refresh(Request $request): JsonResponse
+    public function refresh(Request $request)
     {
         $v = Validator::make($request->all(), [
             // Request user information in the response
@@ -209,7 +207,7 @@ class AuthController extends Controller
      * @param ?User    $user          The user being authenticated
      * @param ?bool    $mode          Response mode: 'fast' - return minimum set of user data
      */
-    protected static function respondWithToken($tokenResponse, $user = null, $mode = null): JsonResponse
+    protected static function respondWithToken($tokenResponse, $user = null, $mode = null)
     {
         $data = json_decode($tokenResponse->getContent());
 
@@ -247,6 +245,6 @@ class AuthController extends Controller
             }
         }
 
-        return $response->response();
+        return $response;
     }
 }

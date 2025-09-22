@@ -197,8 +197,12 @@ Route::group(
 
         Route::get('config/webmail', [API\V4\ConfigController::class, 'webmail']);
 
-        Route::post('device/{hash}/claim', [API\V4\DeviceController::class, 'claim']);
-        Route::get('device/{hash}', [API\V4\DeviceController::class, 'info'])
+        Route::post('device/{token}/claim', [API\V4\DeviceController::class, 'claim']);
+        Route::get('device/{token}', [API\V4\DeviceController::class, 'info'])
+            ->withoutMiddleware(['auth:api', 'scope:api']);
+        Route::get('device/{token}/plans', [API\V4\DeviceController::class, 'plans'])
+            ->withoutMiddleware(['auth:api', 'scope:api']);
+        Route::post('device/{token}/signup', [API\V4\DeviceController::class, 'signup'])
             ->withoutMiddleware(['auth:api', 'scope:api']);
 
         Route::apiResource('domains', API\V4\DomainsController::class);

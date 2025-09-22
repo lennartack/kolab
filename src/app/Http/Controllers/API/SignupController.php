@@ -382,7 +382,7 @@ class SignupController extends Controller
     #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
     #[BodyParameter('first_name', description: 'First name', type: 'string')]
     #[BodyParameter('last_name', description: 'Last name', type: 'string')]
-    public function signup(Request $request): JsonResponse
+    public function signup(Request $request)
     {
         $v = $this->signupValidate($request);
         if ($v->status() !== 200) {
@@ -477,10 +477,7 @@ class SignupController extends Controller
         $response = AuthController::logonResponse($user, $request->password);
 
         if ($request->plan->mode == Plan::MODE_MANDATE) {
-            $data = $response->getData(true);
-            // TODO: Make it visible in the API Doc
-            $data['checkout'] = $this->mandateForPlan($request->plan, $request->discount, $user);
-            $response->setData($data);
+            $response->checkout = $this->mandateForPlan($request->plan, $request->discount, $user);
         }
 
         return $response;
