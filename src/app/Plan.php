@@ -6,7 +6,6 @@ use App\Traits\BelongsToTenantTrait;
 use App\Traits\UuidStrKeyTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -134,15 +133,5 @@ class Plan extends Model
         }
 
         return false;
-    }
-
-    /**
-     * The relationship to signup tokens.
-     *
-     * @return HasMany<SignupToken, $this>
-     */
-    public function signupTokens()
-    {
-        return $this->hasMany(SignupToken::class);
     }
 }

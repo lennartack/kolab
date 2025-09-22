@@ -752,7 +752,7 @@ class SignupTest extends TestCaseDusk
         $plan->update(['mode' => Plan::MODE_TOKEN]);
 
         // Register a valid token
-        $plan->signupTokens()->create(['id' => '1234567890']);
+        SignupToken::create(['id' => '1234567890', 'plans' => [$plan->id]]);
 
         $this->browse(static function (Browser $browser) {
             $browser->visit(new Signup())
@@ -804,7 +804,7 @@ class SignupTest extends TestCaseDusk
         $plan->update(['mode' => Plan::MODE_TOKEN]);
 
         // Register a valid token
-        $plan->signupTokens()->create(['id' => 'abcdefghijk']);
+        SignupToken::create(['id' => 'abcdefghijk', 'plans' => [$plan->id]]);
 
         $this->browse(static function (Browser $browser) {
             $browser->visit(new Signup())

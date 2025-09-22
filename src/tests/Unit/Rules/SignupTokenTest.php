@@ -41,8 +41,8 @@ class SignupTokenTest extends TestCase
             'mode' => Plan::MODE_TOKEN,
         ]);
 
-        $plan->signupTokens()->create(['id' => $tokens[0]]);
-        $tokenPlan->signupTokens()->create(['id' => $tokens[1]]);
+        SignupToken::create(['id' => $tokens[0], 'plans' => [$plan->id]]);
+        SignupToken::create(['id' => $tokens[1], 'plans' => [$tokenPlan->id]]);
 
         $rules = ['token' => [new SignupTokenRule(null)]];
 

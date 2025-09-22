@@ -3,6 +3,7 @@
 namespace App\Rules;
 
 use App\Plan;
+use App\SignupToken as Token;
 use Illuminate\Contracts\Validation\Rule;
 
 class SignupToken implements Rule
@@ -40,8 +41,9 @@ class SignupToken implements Rule
             return false;
         }
 
-        // Check the token existence
-        if (!$this->plan->signupTokens()->find($token)) {
+        // Check the token existence and its plan set
+        $signup_token = Token::find($token);
+        if (!$signup_token || !in_array($this->plan->id, $signup_token->plans)) {
             $this->message = \trans('validation.signuptokeninvalid');
             return false;
         }

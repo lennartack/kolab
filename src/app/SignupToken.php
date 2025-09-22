@@ -4,7 +4,6 @@ namespace App;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * The eloquent definition of a SignupToken.
@@ -12,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Carbon  $created_at The creation timestamp
  * @property int     $counter    Count of signups on this token
  * @property ?string $id         Token
- * @property ?string $plan_id    Plan identifier
+ * @property array   $plans      Plan identifiers
  */
 class SignupToken extends Model
 {
@@ -24,7 +23,7 @@ class SignupToken extends Model
 
     /** @var list<string> The attributes that are mass assignable */
     protected $fillable = [
-        'plan_id',
+        'plans',
         'id',
         'counter',
     ];
@@ -33,18 +32,9 @@ class SignupToken extends Model
     protected $casts = [
         'created_at' => 'datetime:Y-m-d H:i:s',
         'counter' => 'integer',
+        'plans' => 'array',
     ];
 
     /** @var bool Indicates if the model should be timestamped. */
     public $timestamps = false;
-
-    /**
-     * The plan this token applies to
-     *
-     * @return BelongsTo<Plan, $this>
-     */
-    public function plan()
-    {
-        return $this->belongsTo(Plan::class);
-    }
 }

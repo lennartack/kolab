@@ -14,7 +14,7 @@ class SignupTokensCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'data:import:signup-tokens {plan} {file} {--tenant=}';
+    protected $signature = 'data:import:signup-tokens {file} {plan*} {--tenant=}';
 
     /**
      * The console command description.
@@ -35,16 +35,22 @@ class SignupTokensCommand extends Command
     {
         parent::handle();
 
-        $plan = $this->getObject(Plan::class, $this->argument('plan'), 'title', false);
+        $plans = [];
 
-        if (!$plan) {
-            $this->error("Plan not found");
-            return 1;
-        }
+        foreach ($this->argument('plan') as $p) {
+            $plan = $this->getObject(Plan::class, $p, 'title', false);
 
-        if ($plan->mode != Plan::MODE_TOKEN) {
-            $this->error("The plan is not for tokens");
-            return 1;
+            if (!$plan) {
+                $this->error("Plan '{$p}' not found");
+                return 1;
+            }
+
+            if ($plan->mode != Plan::MODE_TOKEN) {
+                $this->error("Plan '{$p}' is not for tokens");
+                return 1;
+            }
+
+            $plans[] = $plan->id;
         }
 
         $file = $this->argument('file');
@@ -98,8 +104,9 @@ class SignupTokensCommand extends Command
 
         // Import tokens
         foreach ($list as $token) {
-            $plan->signupTokens()->create([
+            SignupToken::create([
                 'id' => $token,
+                'plans' => $plans,
                 // This allows us to update counter when importing old tokens in migration.
                 // It can be removed later
                 'counter' => UserSetting::where('key', 'signup_token')

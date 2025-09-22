@@ -1022,7 +1022,7 @@ class SignupTest extends TestCase
         $this->assertSame(['token' => ["The signup token is invalid."]], $json['errors']);
 
         // Test valid token
-        $plan->signupTokens()->create(['id' => 'abc']);
+        $token = SignupToken::create(['id' => 'abc', 'plans' => [$plan->id]]);
         $post['plan'] = $plan->title;
         $response = $this->post('/api/auth/signup', $post);
         $response->assertStatus(200);
@@ -1036,11 +1036,11 @@ class SignupTest extends TestCase
         $user = User::where('email', 'test-inv@kolabnow.com')->first();
         $this->assertNotEmpty($user);
         $this->assertSame($plan->id, $user->getSetting('plan_id'));
-        $this->assertSame($plan->signupTokens()->first()->id, $user->getSetting('signup_token'));
+        $this->assertSame($token->id, $user->getSetting('signup_token'));
         $this->assertNull($user->getSetting('external_email'));
 
         // Token's counter bumped up
-        $this->assertSame(1, $plan->signupTokens()->first()->counter);
+        $this->assertSame(1, $token->fresh()->counter);
     }
 
     /**
