@@ -691,7 +691,7 @@ class User extends Authenticatable
      *
      * @return HasMany<VerificationCode, $this>
      */
-    public function verificationcodes()
+    public function verificationCodes()
     {
         return $this->hasMany(VerificationCode::class, 'user_id', 'id');
     }

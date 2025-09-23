@@ -19,6 +19,8 @@ class UserInfoResource extends UserResource
         'country',
         'currency',
         'external_email',
+        'external_email_new',
+        'external_email_code',
         'first_name',
         'last_name',
         'organization',

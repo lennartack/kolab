@@ -284,8 +284,8 @@ class PasswordResetTest extends TestCaseDusk
         $user = $this->getTestUser('passwordresettestdusk@' . \config('app.domain'));
         $user->setSetting('external_email', 'external@domain.tld');
 
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->save($code);
 
         $this->browse(function (Browser $browser) use ($code) {
             // Test a valid link

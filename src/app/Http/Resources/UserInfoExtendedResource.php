@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Entitlement;
 use App\User;
+use App\VerificationCode;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,9 @@ class UserInfoExtendedResource extends UserInfoResource
      */
     public function toArray(Request $request): array
     {
-        $code = $this->resource->verificationcodes()->where('active', true)
+        $code = $this->resource->verificationCodes()
+            ->where('active', true)
+            ->where('mode', VerificationCode::MODE_PASSWORD)
             ->where('expires_at', '>', Carbon::now())
             ->first();
 

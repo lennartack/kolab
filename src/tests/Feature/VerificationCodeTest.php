@@ -32,7 +32,7 @@ class VerificationCodeTest extends TestCase
         $user = $this->getTestUser('UserAccountA@UserAccount.com');
         $data = [
             'user_id' => $user->id,
-            'mode' => 'password-reset',
+            'mode' => VerificationCode::MODE_PASSWORD,
         ];
 
         $code = VerificationCode::create($data);

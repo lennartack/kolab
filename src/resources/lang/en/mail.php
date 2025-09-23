@@ -26,6 +26,10 @@ return [
     'degradedaccountreminder-body4' => "You can also delete your account there, making sure your data disappears from our systems.",
     'degradedaccountreminder-body5' => "Thank you for your consideration!",
 
+    'emailverification-subject' => ":site Verification",
+    'emailverification-body1' => "This is the verification code to validate eligibility of an email address provided in :site account settings.",
+    'emailverification-body2' => "",
+
     'itip-cancel-subject' => "\":summary\" has been canceled",
     'itip-cancel-body' => "The event \":summary\" at :start has been canceled by the organizer."
         . " The copy in your calendar has been removed accordingly.",

@@ -273,6 +273,12 @@
                 <div class="row form-text"><span>{{ $t('user.delegation-desc') }}</span></div>
             </form>
         </modal-dialog>
+        <modal-dialog id="extemailverification" ref="extEmailVerification" :buttons="['save']" @click="codeValidate()" :title="$t('user.extemailverification')">
+            <div>
+                <p>{{ $t('user.extemailverificationbody', { email: user.external_email_new }) }}</p>
+                <p><input type="text" class="form-control" id="short_code" value=""></p>
+            </div>
+        </modal-dialog>
     </div>
 </template>
 
@@ -445,6 +451,24 @@
             })
         },
         methods: {
+            codeValidate() {
+                let post = { short_code: $('#short_code').val() }
+                axios.post('/api/v4/users/' + this.user_id + '/code/' + this.user.external_email_code, post)
+                    .then(response => {
+                        if (response.data.status == 'success') {
+                            this.$refs.extEmailVerification.hide()
+                            this.$toast.success(response.data.message)
+
+                            if (this.successRoute) {
+                                this.$router.push(this.successRoute)
+                            } else {
+                                this.user.external_email = this.user.external_email_new
+                                delete this.user.external_email_new
+                                delete this.user.external_email_code
+                            }
+                        }
+                    })
+            },
             passwordLinkCopy() {
                 navigator.clipboard.writeText($('#password-link code').text());
             },
@@ -560,7 +584,11 @@
                         }
 
                         this.$toast.success(response.data.message)
-                        if (this.successRoute) {
+
+                        if (this.isSelf && response.data.settings.external_email_code) {
+                            this.user = { ...this.user, ...response.data.settings }
+                            this.$refs.extEmailVerification.show()
+                        } else if (this.successRoute) {
                             this.$router.push(this.successRoute)
                         }
                     })

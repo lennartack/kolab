@@ -242,6 +242,7 @@ Route::group(
         Route::post('users/{id}/login-as', [API\V4\UsersController::class, 'loginAs']);
         Route::get('users/{id}/skus', [API\V4\UsersController::class, 'skus']);
         Route::get('users/{id}/status', [API\V4\UsersController::class, 'status']);
+        Route::post('users/{id}/code/{code}', [API\V4\UsersController::class, 'codeValidation']);
 
         if (\config('app.with_delegation')) {
             Route::get('users/{id}/delegations', [API\V4\UsersController::class, 'delegations']);

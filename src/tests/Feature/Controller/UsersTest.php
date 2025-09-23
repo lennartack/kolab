@@ -7,6 +7,7 @@ use App\Domain;
 use App\Enums\ProcessState;
 use App\Http\Controllers\API\V4\UsersController;
 use App\Http\Resources\UserInfoResource;
+use App\Jobs\Mail\EmailVerificationJob;
 use App\Jobs\User\CreateJob;
 use App\Package;
 use App\Plan;
@@ -86,6 +87,42 @@ class UsersTest extends TestCase
         $folder->setAliases([]);
 
         parent::tearDown();
+    }
+
+    /**
+     * Test validation of a verification code (POST /api/v4/users/<user>/code/<code>)
+     */
+    public function testCodeValidation(): void
+    {
+        $john = $this->getTestUser('john@kolab.org');
+        $jane = $this->getTestUser('jane@kolabnow.com');
+
+        $code = $jane->verificationCodes()->create(['mode' => VerificationCode::MODE_EMAIL]);
+        $jane->setSettings([
+            'external_email_new' => 'test@domain.tld',
+            'external_email_code' => $code->code,
+        ]);
+
+        // Test access by another user
+        $post = ['short_code' => $code->short_code];
+        $response = $this->actingAs($john)->post("/api/v4/users/{$jane->id}/code/{$code->code}", $post);
+        $response->assertStatus(403);
+
+        // Test access by the user
+        $response = $this->actingAs($jane)->post("/api/v4/users/{$jane->id}/code/{$code->code}", $post);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('The external email address has been verified.', $json['message']);
+        $this->assertSame($code->mode, $json['mode']);
+        $this->assertSame('test@domain.tld', $jane->getSetting('external_email'));
+        $this->assertNull($jane->getSetting('external_email_new'));
+        $this->assertNull($jane->getSetting('external_email_code'));
+        $this->assertCount(0, $jane->verificationCodes);
+
+        // TODO: Test all error conditions (e.g. expired code, wrong short code)
     }
 
     /**
@@ -967,8 +1004,8 @@ class UsersTest extends TestCase
             'storage', 'storage', 'storage', 'storage', 'storage']);
 
         // Test password reset link "mode"
-        $code = new VerificationCode(['mode' => 'password-reset', 'active' => false]);
-        $john->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD, 'active' => false]);
+        $john->verificationCodes()->save($code);
 
         $post = [
             'first_name' => 'John2',
@@ -1041,6 +1078,8 @@ class UsersTest extends TestCase
      */
     public function testUpdate(): void
     {
+        Queue::fake();
+
         $userA = $this->getTestUser('UsersControllerTest1@userscontroller.com');
         $userA->setSetting('password_policy', 'min:8,digit');
         $jack = $this->getTestUser('jack@kolab.org');
@@ -1068,7 +1107,6 @@ class UsersTest extends TestCase
         $this->assertSame('success', $json['status']);
         $this->assertSame("User data updated successfully.", $json['message']);
         $this->assertTrue(!empty($json['statusInfo']));
-        $this->assertCount(3, $json);
 
         // Test some invalid data
         $post = ['password' => '1234567', 'currency' => 'invalid'];
@@ -1106,16 +1144,32 @@ class UsersTest extends TestCase
         $this->assertSame('success', $json['status']);
         $this->assertSame("User data updated successfully.", $json['message']);
         $this->assertTrue(!empty($json['statusInfo']));
-        $this->assertCount(3, $json);
         $this->assertTrue($userA->password != $userA->fresh()->password);
+        $code = $userA->verificationCodes()->first();
+        $this->assertSame(VerificationCode::MODE_EMAIL, $code->mode);
+        $this->assertSame($code->code, $json['settings']['external_email_code']);
+        $this->assertSame($post['external_email'], $json['settings']['external_email_new']);
+        $post['external_email_new'] = $post['external_email'];
+        $post['external_email_code'] = $code->code;
+        $post['external_email'] = null;
         unset($post['password'], $post['password_confirmation'], $post['aliases']);
         foreach ($post as $key => $value) {
-            $this->assertSame($value, $userA->getSetting($key));
+            $this->assertSame($value, $userA->getSetting($key), "User setting key: {$key}");
         }
         $aliases = $userA->aliases()->orderBy('alias')->get();
         $this->assertCount(2, $aliases);
         $this->assertSame('useralias1@' . \config('app.domain'), $aliases[0]->alias);
         $this->assertSame('useralias2@' . \config('app.domain'), $aliases[1]->alias);
+
+        Queue::assertPushed(EmailVerificationJob::class, 1);
+        Queue::assertPushed(
+            EmailVerificationJob::class,
+            static function ($job) use ($code) {
+                return $code->code === TestCase::getObjectProperty($job, 'code');
+            }
+        );
+
+        Queue::fake();
 
         // Test unsetting values
         $post = [
@@ -1138,14 +1192,19 @@ class UsersTest extends TestCase
         $this->assertSame('success', $json['status']);
         $this->assertSame("User data updated successfully.", $json['message']);
         $this->assertTrue(!empty($json['statusInfo']));
-        $this->assertCount(3, $json);
+        $this->assertNull($json['settings']['external_email_new']);
+        $this->assertNull($json['settings']['external_email_code']);
+        $post['external_email_new'] = null;
+        $post['external_email_code'] = null;
         unset($post['aliases']);
         foreach ($post as $key => $value) {
-            $this->assertNull($userA->getSetting($key));
+            $this->assertNull($userA->getSetting($key), "User setting key: {$key}");
         }
         $aliases = $userA->aliases()->get();
         $this->assertCount(1, $aliases);
         $this->assertSame('useralias2@' . \config('app.domain'), $aliases[0]->alias);
+
+        Queue::assertPushed(EmailVerificationJob::class, 0);
 
         // Test error on some invalid aliases missing password confirmation
         $post = [
@@ -1176,6 +1235,7 @@ class UsersTest extends TestCase
         $json = $response->json();
 
         $this->assertTrue(empty($json['statusInfo']));
+        $this->assertTrue(empty($json['emailVerificationCode']));
 
         // TODO: Test error on aliases with invalid/non-existing/other-user's domain
 
@@ -1238,8 +1298,8 @@ class UsersTest extends TestCase
         $this->assertTrue(empty($json['statusInfo']));
 
         // Test password reset link "mode"
-        $code = new VerificationCode(['mode' => 'password-reset', 'active' => false]);
-        $owner->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD, 'active' => false]);
+        $owner->verificationCodes()->save($code);
 
         $post = ['passwordLinkCode' => $code->short_code . '-' . $code->code];
 

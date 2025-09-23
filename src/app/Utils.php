@@ -353,12 +353,15 @@ class Utils
      * @param int    $length The length of each segment
      * @param int    $qty    The quantity of segments
      * @param string $join   The string to use to join the segments
+     * @param string $chars  The characters to use to build the code
      *
      * @return string
      */
-    public static function randStr($length, $qty = 1, $join = '')
+    public static function randStr($length, $qty = 1, $join = '', string $chars = '')
     {
-        $chars = env('SHORTCODE_CHARS', self::CHARS);
+        if (strlen($chars) == 0) {
+            $chars = env('SHORTCODE_CHARS', self::CHARS);
+        }
 
         $randStrs = [];
 

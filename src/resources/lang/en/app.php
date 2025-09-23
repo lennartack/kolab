@@ -22,6 +22,8 @@ return [
     'chart-users' => 'Users - last 8 weeks',
     'chart-users-per-country' => 'Users per country',
 
+    'code-verified-email' => 'The external email address has been verified.',
+
     'companion-create-success' => 'Companion app has been created.',
     'companion-delete-success' => 'Companion app has been removed.',
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\API\V4\User\DelegationTrait;
 use App\Http\Controllers\RelationController;
 use App\Http\Resources\UserInfoExtendedResource;
 use App\Http\Resources\UserResource;
+use App\Jobs\Mail\EmailVerificationJob;
 use App\Jobs\User\CreateJob;
 use App\Package;
 use App\Resource;
@@ -51,6 +52,53 @@ class UsersController extends RelationController
 
     /** @var ?VerificationCode Password reset code to activate on user create/update */
     protected $passCode;
+
+    /**
+     * Verification code validation
+     *
+     * @param Request $request the API request
+     * @param string  $id      User identifier
+     * @param string  $code    Verification code identifier
+     */
+    public function codeValidation(Request $request, $id, $code): JsonResponse
+    {
+        // Validate the request args
+        $v = Validator::make(
+            $request->all(),
+            [
+                // Verification code secret
+                'short_code' => 'required',
+            ]
+        );
+
+        if ($v->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
+        }
+
+        // Validate the verification code
+        $code = VerificationCode::where('code', $code)->where('active', true)->first();
+
+        if ($code && ($this->guard()->user()->id != $code->user_id || $code->user_id != $id)) {
+            return $this->errorResponse(403);
+        }
+
+        if (
+            empty($code)
+            || $code->isExpired()
+            || Str::upper($request->short_code) !== Str::upper($code->short_code)
+            || empty($message = $code->applyAction())
+        ) {
+            $errors = ['short_code' => self::trans('validation.verificationcodeinvalid')];
+            return response()->json(['status' => 'error', 'errors' => $errors], 422);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            // Verification code mode
+            'mode' => $code->mode,
+        ]);
+    }
 
     /**
      * Listing of users.
@@ -338,11 +386,45 @@ class UsersController extends RelationController
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 
+        $response = [
+            'status' => 'success',
+            'message' => self::trans('app.user-update-success'),
+            // @var array|null Extended status/permissions information
+            'statusInfo' => null,
+            // @var array Extra settings that got added in this action
+            'settings' => [],
+        ];
+
         DB::beginTransaction();
 
         SkusController::updateEntitlements($user, $request->skus);
 
         if (!empty($settings)) {
+            if ($user->id == $current_user->id && array_key_exists('external_email', $settings)) {
+                if (!empty($settings['external_email'])) {
+                    // User changes his own external email, required code verification
+                    if ($settings['external_email'] != $user->getSetting('external_email')) {
+                        $code = $user->verificationCodes()->create(['mode' => VerificationCode::MODE_EMAIL]);
+                        $extras = [
+                            'external_email_new' => $settings['external_email'],
+                            'external_email_code' => $code->code,
+                        ];
+                        $response['settings'] = array_merge($response['settings'], $extras);
+                        $settings = array_merge($settings, $extras);
+                        unset($settings['external_email']);
+                        EmailVerificationJob::dispatch($code->code)->afterCommit();
+                    }
+                } else {
+                    // User removes his own external email
+                    $extras = [
+                        'external_email_new' => null,
+                        'external_email_code' => null,
+                    ];
+                    $response['settings'] = array_merge($response['settings'], $extras);
+                    $settings = array_merge($settings, $extras);
+                }
+            }
+
             $user->setSettings($settings);
         }
 
@@ -358,13 +440,6 @@ class UsersController extends RelationController
         }
 
         DB::commit();
-
-        $response = [
-            'status' => 'success',
-            'message' => self::trans('app.user-update-success'),
-            // @var array Extended status/permissions information
-            'statusInfo' => null,
-        ];
 
         // For self-update refresh the statusInfo in the UI
         if ($user->id == $current_user->id) {
@@ -406,8 +481,11 @@ class UsersController extends RelationController
                 $code = explode('-', $code)[1];
             }
 
-            $this->passCode = $this->guard()->user()->verificationcodes()
-                ->where('code', $code)->where('active', false)->first();
+            $this->passCode = $this->guard()->user()->verificationCodes()
+                ->where('code', $code)
+                ->where('mode', VerificationCode::MODE_PASSWORD)
+                ->where('active', false)
+                ->first();
 
             // Generate a password for a new user with password reset link
             // FIXME: Should/can we have a user with no password set?

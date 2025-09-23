@@ -21,12 +21,15 @@ class VerificationCode extends Model
     use BelongsToUserTrait;
 
     // Code expires after so many hours
-    public const SHORTCODE_LENGTH = 8;
+    public const SHORTCODE_LENGTH = 6;
 
     public const CODE_LENGTH = 32;
 
     // Code expires after so many hours
     public const CODE_EXP_HOURS = 8;
+
+    public const MODE_EMAIL = 'ext-email';
+    public const MODE_PASSWORD = 'password-reset';
 
     /** @var string The primary key associated with the table */
     protected $primaryKey = 'code';
@@ -50,13 +53,40 @@ class VerificationCode extends Model
     protected $fillable = ['user_id', 'code', 'short_code', 'mode', 'expires_at', 'active'];
 
     /**
-     * Generate a short code (for human).
+     * Apply action on verified code.
+     */
+    public function applyAction(): ?string
+    {
+        switch ($this->mode) {
+            case self::MODE_EMAIL:
+                $settings = $this->user->getSettings(['external_email_new', 'external_email_code']);
+
+                if ($settings['external_email_code'] != $this->code) {
+                    return null;
+                }
+
+                $this->user->setSettings([
+                    'external_email' => $settings['external_email_new'],
+                    'external_email_new' => null,
+                    'external_email_code' => null,
+                ]);
+
+                $this->delete();
+
+                return \trans('app.code-verified-email');
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Generate a short (numeric) code (for human).
      */
     public static function generateShortCode(): string
     {
         $code_length = env('VERIFICATION_CODE_LENGTH', self::SHORTCODE_LENGTH);
 
-        return Utils::randStr($code_length);
+        return Utils::randStr($code_length, 1, '', '1234567890');
     }
 
     /**

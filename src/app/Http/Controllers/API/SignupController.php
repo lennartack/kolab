@@ -208,7 +208,7 @@ class SignupController extends Controller
             || $code->isExpired()
             || Str::upper($request->short_code) !== Str::upper($code->short_code)
         ) {
-            $errors = ['short_code' => self::trans('validation.signupcodeinvalid')];
+            $errors = ['short_code' => self::trans('validation.verificationcodeinvalid')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 
@@ -219,7 +219,7 @@ class SignupController extends Controller
         $plan = $this->getPlan($request);
 
         if (!$plan) {
-            $errors = ['short_code' => self::trans('validation.signupcodeinvalid')];
+            $errors = ['short_code' => self::trans('validation.verificationcodeinvalid')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 

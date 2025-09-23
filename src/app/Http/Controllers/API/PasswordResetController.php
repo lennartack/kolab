@@ -57,8 +57,8 @@ class PasswordResetController extends Controller
         }
 
         // Generate the verification code
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->save($code);
 
         // Send email/sms message
         PasswordResetJob::dispatch($code);
@@ -98,10 +98,10 @@ class PasswordResetController extends Controller
         if (
             empty($code)
             || $code->isExpired()
-            || $code->mode !== 'password-reset'
+            || $code->mode !== VerificationCode::MODE_PASSWORD
             || Str::upper($request->short_code) !== Str::upper($code->short_code)
         ) {
-            $errors = ['short_code' => "The code is invalid or expired."];
+            $errors = ['short_code' => self::trans('validation.verificationcodeinvalid')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 
@@ -202,7 +202,7 @@ class PasswordResetController extends Controller
     {
         // Generate the verification code
         $code = new VerificationCode();
-        $code->mode = 'password-reset';
+        $code->mode = VerificationCode::MODE_PASSWORD;
 
         // These codes are valid for 24 hours
         $code->expires_at = now()->addHours(24);
@@ -210,7 +210,7 @@ class PasswordResetController extends Controller
         // The code is inactive until it is submitted via a different endpoint
         $code->active = false;
 
-        $this->guard()->user()->verificationcodes()->save($code);
+        $this->guard()->user()->verificationCodes()->save($code);
 
         return response()->json([
             'status' => 'success',

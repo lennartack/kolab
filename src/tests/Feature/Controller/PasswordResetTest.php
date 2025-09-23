@@ -35,7 +35,7 @@ class PasswordResetTest extends TestCase
         $user->removeSetting('password_expired');
         $user->password = \config('app.passphrase');
         $user->save();
-        $user->verificationcodes()->delete();
+        $user->verificationCodes()->delete();
 
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
 
@@ -202,8 +202,8 @@ class PasswordResetTest extends TestCase
 
         // Add verification code and required external email address to user settings
         $user = $this->getTestUser('passwordresettest@' . \config('app.domain'));
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->save($code);
 
         // Data with existing code but missing short_code
         $data = [
@@ -242,8 +242,8 @@ class PasswordResetTest extends TestCase
     {
         // Add verification code and required external email address to user settings
         $user = $this->getTestUser('passwordresettest@' . \config('app.domain'));
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->save($code);
 
         // Data with invalid code
         $data = [
@@ -279,8 +279,8 @@ class PasswordResetTest extends TestCase
         $this->assertArrayHasKey('short_code', $json['errors']);
 
         $user = $this->getTestUser('passwordresettest@' . \config('app.domain'));
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->save($code);
 
         // Data with existing code but missing password
         $data = [
@@ -352,9 +352,9 @@ class PasswordResetTest extends TestCase
     public function testPasswordResetValidInput()
     {
         $user = $this->getTestUser('passwordresettest@' . \config('app.domain'));
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->delete();
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->delete();
+        $user->verificationCodes()->save($code);
 
         Queue::fake();
         Queue::assertNothingPushed();
@@ -393,13 +393,13 @@ class PasswordResetTest extends TestCase
         $this->assertTrue($user->validatePassword('testtest'));
 
         // Check if the code has been removed
-        $this->assertCount(0, $user->verificationcodes()->get());
+        $this->assertCount(0, $user->verificationCodes()->get());
 
         // Test 2FA handling
         $user = $this->getTestUser('ned@kolab.org');
-        $code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->delete();
-        $user->verificationcodes()->save($code);
+        $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->delete();
+        $user->verificationCodes()->save($code);
         $user->removeSetting('password_expired');
 
         $data = [
@@ -421,7 +421,7 @@ class PasswordResetTest extends TestCase
         // Make sure password didn't change if 2FA wasn't provided
         $user->refresh();
         $this->assertTrue($user->validatePassword(\config('app.passphrase')));
-        $this->assertCount(1, $user->verificationcodes()->get());
+        $this->assertCount(1, $user->verificationCodes()->get());
 
         $data['secondfactor'] = SecondFactor::code('ned@kolab.org');
         $response = $this->post('/api/auth/password-reset', $data);
@@ -435,7 +435,7 @@ class PasswordResetTest extends TestCase
 
         $user->refresh();
         $this->assertTrue($user->validatePassword('ABC123456789'));
-        $this->assertCount(0, $user->verificationcodes()->get());
+        $this->assertCount(0, $user->verificationCodes()->get());
     }
 
     /**
@@ -570,14 +570,14 @@ class PasswordResetTest extends TestCase
     public function testCodeCreate()
     {
         $user = $this->getTestUser('john@kolab.org');
-        $user->verificationcodes()->delete();
+        $user->verificationCodes()->delete();
 
         $response = $this->actingAs($user)->post('/api/v4/password-reset/code', []);
         $response->assertStatus(200);
 
         $json = $response->json();
 
-        $code = $user->verificationcodes()->first();
+        $code = $user->verificationCodes()->first();
 
         $this->assertSame('success', $json['status']);
         $this->assertSame($code->code, $json['code']);
@@ -593,15 +593,15 @@ class PasswordResetTest extends TestCase
         $user = $this->getTestUser('passwordresettest@' . \config('app.domain'));
         $john = $this->getTestUser('john@kolab.org');
         $jack = $this->getTestUser('jack@kolab.org');
-        $john->verificationcodes()->delete();
-        $jack->verificationcodes()->delete();
+        $john->verificationCodes()->delete();
+        $jack->verificationCodes()->delete();
 
-        $john_code = new VerificationCode(['mode' => 'password-reset']);
-        $john->verificationcodes()->save($john_code);
-        $jack_code = new VerificationCode(['mode' => 'password-reset']);
-        $jack->verificationcodes()->save($jack_code);
-        $user_code = new VerificationCode(['mode' => 'password-reset']);
-        $user->verificationcodes()->save($user_code);
+        $john_code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $john->verificationCodes()->save($john_code);
+        $jack_code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $jack->verificationCodes()->save($jack_code);
+        $user_code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+        $user->verificationCodes()->save($user_code);
 
         // Unauth access
         $response = $this->delete('/api/v4/password-reset/code/' . $user_code->code);
@@ -621,7 +621,7 @@ class PasswordResetTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertSame(0, $john->verificationcodes()->count());
+        $this->assertSame(0, $john->verificationCodes()->count());
         $this->assertSame('success', $json['status']);
         $this->assertSame("Password reset code deleted successfully.", $json['message']);
 
@@ -633,7 +633,7 @@ class PasswordResetTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertSame(0, $jack->verificationcodes()->count());
+        $this->assertSame(0, $jack->verificationCodes()->count());
         $this->assertSame('success', $json['status']);
         $this->assertSame("Password reset code deleted successfully.", $json['message']);
     }

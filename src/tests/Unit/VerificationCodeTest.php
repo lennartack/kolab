@@ -2,7 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Utils;
 use App\VerificationCode;
 use Tests\TestCase;
 
@@ -18,6 +17,6 @@ class VerificationCodeTest extends TestCase
         $code_length = env('VERIFICATION_CODE_LENGTH', VerificationCode::SHORTCODE_LENGTH);
 
         $this->assertTrue(strlen($code) === $code_length);
-        $this->assertTrue(strspn($code, Utils::CHARS) === strlen($code));
+        $this->assertTrue(strspn($code, '1234567890') === strlen($code));
     }
 }

@@ -103,8 +103,8 @@ class UsersTest extends TestCaseDusk
         $this->browse(function (Browser $browser) {
             $john = $this->getTestUser('john@kolab.org');
             $jack = $this->getTestUser('jack@kolab.org');
-            $john->verificationcodes()->delete();
-            $jack->verificationcodes()->delete();
+            $john->verificationCodes()->delete();
+            $jack->verificationCodes()->delete();
             $john->setSetting('password_policy', 'min:10,upper,digit');
 
             // Test that the page requires authentication
@@ -292,8 +292,8 @@ class UsersTest extends TestCaseDusk
             });
 
             // Test password reset link delete and create
-            $code = new VerificationCode(['mode' => 'password-reset']);
-            $jack->verificationcodes()->save($code);
+            $code = new VerificationCode(['mode' => VerificationCode::MODE_PASSWORD]);
+            $jack->verificationCodes()->save($code);
 
             $browser->visit('/user/' . $jack->id)
                 ->on(new UserInfo())
@@ -320,7 +320,7 @@ class UsersTest extends TestCaseDusk
                         ->assertMissing('#pass-mode-input:checked')
                         ->assertMissing('#password');
 
-                    $this->assertSame(0, $jack->verificationcodes()->count());
+                    $this->assertSame(0, $jack->verificationCodes()->count());
 
                     // Test creating a password reset link
                     $link = preg_replace('|/[a-z0-9A-Z-]+$|', '', $link) . '/';
@@ -334,7 +334,7 @@ class UsersTest extends TestCaseDusk
 
                     // Test copy to clipboard
                     /* TODO: Figure out how to give permission to do this operation
-                    $code = $john->verificationcodes()->first();
+                    $code = $john->verificationCodes()->first();
                     $link .= $code->short_code . '-' . $code->code;
 
                     $browser->assertMissing('#password-link button.text-danger')
@@ -349,8 +349,8 @@ class UsersTest extends TestCaseDusk
                         ->click('button[type=submit]')
                         ->assertToast(Toast::TYPE_SUCCESS, 'User data updated successfully.');
 
-                    $this->assertSame(1, $jack->verificationcodes()->where('active', true)->count());
-                    $this->assertSame(0, $john->verificationcodes()->count());
+                    $this->assertSame(1, $jack->verificationCodes()->where('active', true)->count());
+                    $this->assertSame(0, $john->verificationCodes()->count());
                 });
         });
     }
