@@ -34,27 +34,24 @@ class EmailVerificationJobTest extends TestCase
 
         $user = $this->getTestUser('EmailVerification@UserAccount.com');
         $user->verificationCodes()->save($code);
-        $user->setSettings(['external_email_new' => 'etx@email.com']);
+        $user->setSettings(['external_email_new' => 'etx@email.com', 'external_email_code' => $code->code]);
 
         Mail::fake();
 
         // Assert that no jobs were pushed...
         Mail::assertNothingSent();
 
-        $job = new EmailVerificationJob($code);
+        $job = new EmailVerificationJob($code->code);
         $job->handle();
 
         // Assert the email sending job was pushed once
         Mail::assertSent(EmailVerification::class, 1);
 
-        // Assert the mail was sent to the code's email
         Mail::assertSent(EmailVerification::class, static function ($mail) {
-            return $mail->hasTo('ext@email.com');
-        });
-
-        // Assert sender
-        Mail::assertSent(EmailVerification::class, static function ($mail) {
-            return $mail->hasFrom(\config('mail.sender.address'), \config('mail.sender.name'))
+            // Assert the mail was sent to the code's email
+            return $mail->hasTo('etx@email.com')
+                // Assert sender
+                && $mail->hasFrom(\config('mail.sender.address'), \config('mail.sender.name'))
                 && $mail->hasReplyTo(\config('mail.replyto.address'), \config('mail.replyto.name'));
         });
 
