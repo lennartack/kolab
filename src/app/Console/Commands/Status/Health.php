@@ -122,7 +122,7 @@ class Health extends Command
         try {
             $user = User::findByEmail($this->option('user'));
             $response = AuthController::logonResponse($user, $this->option('password'));
-            return $response->getData()->status == 'success';
+            return $response->response()->getData()->status == 'success';
         } catch (\Exception $exception) {
             $this->line($exception);
             return false;
