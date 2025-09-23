@@ -625,6 +625,22 @@ class Mollie extends PaymentProvider
     }
 
     /**
+     * Returns the full URL used when returning from the Mollie checkout page (e.g. the wallet page).
+     * Depending on the request origin it will return a URL for the User or Reseller UI.
+     * For some mobile clients it will return a special scheme URL.
+     */
+    public static function redirectUrl(): string
+    {
+        $user_agent = strtolower((string) \request()->headers->get('User-Agent'));
+
+        if (str_contains($user_agent, 'aphy-app')) {
+            return 'aphy-app://payment-return';
+        }
+
+        return parent::redirectUrl();
+    }
+
+    /**
      * Get a payment.
      *
      * @param string $paymentId Payment identifier
