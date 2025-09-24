@@ -172,6 +172,9 @@ class ActiveSync:
 
 
     def send_request(self, command, request, extra_args = None):
+        if self.verbose:
+            print(request)
+
         body = wbxml.xml_to_wbxml(request)
 
         headers = {
@@ -417,7 +420,6 @@ class ActiveSync:
         </FolderCreate>
         """.replace('    ', '').replace('\n', '').format(collection_name=collection_name, folder_sync_key=folder_sync_key, folder_type=folder_type)
 
-        print(request)
         response = self.send_request('FolderCreate', request)
 
         assert response.status == 200
@@ -500,9 +502,6 @@ class ActiveSync:
                 <SyncKey>{sync_key}</SyncKey>
             </FolderSync>
         """.replace('    ', '').replace('\n', '').format(sync_key=sync_key)
-
-        if self.verbose:
-            print(request)
 
         response = self.send_request('FolderSync', request)
 
