@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V4\Reseller;
 
+use App\Http\Resources\SharedFolderResource;
 use App\SharedFolder;
 use App\User;
 use Illuminate\Http\JsonResponse;
@@ -27,15 +28,8 @@ class SharedFoldersController extends \App\Http\Controllers\API\V4\Admin\SharedF
             }
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($folder) {
-                return $this->objectToClient($folder);
-            }
-        );
-
         $result = [
-            'list' => $result,
+            'list' => SharedFolderResource::collection($result),
             'count' => count($result),
             'message' => self::trans('app.search-foundxsharedfolders', ['x' => count($result)]),
         ];

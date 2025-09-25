@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\API\V4;
 
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\SharedFolderInfoResource;
+use App\Http\Resources\SharedFolderResource;
 use App\Jobs\SharedFolder\CreateJob;
 use App\Rules\SharedFolderName;
 use App\Rules\SharedFolderType;
 use App\SharedFolder;
 use App\User;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +32,52 @@ class SharedFoldersController extends RelationController
     protected $objectProps = ['email', 'name', 'type'];
 
     /**
+     * List shared folders.
+     *
+     * The shared folder entitlements billed to the current user wallet(s)
+     */
+    public function index(): JsonResponse
+    {
+        $user = $this->guard()->user();
+
+        $result = $user->sharedFolders()->orderBy('name')->get();
+
+        // TODO: Searching and paging
+
+        return response()->json([
+            'status' => 'success',
+            // @var string Response message
+            'message' => self::trans("app.search-foundxshared-folders", ['x' => count($result)]),
+            // List of shared folders
+            'list' => SharedFolderResource::collection($result),
+            // @var int Number of entries in the list
+            'count' => count($result),
+            // @var bool Indicates that there are more entries available
+            'hasMore' => false,
+        ]);
+    }
+
+    /**
+     * Shared folder information.
+     *
+     * @param string $id Shared folder identifier
+     */
+    public function show($id): JsonResponse
+    {
+        $folder = SharedFolder::find($id);
+
+        if (!$this->checkTenant($folder)) {
+            return $this->errorResponse(404);
+        }
+
+        if (!$this->guard()->user()->canRead($folder)) {
+            return $this->errorResponse(403);
+        }
+
+        return (new SharedFolderInfoResource($folder))->response();
+    }
+
+    /**
      * SharedFolder status (extended) information
      *
      * @param SharedFolder $folder SharedFolder object
@@ -48,8 +97,11 @@ class SharedFoldersController extends RelationController
     }
 
     /**
-     * Create a new shared folder record.
+     * Create a shared folder.
      */
+    #[BodyParameter('domain', description: 'Domain namespace', type: 'string', required: true)]
+    #[BodyParameter('name', description: 'Folder name', type: 'string', required: true)]
+    #[BodyParameter('type', description: 'Folder type', type: 'string', required: true)]
     public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
@@ -59,8 +111,8 @@ class SharedFoldersController extends RelationController
             return $this->errorResponse(403);
         }
 
-        if ($error_response = $this->validateFolderRequest($request, null, $wallet->owner)) {
-            return $error_response;
+        if ($errors = $this->validateFolderRequest($request, null, $wallet->owner)) {
+            return response()->json(['status' => 'error', 'errors' => /* @var array */ $errors], 422);
         }
 
         DB::beginTransaction();
@@ -92,6 +144,8 @@ class SharedFoldersController extends RelationController
      * @param Request $request the API request
      * @param string  $id      Shared folder identifier
      */
+    #[BodyParameter('name', description: 'Folder name', type: 'string')]
+    #[BodyParameter('aliases', description: 'Folder email aliases', type: 'array<string>')]
     public function update(Request $request, $id): JsonResponse
     {
         $folder = SharedFolder::find($id);
@@ -106,8 +160,8 @@ class SharedFoldersController extends RelationController
             return $this->errorResponse(403);
         }
 
-        if ($error_response = $this->validateFolderRequest($request, $folder, $folder->walletOwner())) {
-            return $error_response;
+        if ($errors = $this->validateFolderRequest($request, $folder, $folder->walletOwner())) {
+            return response()->json(['status' => 'error', 'errors' => /* @var array */ $errors], 422);
         }
 
         $name = $request->input('name');
@@ -171,9 +225,9 @@ class SharedFoldersController extends RelationController
      * @param SharedFolder|null $folder  Shared folder
      * @param User|null         $owner   Account owner
      *
-     * @return JsonResponse|null The error response on error
+     * @return ?array List of validation errors if any
      */
-    protected function validateFolderRequest(Request $request, $folder, $owner)
+    protected function validateFolderRequest(Request $request, $folder, $owner): ?array
     {
         $errors = [];
 
@@ -233,11 +287,7 @@ class SharedFoldersController extends RelationController
             $request->aliases = $aliases;
         }
 
-        if (!empty($errors)) {
-            return response()->json(['status' => 'error', 'errors' => $errors], 422);
-        }
-
-        return null;
+        return !empty($errors) ? $errors : null;
     }
 
     /**

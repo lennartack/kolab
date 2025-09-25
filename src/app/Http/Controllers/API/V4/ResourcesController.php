@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\API\V4;
 
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\ResourceInfoResource;
+use App\Http\Resources\ResourceResource;
 use App\Jobs\Resource\CreateJob;
 use App\Resource;
 use App\Rules\ResourceName;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +27,52 @@ class ResourcesController extends RelationController
 
     /** @var array Common object properties in the API response */
     protected $objectProps = ['email', 'name'];
+
+    /**
+     * List resources.
+     *
+     * The resource entitlements billed to the current user wallet(s)
+     */
+    public function index(): JsonResponse
+    {
+        $user = $this->guard()->user();
+
+        $result = $user->resources()->orderBy('name')->get();
+
+        // TODO: Searching and paging
+
+        return response()->json([
+            'status' => 'success',
+            // @var string Response message
+            'message' => self::trans("app.search-foundxresources", ['x' => count($result)]),
+            // List of resources
+            'list' => ResourceResource::collection($result),
+            // @var int Number of entries in the list
+            'count' => count($result),
+            // @var bool Indicates that there are more entries available
+            'hasMore' => false,
+        ]);
+    }
+
+    /**
+     * Resource information.
+     *
+     * @param string $id Resource identifier
+     */
+    public function show($id): JsonResponse
+    {
+        $resource = Resource::find($id);
+
+        if (!$this->checkTenant($resource)) {
+            return $this->errorResponse(404);
+        }
+
+        if (!$this->guard()->user()->canRead($resource)) {
+            return $this->errorResponse(403);
+        }
+
+        return (new ResourceInfoResource($resource))->response();
+    }
 
     /**
      * Resource status (extended) information
@@ -49,6 +98,7 @@ class ResourcesController extends RelationController
      *
      * @param Request $request the API request
      */
+    #[BodyParameter('domain', description: 'Domain namespace', type: 'string', required: true)]
     public function store(Request $request): JsonResponse
     {
         $current_user = $this->guard()->user();
@@ -96,6 +146,7 @@ class ResourcesController extends RelationController
      * @param Request $request the API request
      * @param string  $id      Resource identifier
      */
+    #[BodyParameter('name', description: 'Resource name', type: 'string')]
     public function update(Request $request, $id): JsonResponse
     {
         $resource = Resource::find($id);

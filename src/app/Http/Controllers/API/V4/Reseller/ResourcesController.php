@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V4\Reseller;
 
+use App\Http\Resources\ResourceResource;
 use App\Resource;
 use App\User;
 use Illuminate\Http\JsonResponse;
@@ -27,15 +28,8 @@ class ResourcesController extends \App\Http\Controllers\API\V4\Admin\ResourcesCo
             }
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($resource) {
-                return $this->objectToClient($resource);
-            }
-        );
-
         $result = [
-            'list' => $result,
+            'list' => ResourceResource::collection($result),
             'count' => count($result),
             'message' => self::trans('app.search-foundxresources', ['x' => count($result)]),
         ];

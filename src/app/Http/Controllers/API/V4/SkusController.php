@@ -104,7 +104,7 @@ class SkusController extends ResourceController
      * @param object $object   User/Domain/etc object
      * @param array  $response The response to put the data into
      */
-    public static function objectEntitlements($object, &$response = []): void
+    public static function objectEntitlements($object, &$response = []): array
     {
         // Object's entitlements information
         $response['skus'] = Entitlement::objectEntitlementsSummary($object);
@@ -117,6 +117,8 @@ class SkusController extends ResourceController
                 $response['wallet']['discount_description'] = $wallet->discount->description;
             }
         }
+
+        return $response;
     }
 
     /**

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API\V4;
 use App\Domain;
 use App\Group;
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\GroupInfoResource;
+use App\Http\Resources\GroupResource;
 use App\Jobs\Group\CreateJob;
 use App\Rules\ExternalEmail;
 use App\Rules\GroupName;
@@ -39,22 +41,49 @@ class GroupsController extends RelationController
     protected $deleteBeforeCreate;
 
     /**
-     * Prepare a resource object for the UI.
+     * List groups.
      *
-     * @param object $object An object
-     * @param bool   $full   Include all object properties
-     *
-     * @return array Object information
+     * The group entitlements billed to the current user wallet(s)
      */
-    protected function objectToClient($object, bool $full = false): array
+    public function index(): JsonResponse
     {
-        $result = parent::objectToCLient($object, $full);
+        $user = $this->guard()->user();
 
-        if ($full) {
-            $result['members'] = $object->getAddresses();
+        $result = $user->groups()->orderBy('name')->orderBy('email')->get();
+
+        // TODO: Searching and paging
+
+        return response()->json([
+            'status' => 'success',
+            // @var string Response message
+            'message' => self::trans("app.search-foundxdistlists", ['x' => count($result)]),
+            // List of groups
+            'list' => GroupResource::collection($result),
+            // @var int Number of entries in the list
+            'count' => count($result),
+            // @var bool Indicates that there are more entries available
+            'hasMore' => false,
+        ]);
+    }
+
+    /**
+     * Group information.
+     *
+     * @param string $id Group identifier
+     */
+    public function show($id): JsonResponse
+    {
+        $group = Group::find($id);
+
+        if (!$this->checkTenant($group)) {
+            return $this->errorResponse(404);
         }
 
-        return $result;
+        if (!$this->guard()->user()->canRead($group)) {
+            return $this->errorResponse(403);
+        }
+
+        return (new GroupInfoResource($group))->response();
     }
 
     /**
@@ -76,7 +105,7 @@ class GroupsController extends RelationController
     }
 
     /**
-     * Create a new group record.
+     * Create a group.
      */
     #[BodyParameter('name', description: 'Group name', type: 'string', required: true)]
     #[BodyParameter('email', description: 'Group email address', type: 'string', required: true)]
@@ -132,7 +161,7 @@ class GroupsController extends RelationController
         }
 
         if (!empty($errors)) {
-            return response()->json(['status' => 'error', 'errors' => $errors], 422);
+            return response()->json(['status' => 'error', 'errors' => /* @var array */ $errors], 422);
         }
 
         DB::beginTransaction();

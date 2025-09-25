@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API\V4;
 
 use App\Domain;
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\DomainInfoResource;
+use App\Http\Resources\DomainResource;
 use App\Jobs\Domain\CreateJob;
 use App\Package;
 use App\Rules\UserEmailDomain;
@@ -56,6 +58,7 @@ class DomainsController extends RelationController
 
         return response()->json([
             'status' => 'success',
+            // @var array Domain status information
             'statusInfo' => self::statusInfo($domain),
             'message' => self::trans('app.domain-confirm-success'),
         ]);
@@ -90,6 +93,52 @@ class DomainsController extends RelationController
             'status' => 'success',
             'message' => self::trans('app.domain-delete-success'),
         ]);
+    }
+
+    /**
+     * List domains.
+     *
+     * The domain entitlements billed to the current user wallet(s)
+     */
+    public function index(): JsonResponse
+    {
+        $user = $this->guard()->user();
+
+        $result = $user->domains(true, false)->orderBy('namespace')->get();
+
+        // TODO: Searching and paging
+
+        return response()->json([
+            'status' => 'success',
+            // @var string Response message
+            'message' => self::trans("app.search-foundx{$this->label}s", ['x' => count($result)]),
+            // List of domains
+            'list' => DomainResource::collection($result),
+            // @var int Number of entries in the list
+            'count' => count($result),
+            // @var bool Indicates that there are more entries available
+            'hasMore' => false,
+        ]);
+    }
+
+    /**
+     * Domain information.
+     *
+     * @param string $id Domain identifier
+     */
+    public function show($id): JsonResponse
+    {
+        $domain = Domain::find($id);
+
+        if (!$this->checkTenant($domain)) {
+            return $this->errorResponse(404);
+        }
+
+        if (!$this->guard()->user()->canRead($domain)) {
+            return $this->errorResponse(403);
+        }
+
+        return (new DomainInfoResource($domain))->response();
     }
 
     /**
@@ -166,97 +215,6 @@ class DomainsController extends RelationController
             'status' => 'success',
             'message' => self::trans('app.domain-create-success'),
         ]);
-    }
-
-    /**
-     * Domain information.
-     *
-     * @param string $id Domain identifier
-     */
-    public function show($id): JsonResponse
-    {
-        $domain = Domain::find($id);
-
-        if (!$this->checkTenant($domain)) {
-            return $this->errorResponse(404);
-        }
-
-        if (!$this->guard()->user()->canRead($domain)) {
-            return $this->errorResponse(403);
-        }
-
-        $response = $this->objectToClient($domain, true);
-
-        // Add hash information to the response
-        $response['hash_text'] = $domain->hash(Domain::HASH_TEXT);
-        $response['hash_cname'] = $domain->hash(Domain::HASH_CNAME);
-        $response['hash_code'] = $domain->hash(Domain::HASH_CODE);
-
-        // Add DNS/MX configuration for the domain
-        $response['dns'] = self::getDNSConfig($domain);
-        $response['mx'] = self::getMXConfig($domain->namespace);
-
-        // Domain configuration, e.g. spf whitelist
-        $response['config'] = $domain->getConfig();
-
-        // Status info
-        $response['statusInfo'] = self::statusInfo($domain);
-
-        // Entitlements/Wallet info
-        SkusController::objectEntitlements($domain, $response);
-
-        return response()->json($response);
-    }
-
-    /**
-     * Provide DNS MX information to configure specified domain for
-     */
-    protected static function getMXConfig(string $namespace): array
-    {
-        $entries = [];
-
-        // copy MX entries from an existing domain
-        if ($master = \config('dns.copyfrom')) {
-            // TODO: cache this lookup
-            foreach ((array) dns_get_record($master, \DNS_MX) as $entry) {
-                $entries[] = sprintf(
-                    "@\t%s\t%s\tMX\t%d %s.",
-                    \config('dns.ttl', $entry['ttl']),
-                    $entry['class'],
-                    $entry['pri'],
-                    $entry['target']
-                );
-            }
-        } elseif ($static = \config('dns.static')) {
-            $entries[] = strtr($static, ['\n' => "\n", '%s' => $namespace]);
-        }
-
-        // display SPF settings
-        if ($spf = \config('dns.spf')) {
-            $entries[] = ';';
-            foreach (['TXT', 'SPF'] as $type) {
-                $entries[] = sprintf(
-                    "@\t%s\tIN\t%s\t\"%s\"",
-                    \config('dns.ttl'),
-                    $type,
-                    $spf
-                );
-            }
-        }
-
-        return $entries;
-    }
-
-    /**
-     * Provide sample DNS config for domain confirmation
-     */
-    protected static function getDNSConfig(Domain $domain): array
-    {
-        $hash_txt = $domain->hash(Domain::HASH_TEXT);
-
-        return [
-            "{$domain->namespace}. TXT \"{$hash_txt}\"",
-        ];
     }
 
     /**

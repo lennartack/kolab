@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V4\Reseller;
 
 use App\Domain;
+use App\Http\Resources\DomainResource;
 use App\User;
 use Illuminate\Http\JsonResponse;
 
@@ -36,15 +37,10 @@ class DomainsController extends \App\Http\Controllers\API\V4\Admin\DomainsContro
             }
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($domain) {
-                return $this->objectToClient($domain);
-            }
-        );
-
         $result = [
-            'list' => $result,
+            // List of domains
+            'list' => DomainResource::collection($result),
+            // @var int Number of entries in the list
             'count' => count($result),
             'message' => self::trans('app.search-foundxdomains', ['x' => count($result)]),
         ];

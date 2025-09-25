@@ -96,11 +96,9 @@ class RelationController extends ResourceController
         }
 
         // TODO: Search and paging
-
-        $result = $query->get()
-            ->map(function ($resource) {
-                return $this->objectToClient($resource);
-            });
+        $result = $query->get()->map(function ($resource) {
+            return $this->objectToClient($resource);
+        });
 
         $result = [
             'status' => 'success',
@@ -360,29 +358,11 @@ class RelationController extends ResourceController
 
         $response = $this->objectToClient($resource, true);
 
-        if (!empty($statusInfo = $this->statusInfo($resource))) {
-            $response['statusInfo'] = $statusInfo;
-        }
-
-        // Resource configuration, e.g. sender_policy, invitation_policy, acl
-        if (method_exists($resource, 'getConfig')) {
-            $response['config'] = $resource->getConfig();
-        }
-
-        if (method_exists($resource, 'aliases')) {
-            $response['aliases'] = $resource->aliases()->pluck('alias')->all();
-        }
-
-        // Entitlements/Wallet info
-        if (method_exists($resource, 'wallet')) {
-            API\V4\SkusController::objectEntitlements($resource, $response);
-        }
-
         return response()->json($response);
     }
 
     /**
-     * Get a list of SKUs available to the resource.
+     * Get list of SKUs available to the resource.
      *
      * @param int $id Resource identifier
      */

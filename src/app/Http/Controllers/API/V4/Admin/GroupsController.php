@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V4\Admin;
 
 use App\EventLog;
 use App\Group;
+use App\Http\Resources\GroupResource;
 use App\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,15 +31,8 @@ class GroupsController extends \App\Http\Controllers\API\V4\GroupsController
             }
         }
 
-        // Process the result
-        $result = $result->map(
-            function ($group) {
-                return $this->objectToClient($group);
-            }
-        );
-
         $result = [
-            'list' => $result,
+            'list' => GroupResource::collection($result),
             'count' => count($result),
             'message' => self::trans('app.search-foundxdistlists', ['x' => count($result)]),
         ];
