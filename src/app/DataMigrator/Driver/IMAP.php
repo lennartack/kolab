@@ -222,7 +222,6 @@ class IMAP implements ExporterInterface, ImporterInterface
         if ($this->imap->getCapability('METADATA') && !empty($this->account->metadata)) {
             $folder->metadata = $this->imap->getMetadata($mailbox, $this->account->metadata)[$mailbox] ?? null;
         }
-
     }
 
     /**

@@ -34,7 +34,8 @@ class MigrateCommand extends Command
                                 {--dry : Dry run}
                                 {--folder-filter=* : Exact folder name match before mapping}
                                 {--skip-folder=* : Exact folder name match before mapping}
-                                {--folder-mapping=* : Folder mapping in the form "source:target"}';
+                                {--folder-mapping=* : Folder mapping in the form "source:target"}
+                                {--metadata=* : IMAP folder metadata key(s) to migrate}';
     //                                {--export-only : Only export data}
     //                                {--import-only : Only import previously exported data}';
 

@@ -48,6 +48,9 @@ class Folder
     /** @var array Extra (temporary, cache) data */
     public $data = [];
 
+    /** @var ?array IMAP metadata */
+    public $metadata;
+
     /**
      * Create Folder instance from an array
      */
