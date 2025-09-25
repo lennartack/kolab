@@ -1236,6 +1236,8 @@ class SignupTest extends TestCase
             ['administrator', $domain, false, ['login' => 'The specified login is not available.']],
             ['sales', $domain, false, ['login' => 'The specified login is not available.']],
             ['root', $domain, false, ['login' => 'The specified login is not available.']],
+            ['anonymous', $domain, false, ['login' => 'The specified login is not available.']],
+            ['anonymous', 'kolabsys.com', false, ['login' => 'The specified login is not available.']],
 
             // Domain account
             ['admin', 'kolabsys.com', true, null],

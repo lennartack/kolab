@@ -1638,6 +1638,10 @@ class UsersTest extends TestCase
             ["{$domain}", $john, 'The specified email is invalid.'],
             [".@{$domain}", $john, 'The specified email is invalid.'],
 
+            // blacklisted
+            ["anonymous@kolab.org", $john, 'The specified email is not available.'],
+            ["anyone@kolab.org", $john, 'The specified email is not available.'],
+
             // forbidden local part on public domains
             ["admin@{$domain}", $john, 'The specified email is not available.'],
             ["administrator@{$domain}", $john, 'The specified email is not available.'],

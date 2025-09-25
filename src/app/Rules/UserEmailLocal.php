@@ -9,6 +9,11 @@ class UserEmailLocal implements Rule
 {
     private $message;
     private $external;
+    private $blacklist = [
+        // These are special names in Cyrus IMAP
+        'anonymous',
+        'anyone',
+    ];
 
     /**
      * Class constructor.
@@ -46,6 +51,15 @@ class UserEmailLocal implements Rule
         if ($v->fails()) {
             $this->message = \trans('validation.entryinvalid', ['attribute' => $attribute]);
             return false;
+        }
+
+        // Global blacklist, e.g. for keywords reserved in the backend(s)
+        // TODO: This should not be done when checking aliases or groups (they don't create a mailbox)
+        foreach ($this->blacklist as $entry) {
+            if (strcasecmp($login, $entry) == 0) {
+                $this->message = \trans('validation.entryexists', ['attribute' => $attribute]);
+                return false;
+            }
         }
 
         // Check if the local part is not one of exceptions

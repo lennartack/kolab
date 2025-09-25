@@ -48,6 +48,11 @@ class UserEmailLocalTest extends TestCase
             ['Root', false, 'The specified user is not available.'],
             ['Postmaster', false, 'The specified user is not available.'],
             ['Webmaster', false, 'The specified user is not available.'],
+            ['anonymous', false, 'The specified user is not available.'],
+            ['AnoNymous', false, 'The specified user is not available.'],
+            ['anonymous', true, 'The specified user is not available.'],
+            ['anyone', false, 'The specified user is not available.'],
+            ['anyOne', true, 'The specified user is not available.'],
             // Valid
             ['test.test', false, null],
             // Valid for external domains
