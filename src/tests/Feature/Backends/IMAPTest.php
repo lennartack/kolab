@@ -491,7 +491,7 @@ class IMAPTest extends TestCase
         $imap = $this->getImap($user->email);
         $imap->createFolder("copytest1");
 
-        # TODO add messages
+        // TODO add messages
 
         $result = IMAP::copyMailbox(
             IMAP::userMailbox($user->email, "copytest1"),
@@ -508,7 +508,7 @@ class IMAPTest extends TestCase
         $result = IMAP::listMailboxes($user->email);
         $this->assertTrue(in_array(IMAP::userMailbox($user->email, "copytest1"), $result));
 
-        # TODO verify messages
+        // TODO verify messages
     }
 
     /**

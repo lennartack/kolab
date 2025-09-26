@@ -477,7 +477,7 @@ class IMAP
      *
      * @param string $sourceMailbox Source Mailbox
      * @param string $targetMailbox Target Mailbox
-     * @param array  $metadata Metadata entries to copy
+     * @param array  $metadata      Metadata entries to copy
      *
      * @return bool True if the mailbox was copied successfully, False otherwise
      *
@@ -525,7 +525,7 @@ class IMAP
     /**
      * subscribe to the user mailbox
      *
-     * @param string $user user email address
+     * @param string $user    user email address
      * @param string $mailbox mailbox name
      *
      * @return bool True if the mailbox was subscribed successfully, False otherwise
@@ -545,7 +545,7 @@ class IMAP
     /**
      * unsubscribe from the user mailbox
      *
-     * @param string $user user email address
+     * @param string $user    user email address
      * @param string $mailbox mailbox name
      *
      * @return bool True if the mailbox was unsubscribed successfully, False otherwise
@@ -565,7 +565,7 @@ class IMAP
     /**
      * get the user mailbox name for cyrus-imap
      *
-     * @param string $user user email address
+     * @param string $user    user email address
      * @param string $mailbox mailbox name
      *
      * @return string user mailbox in user/ namespace

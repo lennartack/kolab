@@ -50,7 +50,7 @@ class IdentityEntity implements IdentityEntityInterface
 
         // A custom scope/claim that allows us to use an old user identifier (e.g. after a migration from an old system)
         if (in_array('uuid', $scopes)) {
-            $claims['uuid'] = (string)($this->user->getSetting('uid') ?: $this->user->id);
+            $claims['uuid'] = (string) ($this->user->getSetting('uid') ?: $this->user->id);
         }
 
         return $claims;
