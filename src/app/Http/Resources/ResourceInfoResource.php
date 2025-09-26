@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Http\Controllers\API\V4\ResourcesController;
-use App\Http\Controllers\API\V4\SkusController;
 use App\Resource;
 use Illuminate\Http\Request;
 
@@ -36,7 +35,7 @@ class ResourceInfoResource extends GroupResource
             'statusInfo' => ResourcesController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(SkusController::objectEntitlements($this->resource)),
+            $this->merge(self::objectEntitlements($this->resource)),
         ];
     }
 }

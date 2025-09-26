@@ -1504,7 +1504,6 @@ class UsersTest extends TestCase
         $this->assertCount(0, $result['accounts']);
         $this->assertCount(1, $result['wallets']);
         $this->assertSame($wallet->id, $result['wallet']['id']);
-        $this->assertArrayNotHasKey('discount', $result['wallet']);
         $this->assertFalse($result['isLocked']);
 
         $this->assertTrue($result['statusInfo']['enableDomains']);

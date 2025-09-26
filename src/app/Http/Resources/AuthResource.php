@@ -3,12 +3,11 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Authentication response
  */
-class AuthResource extends JsonResource
+class AuthResource extends ApiResource
 {
     public string $status = 'success';
     public ?string $message = null;

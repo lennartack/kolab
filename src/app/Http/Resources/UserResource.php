@@ -5,24 +5,19 @@ namespace App\Http\Resources;
 use App\Http\Controllers\RelationController;
 use App\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * User response
  *
  * @mixin User
  */
-class UserResource extends JsonResource
+class UserResource extends ApiResource
 {
     /**
      * Transform the resource into an array.
      */
     public function toArray(Request $request): array
     {
-        $actor = Auth::guard()->user();
-        $isAdmin = $actor && in_array($actor->role, [User::ROLE_ADMIN, User::ROLE_RESELLER]);
-
         $state = RelationController::objectState($this->resource);
 
         return [
@@ -33,7 +28,7 @@ class UserResource extends JsonResource
             // User status
             'status' => $this->resource->status,
 
-            $this->mergeWhen($isAdmin, [
+            $this->mergeWhen(self::isAdmin(), [
                 // User creation date-time
                 'created_at' => (string) $this->resource->created_at,
                 // User deletion date-time

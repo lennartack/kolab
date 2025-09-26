@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Group;
 use App\Http\Controllers\API\V4\GroupsController;
-use App\Http\Controllers\API\V4\SkusController;
 use Illuminate\Http\Request;
 
 /**
@@ -39,7 +38,7 @@ class GroupInfoResource extends GroupResource
             'statusInfo' => GroupsController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(SkusController::objectEntitlements($this->resource)),
+            $this->merge(self::objectEntitlements($this->resource)),
         ];
     }
 }

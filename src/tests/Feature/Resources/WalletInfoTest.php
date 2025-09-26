@@ -3,12 +3,12 @@
 namespace Tests\Feature\Resources;
 
 use App\Discount;
-use App\Http\Resources\WalletResource;
+use App\Http\Resources\WalletInfoResource;
 use App\Plan;
 use Carbon\Carbon;
 use Tests\TestCase;
 
-class WalletTest extends TestCase
+class WalletInfoTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -34,7 +34,7 @@ class WalletTest extends TestCase
         $user->assignPlan($plan);
         $wallet = $user->wallets()->first();
 
-        $resource = new WalletResource($wallet);
+        $resource = new WalletInfoResource($wallet);
         $method = new \ReflectionMethod($resource, 'getWalletNotice');
 
         // User/entitlements created today, balance=0

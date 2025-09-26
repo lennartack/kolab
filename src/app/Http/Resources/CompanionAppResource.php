@@ -4,14 +4,13 @@ namespace App\Http\Resources;
 
 use App\CompanionApp;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * CompanionApp response
  *
  * @mixin CompanionApp
  */
-class CompanionAppResource extends JsonResource
+class CompanionAppResource extends ApiResource
 {
     /**
      * Transform the resource into an array.

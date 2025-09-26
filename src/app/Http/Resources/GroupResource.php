@@ -5,14 +5,13 @@ namespace App\Http\Resources;
 use App\Group;
 use App\Http\Controllers\RelationController;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Group response
  *
  * @mixin Group
  */
-class GroupResource extends JsonResource
+class GroupResource extends ApiResource
 {
     /**
      * Transform the resource into an array.

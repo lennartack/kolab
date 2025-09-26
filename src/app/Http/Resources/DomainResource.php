@@ -5,14 +5,13 @@ namespace App\Http\Resources;
 use App\Domain;
 use App\Http\Controllers\RelationController;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Domain response
  *
  * @mixin Domain
  */
-class DomainResource extends JsonResource
+class DomainResource extends ApiResource
 {
     /**
      * Transform the resource into an array.

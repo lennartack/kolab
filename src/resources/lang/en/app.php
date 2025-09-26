@@ -141,6 +141,7 @@ return [
 
     'search-foundxdomains' => ':x domains have been found.',
     'search-foundxdistlists' => ':x distribution lists have been found.',
+    'search-foundxpackages' => ':x packages have been found.',
     'search-foundxresources' => ':x resources have been found.',
     'search-foundxshared-folders' => ':x shared folders have been found.',
     'search-foundxusers' => ':x user accounts have been found.',

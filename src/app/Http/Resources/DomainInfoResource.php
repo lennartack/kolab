@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Domain;
 use App\Http\Controllers\API\V4\DomainsController;
-use App\Http\Controllers\API\V4\SkusController;
 use Illuminate\Http\Request;
 
 /**
@@ -48,7 +47,7 @@ class DomainInfoResource extends DomainResource
             'statusInfo' => DomainsController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(SkusController::objectEntitlements($this->resource)),
+            $this->merge(self::objectEntitlements($this->resource)),
         ];
     }
 

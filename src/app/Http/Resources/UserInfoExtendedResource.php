@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Entitlement;
 use App\User;
 use App\VerificationCode;
 use Carbon\Carbon;
@@ -29,8 +28,7 @@ class UserInfoExtendedResource extends UserInfoResource
 
         return [
             $this->merge(parent::toArray($request)),
-            // @var array User subscriptions summary
-            'skus' => Entitlement::objectEntitlementsSummary($this->resource),
+
             // @var array User configuration
             'config' => $this->resource->getConfig(true),
             // @var array<string> Email address aliases

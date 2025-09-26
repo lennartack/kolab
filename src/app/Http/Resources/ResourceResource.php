@@ -5,14 +5,13 @@ namespace App\Http\Resources;
 use App\Http\Controllers\RelationController;
 use App\Resource;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Resource response
  *
  * @mixin Resource
  */
-class ResourceResource extends JsonResource
+class ResourceResource extends ApiResource
 {
     /**
      * Transform the resource into an array.

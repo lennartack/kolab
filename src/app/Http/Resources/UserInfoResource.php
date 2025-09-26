@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Http\Controllers\API\V4\UsersController;
 use App\Plan;
-use App\Providers\PaymentProvider;
 use App\User;
 use Illuminate\Http\Request;
 
@@ -41,14 +40,6 @@ class UserInfoResource extends UserResource
         $keys = array_merge(self::USER_SETTINGS, ['password_expired', 'debug']);
         $settings = $this->resource->settings()->whereIn('key', $keys)->pluck('value', 'key')->all();
 
-        // Status info
-        $statusInfo = UsersController::statusInfo($this->resource);
-
-        // Information about wallets and accounts for access checks
-        $wallets = $this->resource->wallets->map([$this, 'walletPropsMap'])->toArray();
-        $accounts = $this->resource->accounts->map([$this, 'walletPropsMap'])->toArray();
-        $wallet = $this->walletPropsMap($wallet);
-
         return [
             $this->merge(parent::toArray($request)),
 
@@ -57,37 +48,15 @@ class UserInfoResource extends UserResource
 
             // @var array<strig, mixed> User settings (first_name, last_name, phone, etc.)
             'settings' => $settings,
-            // @var array Wallets controlled by the user
-            'accounts' => $accounts,
-            // @var array Wallets owned by the user
-            'wallets' => $wallets,
-            // @var array Wallet the user is in
-            'wallet' => $wallet,
+            // Wallets controlled by the user
+            'accounts' => WalletResource::collection($this->resource->accounts),
+            // Wallets owned by the user
+            'wallets' => WalletResource::collection($this->resource->wallets),
             // @var array Extended status/permissions information
-            'statusInfo' => $statusInfo,
+            'statusInfo' => UsersController::statusInfo($this->resource),
+
+            // Entitlements/Wallet information
+            $this->merge(self::objectEntitlements($this->resource)),
         ];
-    }
-
-    /**
-     * Add more info to the wallet object output
-     */
-    public function walletPropsMap($wallet): array
-    {
-        $result = $wallet->toArray();
-
-        if ($wallet->discount) {
-            $result['discount'] = $wallet->discount->discount;
-            $result['discount_description'] = $wallet->discount->description;
-        }
-
-        if ($wallet->user_id != $this->resource->id) {
-            // FIXME: This one probably is relevant for an admin/reseller UI only
-            $result['user_email'] = $wallet->owner->email;
-        }
-
-        $provider = PaymentProvider::factory($wallet);
-        $result['provider'] = $provider->name();
-
-        return $result;
     }
 }

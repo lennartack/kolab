@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\V4;
 
 use App\Documents\Receipt;
 use App\Http\Controllers\ResourceController;
-use App\Http\Resources\WalletResource;
+use App\Http\Resources\WalletInfoResource;
 use App\Payment;
 use App\ReferralCode;
 use App\ReferralProgram;
@@ -40,7 +40,7 @@ class WalletsController extends ResourceController
             return $this->errorResponse(403);
         }
 
-        return (new WalletResource($wallet))->response();
+        return (new WalletInfoResource($wallet))->response();
     }
 
     /**

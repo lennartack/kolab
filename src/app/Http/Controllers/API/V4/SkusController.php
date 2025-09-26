@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API\V4;
 
-use App\Entitlement;
 use App\Handlers\Mailbox;
 use App\Http\Controllers\ResourceController;
 use App\Sku;
@@ -14,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class SkusController extends ResourceController
 {
     /**
-     * Get a list of active SKUs.
+     * List of active SKUs.
      */
     #[QueryParameter('type', description: 'SKU type', type: 'string')]
     public function index(): JsonResponse
@@ -96,29 +95,6 @@ class SkusController extends ResourceController
         });
 
         return response()->json($response);
-    }
-
-    /**
-     * Include SKUs/Wallet information in the object's response.
-     *
-     * @param object $object   User/Domain/etc object
-     * @param array  $response The response to put the data into
-     */
-    public static function objectEntitlements($object, &$response = []): array
-    {
-        // Object's entitlements information
-        $response['skus'] = Entitlement::objectEntitlementsSummary($object);
-
-        // Some basic information about the object's wallet
-        if ($wallet = $object->wallet()) {
-            $response['wallet'] = $wallet->toArray();
-            if ($wallet->discount) {
-                $response['wallet']['discount'] = $wallet->discount->discount;
-                $response['wallet']['discount_description'] = $wallet->discount->description;
-            }
-        }
-
-        return $response;
     }
 
     /**

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API\V4\Admin;
 
 use App\Discount;
-use App\Http\Resources\WalletResource;
+use App\Http\Resources\WalletInfoResource;
 use App\User;
 use App\Wallet;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,7 @@ class WalletsController extends \App\Http\Controllers\API\V4\WalletsController
             return $this->errorResponse(404);
         }
 
-        $result = new WalletResource($wallet);
-        $result->extended = true;
-
-        return $result->response();
+        return (new WalletInfoResource($wallet))->response();
     }
 
     /**

@@ -60,7 +60,7 @@
 
             axios.get('/api/v4/packages', { loader: true })
                 .then(response => {
-                    this.packages = response.data.filter(pkg => {
+                    this.packages = response.data.list.filter(pkg => {
                         if (this.type == 'domain') {
                             return pkg.isDomain
                         }

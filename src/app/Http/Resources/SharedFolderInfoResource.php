@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Http\Controllers\API\V4\SharedFoldersController;
-use App\Http\Controllers\API\V4\SkusController;
 use Illuminate\Http\Request;
 
 /**
@@ -38,7 +37,7 @@ class SharedFolderInfoResource extends SharedFolderResource
             'statusInfo' => SharedFoldersController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(SkusController::objectEntitlements($this->resource)),
+            $this->merge(self::objectEntitlements($this->resource)),
         ];
     }
 }

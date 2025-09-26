@@ -4,14 +4,13 @@ namespace App\Http\Resources;
 
 use App\AuthAttempt;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * AuthAttempt response
  *
  * @mixin AuthAttempt
  */
-class AuthAttemptResource extends JsonResource
+class AuthAttemptResource extends ApiResource
 {
     /**
      * Transform the resource into an array.
