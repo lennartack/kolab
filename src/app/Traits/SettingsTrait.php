@@ -93,7 +93,7 @@ trait SettingsTrait
      */
     public function setSetting(string $key, $value): void
     {
-        $this->storeSetting($key, $value);
+        $this->setSettings([$key => $value]);
     }
 
     /**
@@ -110,8 +110,21 @@ trait SettingsTrait
      */
     public function setSettings(array $data = []): void
     {
+        // Note: We're selecting the records first, so observers can act
+        $settings = $this->settings()->whereIn('key', array_keys($data))->get()->keyBy('key')->all();
+
         foreach ($data as $key => $value) {
-            $this->storeSetting($key, $value);
+            if ($value === null || $value === '') {
+                if (isset($settings[$key])) {
+                    $settings[$key]->delete();
+                }
+            } elseif (isset($settings[$key])) {
+                $settings[$key]->value = $value;
+                $settings[$key]->save();
+            } else {
+                // Note: upsert() might have been better, but it does not trigger events
+                $this->settings()->create(['key' => $key, 'value' => $value]);
+            }
         }
     }
 
@@ -123,36 +136,5 @@ trait SettingsTrait
     public function settings()
     {
         return $this->hasMany(self::class . 'Setting');
-    }
-
-    /**
-     * Create or update a setting.
-     *
-     * @param string      $key   Setting name
-     * @param string|null $value the new value for the setting
-     */
-    private function storeSetting(string $key, $value): void
-    {
-        if ($value === null || $value === '') {
-            // Note: We're selecting the record first, so observers can act
-            if ($setting = $this->settings()->where('key', $key)->first()) {
-                $setting->delete();
-            }
-        } else {
-            // Note: upsert() is a single query (INSERT ... ON DUPLICATE KEY UPDATE),
-            // updateOrCreate() is a few queries (BEGIN + INSERT [+ UPDATE] + COMMIT).
-            // However, it does not invoke event observers
-            /*
-            $this->settings()->upsert(
-                ['key' => $key, 'value' => $value],
-                uniqueBy: ['user_id', 'key', 'value'],
-                update: ['key', 'value']
-            );
-            */
-            $this->settings()->updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
-            );
-        }
     }
 }
