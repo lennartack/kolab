@@ -126,8 +126,24 @@ class Device extends Model
     {
         DB::beginTransaction();
 
-        // Create a device record
-        $device = self::create(['hash' => $token]);
+        // Check if a device already exists
+        $device = Device::withTrashed()->where('hash', $token)->first();
+
+        if ($device) {
+            // FIXME: Should we remove the user (if it's a role=device user)?
+            // FIXME: Should we bail out if the device is used by a normal user?
+
+            // Remove the device-to-wallet connection
+            $device->entitlements()->delete();
+
+            // Undelete the device if needed
+            if ($device->trashed()) {
+                $device->restore();
+            }
+        } else {
+            // Create a device
+            $device = self::create(['hash' => $token]);
+        }
 
         // Create a special account
         while (true) {
@@ -153,10 +169,15 @@ class Device extends Model
         $device->assignPlan($plan, $wallet = $user->wallets()->first());
 
         // Push entitlements.updated_at to one year in the future
-        $device->entitlements()->each(static function ($entitlement) {
-            $entitlement->updated_at = \now()->addYearWithoutOverflow();
-            $entitlement->save();
-        });
+        $threshold = (clone $device->created_at)->addYearWithoutOverflow();
+        if ($threshold > \now()) {
+            $device->entitlements()->each(static function ($entitlement) use ($threshold) {
+                $entitlement->updated_at = $threshold;
+                $entitlement->save();
+            });
+        }
+
+        // FIXME: Should this bump signup_tokens.counter, as it does for user signup?
 
         // TODO: Trigger payment mandate creation?
 

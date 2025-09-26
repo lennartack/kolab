@@ -196,8 +196,39 @@ class DeviceTest extends TestCase
         $this->assertNotEmpty($json['access_token']);
 
         $device = Device::where('hash', $this->hash)->first();
+        $account = $device->account;
 
         $this->assertTrue(!empty($device));
+        $this->assertSame($account->email, $json['user']['email']);
+        $this->assertSame(User::ROLE_DEVICE, $account->role);
+        $this->assertSame($plan->id, $account->getSetting('plan_id'));
+        $this->assertSame($this->hash, $account->getSetting('signup_token'));
+
+        $entitlements = $device->wallet()->entitlements()->get();
+        $this->assertCount(1, $entitlements);
+        $this->assertSame($sku->id, $entitlements[0]->sku_id);
+        $this->assertStringContainsString('2026-02-02', $entitlements[0]->updated_at->toDateString());
+
+        $device->created_at = \now()->subMonthsWithoutOverflow();
+        $device->save();
+
+        // Note: without this finding the proper wallet may not work because of how Device::wallet() works
+        Carbon::setTestNow(Carbon::createFromDate(2025, 3, 4));
+
+        // Signup again
+        $response = $this->post("api/v4/device/{$this->hash}/signup", $post);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('bearer', $json['token_type']);
+        $this->assertTrue(!empty($json['expires_in']) && is_int($json['expires_in']) && $json['expires_in'] > 0);
+        $this->assertNotEmpty($json['access_token']);
+
+        $device = Device::where('hash', $this->hash)->first();
+
+        $this->assertTrue($device->account->id != $account->id);
         $this->assertSame($device->account->email, $json['user']['email']);
         $this->assertSame(User::ROLE_DEVICE, $device->account->role);
         $this->assertSame($plan->id, $device->account->getSetting('plan_id'));
@@ -206,7 +237,8 @@ class DeviceTest extends TestCase
         $entitlements = $device->wallet()->entitlements()->get();
         $this->assertCount(1, $entitlements);
         $this->assertSame($sku->id, $entitlements[0]->sku_id);
-        $this->assertStringContainsString('2026-02-02', $entitlements[0]->updated_at->toDateString());
+        $this->assertStringContainsString('2025-03-04', $entitlements[0]->created_at->toDateString());
+        $this->assertStringContainsString('2026-01-02', $entitlements[0]->updated_at->toDateString());
     }
 
     private function initTestDevice(): array

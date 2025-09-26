@@ -142,11 +142,6 @@ class DeviceController extends Controller
 
         // TODO: Validate that the plan is device-only, don't accept a user plan here
 
-        // Check if a device already exists
-        if (Device::withTrashed()->where('hash', $token)->exists()) {
-            return $this->errorResponse(500);
-        }
-
         // TODO: Should we get the password from the device? Then we'd not have to return it back at the end
         $password = Utils::generatePassphrase();
 
