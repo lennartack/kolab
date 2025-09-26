@@ -40,6 +40,8 @@ class PlanResource extends ApiResource
             'months' => $this->resource->months,
             // @var int Cumulative cost (in cents)
             'cost' => $this->resource->cost(),
+            // Cost currency
+            'currency' => \config('app.currency'),
         ];
     }
 }

@@ -128,6 +128,7 @@ class DeviceTest extends TestCase
         $this->assertSame(1, $json['count']);
         $this->assertFalse($json['hasMore']);
         $this->assertSame($plan->title, $json['list'][0]['title']);
+        $this->assertSame(\config('app.currency'), $json['list'][0]['currency']);
     }
 
     /**
