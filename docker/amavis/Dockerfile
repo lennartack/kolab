@@ -4,10 +4,6 @@ FROM apheleia/almalinux9
 # ENV LC_ALL=en_US.utf8
 # ENV APP_DOMAIN
 # ENV LMTP_DESTINATION
-# ENV DB_HOST
-# ENV DB_USERNAME
-# ENV DB_PASSWORD
-# ENV DB_DATABASE
 
 RUN dnf -y install \
     amavis \
@@ -38,6 +34,8 @@ ENV CLAMD=false
 # ENV DB_DATABASE=
 # ENV DB_USERNAME=
 # ENV DB_PASSWORD=
+# ENV REDIS_HOST=
+# ENV REDIS_PASSWORD=
 
 CMD ["/init.sh"]
 

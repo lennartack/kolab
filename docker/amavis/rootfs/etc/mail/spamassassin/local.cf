@@ -1,0 +1,32 @@
+# These values can be overridden by editing ~/.spamassassin/user_prefs.cf
+# (see spamassassin(1) for details)
+
+# These should be safe assumptions and allow for simple visual sifting
+# without risking lost emails.
+
+required_hits 5
+report_safe 0
+rewrite_header Subject [SPAM]
+
+#########
+
+# Tell SA to use Bayes/Redis backend
+bayes_store_module  Mail::SpamAssassin::BayesStore::Redis
+
+bayes_sql_dsn  server=REDIS_HOST:6379;database=4;password=REDIS_PASSWORD
+use_bayes 1
+use_bayes_rules 1
+
+bayes_auto_learn  1
+
+use_learner 1
+bayes_learn_to_journal 0
+
+# THIS IS MANDATORY - You do NOT need to run sa-learn to expire tokens
+# *_ttl below takes care of it.
+bayes_auto_expire  1
+
+# You  will need to changes this according to your need
+# This replaces sa-learn's sql/file based expire routines.
+bayes_token_ttl 30d
+bayes_seen_ttl  14d

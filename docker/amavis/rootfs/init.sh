@@ -25,6 +25,11 @@ sed -i -r \
     -e "s|DB_PASSWORD|$DB_PASSWORD|g" \
     $CONFIG
 
+sed -i -r \
+    -e "s|REDIS_HOST|$REDIS_HOST|g" \
+    -e "s|REDIS_PASSWORD|$REDIS_PASSWORD|g" \
+    /etc/mail/spamassassin/local.cf
+
 # We use these to check if the process has started, so ensure we aren't dealing wiht leftover files
 rm -f /var/run/amavisd/amavisd.pid
 rm -f /var/run/amavisd/clamd.pid

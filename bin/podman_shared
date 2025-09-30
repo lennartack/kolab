@@ -340,6 +340,8 @@ podman__run_amavis() {
         -e DB_USERNAME \
         -e DB_PASSWORD \
         -e DB_DATABASE \
+        -e REDIS_HOST=localhost \
+        -e REDIS_PASSWORD="${REDIS_PASSWORD:?"missing env variable"}" \
         kolab-amavis:latest $@
 }
 
