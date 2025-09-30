@@ -156,6 +156,38 @@ END:VCALENDAR
 --=_e826fa0b51105002516c94e15d877816--
 '''.strip()
 
+virusmailtemplate = '''
+MIME-Version: 1.0
+Date: {date}
+From: {sender}
+To: {to}
+Subject: EICAR test message {subject}
+Message-ID: {messageid}
+Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="=_e826fa0b51105002516c94e15d877816"
+
+This is a multipart message in MIME format.
+
+--=_e826fa0b51105002516c94e15d877816
+Content-Type: text/plain
+
+This test message has an attached file, "eicar.com", that contains
+the EICAR test string which should be detected as a virus.
+
+For more information, refer to EICAR at:
+http://www.eicar.org/83-0-Anti-Malware-Testfile.html
+
+--=_e826fa0b51105002516c94e15d877816
+Content-Type: text/plain;
+Content-Disposition: attachment;
+        filename="eicar.com"
+
+{eicarpayload}
+
+--=_e826fa0b51105002516c94e15d877816--
+'''.strip()
+
 RED='\033[31m'
 GREEN='\033[32m'
 RESET='\033[39m'
@@ -190,6 +222,8 @@ class SendTest:
         self.attachmentSize = options.attachmentSize
         self.invitation = options.invitation
         self.testmessage = options.testmessage
+        self.spam = options.spamtest
+        self.virus = options.virustest
 
         self.uuid = None
         self.subject = None
@@ -227,10 +261,16 @@ class SendTest:
                 print_error("DKIM signature is not aligned", header)
                 return False
 
-        if msg['X-Spam-Flag'] and "NO" not in msg['X-Spam-Flag']:
-            print_error("Test email is flagged as spam")
-            print("Existing header: " + str(msg['X-Spam-Flag']))
-            return False
+        if self.spam:
+            if "NO" in msg['X-Spam-Flag']:
+                print_error("Test email is not flagged as spam")
+                print("Existing header: " + str(msg['X-Spam-Flag']))
+                return False
+        else:
+            if msg['X-Spam-Flag'] and "NO" not in msg['X-Spam-Flag']:
+                print_error("Test email is flagged as spam")
+                print("Existing header: " + str(msg['X-Spam-Flag']))
+                return False
 
         if "NO" not in (msg['X-Virus-Scanned'] or ""):
             print("Message was virus scanned: " + str(msg['X-Virus-Scanned']))
@@ -341,6 +381,19 @@ class SendTest:
                 attachment='ICAgIEJvYXJkTmFtZSAgICAgICJOVlMgNDIwME0iCiAgICBPcHRpb24gIk5vTG9nbyIgInRydWUi\n' * attachmentMultiplier
             )
 
+        if self.virus:
+            return virusmailtemplate.format(
+                messageid="<{}@viruscheck.org>".format(self.uuid),
+                subject=self.subject,
+                sender=from_address,
+                to=to,
+                date=dtstamp.strftime("%a, %d %b %Y %H:%M:%S %z"),
+                eicarpayload=r'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*',
+            )
+
+        if self.spam:
+            self.body = r'XJS*C4JDBQADN1.NSBN3*2IDNEN*GTUBE-STANDARD-ANTI-UBE-TEST-EMAIL*C.34X'
+
         return mailtemplate.format(
             messageid="<{}@deliverycheck.org>".format(self.uuid),
             subject=self.subject,
@@ -414,6 +467,8 @@ parser.add_argument("--body", help="Body text to include")
 parser.add_argument("--validate", action='store_true', help="Validate the received message")
 parser.add_argument('--bulk-send', help='Bulk send email, then exit', type=int, default=0)
 parser.add_argument('--invitation', action='store_true', help='Send an invitation')
+parser.add_argument('--spamtest', action='store_true', help='Send a spam test message')
+parser.add_argument('--virustest', action='store_true', help='Send a virus test message')
 parser.add_argument('--testmessage', action='store_true', help='Send a kolab4 testmessage')
 parser.add_argument('--attachmentSize', help='in MB', type=int, default=0)
 
