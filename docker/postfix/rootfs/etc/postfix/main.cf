@@ -189,6 +189,8 @@ mynetworks = MYNETWORKS
 #relayhost = uucphost
 #relayhost = [an.ip.add.ress]
 
+#relayhost=
+
 # REJECTING UNKNOWN RELAY USERS
 #
 # The relay_recipient_maps parameter specifies optional lookup tables

@@ -72,6 +72,12 @@ if [ "$HOLD_INCOMING_EMAILS" == "true" ]; then
         /etc/postfix/main.cf
 fi
 
+if [ "$RELAY_HOST" != "" ]; then
+    sed -i -r \
+        -e "s|#relayhost=|relayhost=$RELAY_HOST|g" \
+        /etc/postfix/main.cf
+fi
+
 sed -i -r \
     -e "s|SERVICES_HOST|http://$APP_SERVICES_DOMAIN:$SERVICES_PORT|g" \
     /usr/libexec/postfix/kolab_policy*
