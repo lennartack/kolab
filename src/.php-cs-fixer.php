@@ -20,8 +20,8 @@ return (new Config())
     ->setRules([
         '@PhpCsFixer' => true,
         '@PhpCsFixer:risky' => true,
-        '@PHP82Migration' => true,
-        '@PHP82Migration:risky' => true,
+        '@PHP8x2Migration' => true,
+        '@PHP8x2Migration:risky' => true,
 
         // required by PSR-12
         'concat_space' => [

@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
  */
 class UserInfoResource extends UserResource
 {
-    /** @const array List of user setting keys available for modification in UI */
+    /** @var array List of user setting keys available for modification in UI */
     public const USER_SETTINGS = [
         'billing_address',
         'country',

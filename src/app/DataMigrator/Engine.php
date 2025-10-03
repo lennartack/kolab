@@ -25,7 +25,7 @@ class Engine
     public const TYPE_CONFIGURATION = 'configuration';
     public const TYPE_FILE = 'file';
 
-    /** @const int Max item size to handle in-memory, bigger will be handled with temp files */
+    /** @var int Max item size to handle in-memory, bigger will be handled with temp files */
     public const MAX_ITEM_SIZE = 20 * 1024 * 1024;
 
     /** @var Account Source account */

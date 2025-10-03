@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Http;
  */
 class EWS implements ExporterInterface
 {
-    /** @const int Max number of items to migrate in one go */
+    /** @var int Max number of items to migrate in one go */
     protected const CHUNK_SIZE = 20;
 
     /** @var API EWS API object */

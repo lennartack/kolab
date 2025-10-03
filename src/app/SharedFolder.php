@@ -48,7 +48,7 @@ class SharedFolder extends Model
     // folder has been created in IMAP
     public const STATUS_IMAP_READY = 1 << 8;
 
-    /** @const string A template for the email attribute on a folder creation */
+    /** @var string A template for the email attribute on a folder creation */
     public const EMAIL_TEMPLATE = '{type}-{id}@{domainName}';
 
     /** @var int The allowed states for this object used in StatusPropertyTrait */

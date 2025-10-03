@@ -10,7 +10,7 @@ use App\Utils;
 
 class IMAP
 {
-    /** @const array Maps Kolab permissions to IMAP permissions */
+    /** @var array Maps Kolab permissions to IMAP permissions */
     private const ACL_MAP = [
         'read-only' => 'lrs',
         'read-write' => 'lrswitedn',

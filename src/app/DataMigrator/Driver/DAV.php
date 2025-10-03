@@ -20,7 +20,7 @@ use Illuminate\Http\Client\RequestException;
 
 class DAV implements ExporterInterface, ImporterInterface
 {
-    /** @const int Max number of items to migrate in one go */
+    /** @var int Max number of items to migrate in one go */
     protected const CHUNK_SIZE = 25;
 
     /** @var DAVClient DAV Backend */

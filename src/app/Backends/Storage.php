@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Storage
 {
-    /** @const How long the resumable upload "token" is valid (in seconds) */
+    /** @var int How long the resumable upload "token" is valid (in seconds) */
     public const UPLOAD_TTL = 60 * 60 * 6;
 
     /**
