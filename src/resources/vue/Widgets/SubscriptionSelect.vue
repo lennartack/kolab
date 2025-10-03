@@ -81,11 +81,11 @@
             axios.get(url, { loader: true })
                 .then(response => {
                     if (this.readonly && this.object.skus) {
-                        response.data = response.data.filter(sku => { return sku.id in this.object.skus })
+                        response.data.list = response.data.list.filter(sku => { return sku.id in this.object.skus })
                     }
 
                     // "merge" SKUs with user entitlement-SKUs
-                    this.skus = response.data
+                    this.skus = response.data.list
                         .map(sku => {
                             const objSku = this.object.skus ? this.object.skus[sku.id] : null
                             if (objSku) {
@@ -113,7 +113,7 @@
 
                         // Mark 'exclusive' SKUs as readonly, they can't be unchecked
                         this.skus.forEach(item => {
-                            if (item.exclusive && item.enabled) {
+                            if (item.exclusive.length && item.enabled) {
                                 $('#s' + item.id).find('input[type=checkbox]')[0].readOnly = true
                             }
                         })
@@ -148,7 +148,7 @@
 
                 if (input.checked) {
                     // Check if a required SKU is selected, alert the user if not
-                    (sku.required || []).forEach(handler => {
+                    sku.required.forEach(handler => {
                         this.skus.forEach(item => {
                             if (item.handler == handler) {
                                 if (!$('#s' + item.id).find('input[type=checkbox]:checked').length) {
@@ -164,7 +164,7 @@
                     }
 
                     // Make sure there must be only one of 'exclusive' SKUs
-                    if (sku.exclusive) {
+                    if (sku.exclusive.length) {
                         input.readOnly = true
 
                         this.skus.forEach(item => {
@@ -187,7 +187,7 @@
                 }
 
                 // Uncheck+lock/unlock conflicting SKUs
-                (sku.forbidden || []).forEach(handler => {
+                sku.forbidden.forEach(handler => {
                     this.skus.forEach(item => {
                         let checkbox
                         if (item.handler == handler && (checkbox = $('#s' + item.id).find('input[type=checkbox]')[0])) {

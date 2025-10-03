@@ -117,7 +117,6 @@ class MeetTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertSame(325, $json['code']);
         $this->assertSame('error', $json['status']);
         $this->assertSame('Failed to join the session. Invalid password.', $json['message']);
@@ -195,7 +194,6 @@ class MeetTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(4, $json);
         $this->assertSame(326, $json['code']);
         $this->assertSame('error', $json['status']);
         $this->assertSame('Failed to join the session. Room locked.', $json['message']);

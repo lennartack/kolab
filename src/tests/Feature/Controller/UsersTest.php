@@ -464,9 +464,9 @@ class UsersTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(5, $json);
+        $this->assertCount(5, $json['list']);
 
-        $this->assertSkuElement('mailbox', $json[0], [
+        $this->assertSkuElement('mailbox', $json['list'][0], [
             'prio' => 100,
             'type' => 'user',
             'handler' => 'Mailbox',
@@ -474,7 +474,7 @@ class UsersTest extends TestCase
             'readonly' => true,
         ]);
 
-        $this->assertSkuElement('storage', $json[1], [
+        $this->assertSkuElement('storage', $json['list'][1], [
             'prio' => 90,
             'type' => 'user',
             'handler' => 'Storage',
@@ -487,7 +487,7 @@ class UsersTest extends TestCase
             ],
         ]);
 
-        $this->assertSkuElement('groupware', $json[2], [
+        $this->assertSkuElement('groupware', $json['list'][2], [
             'prio' => 80,
             'type' => 'user',
             'handler' => 'Groupware',
@@ -495,7 +495,7 @@ class UsersTest extends TestCase
             'readonly' => false,
         ]);
 
-        $this->assertSkuElement('activesync', $json[3], [
+        $this->assertSkuElement('activesync', $json['list'][3], [
             'prio' => 70,
             'type' => 'user',
             'handler' => 'Activesync',
@@ -504,7 +504,7 @@ class UsersTest extends TestCase
             'required' => ['Groupware'],
         ]);
 
-        $this->assertSkuElement('2fa', $json[4], [
+        $this->assertSkuElement('2fa', $json['list'][4], [
             'prio' => 60,
             'type' => 'user',
             'handler' => 'Auth2F',
@@ -521,9 +521,9 @@ class UsersTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(6, $json);
+        $this->assertCount(6, $json['list']);
 
-        $this->assertSkuElement('beta', $json[5], [
+        $this->assertSkuElement('beta', $json['list'][5], [
             'prio' => 10,
             'type' => 'user',
             'handler' => 'Beta',

@@ -86,7 +86,7 @@ class Entitlement extends Model
      *
      * @param object $object Entitleable object
      *
-     * @return array Skus list with some metadata
+     * @return array<string, array> Skus list with some metadata
      */
     public static function objectEntitlementsSummary($object): array
     {

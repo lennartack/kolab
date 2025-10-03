@@ -19,7 +19,10 @@ class DeviceInfoResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            // Device registration date-time
+            /*
+             * @var string Device registration date-time
+             * @format date-time
+             */
             'created_at' => (string) $this->resource->created_at,
         ];
     }

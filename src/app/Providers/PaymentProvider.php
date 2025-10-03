@@ -251,7 +251,7 @@ abstract class PaymentProvider
      *
      * @param string $type the payment type for which we require a method
      *
-     * @return array Array of methods
+     * @return array<array> Array of methods
      */
     private static function applyMethodWhitelist($type, $availableMethods): array
     {
@@ -274,15 +274,15 @@ abstract class PaymentProvider
      * List supported payment methods for $wallet
      *
      * @param Wallet $wallet The wallet
-     * @param string $type   the payment type for which we require a method (oneoff/recurring)
+     * @param string $type   The payment type for which we require a method (oneoff/recurring)
      *
-     * @return array Array of array with available payment methods:
-     *               - id: id of the method
-     *               - name: User readable name of the payment method
-     *               - minimumAmount: Minimum amount to be charged in cents
-     *               - currency: Currency used for the method
-     *               - exchangeRate: The projected exchange rate (actual rate is determined during payment)
-     *               - icon: An icon (icon name) representing the method
+     * @return array<array> Array of array with available payment methods:
+     *                      - id: id of the method
+     *                      - name: User readable name of the payment method
+     *                      - minimumAmount: Minimum amount to be charged in cents
+     *                      - currency: Currency used for the method
+     *                      - exchangeRate: The projected exchange rate (actual rate is determined during payment)
+     *                      - icon: An icon (icon name) representing the method
      */
     public static function paymentMethods(Wallet $wallet, $type): array
     {

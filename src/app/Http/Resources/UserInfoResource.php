@@ -56,7 +56,7 @@ class UserInfoResource extends UserResource
             'statusInfo' => UsersController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(self::objectEntitlements($this->resource)),
+            $this->merge($this->objectEntitlements()),
         ];
     }
 }

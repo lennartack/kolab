@@ -127,7 +127,7 @@ class Device extends Model
         DB::beginTransaction();
 
         // Check if a device already exists
-        $device = Device::withTrashed()->where('hash', $token)->first();
+        $device = self::withTrashed()->where('hash', $token)->first();
 
         if ($device) {
             // FIXME: Should we remove the user (if it's a role=device user)?

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V4;
 
 use App\Handlers\Mailbox;
 use App\Http\Controllers\ResourceController;
+use App\Http\Resources\SkuResource;
 use App\Sku;
 use App\Wallet;
 use Dedoc\Scramble\Attributes\QueryParameter;
@@ -19,38 +20,26 @@ class SkusController extends ResourceController
     public function index(): JsonResponse
     {
         $type = request()->input('type');
+        $wallet = $this->guard()->user()->wallet();
 
         // Note: Order by title for consistent ordering in tests
-        $response = Sku::withSubjectTenantContext()->where('active', true)->orderBy('title')
+        $list = Sku::withSubjectTenantContext()->where('active', true)->orderBy('title')
             ->get()
-            ->transform(function ($sku) {
-                return $this->skuElement($sku);
+            ->transform(function ($sku, $type) {
+                return $this->skuElement($sku, $type);
             })
             ->filter(static function ($sku) use ($type) {
-                return $sku && (!$type || $sku['type'] === $type);
+                return $sku && (!$type || $sku->metadata['type'] === $type);
             })
             ->sortByDesc('prio')
             ->values();
 
-        if ($type) {
-            $wallet = $this->guard()->user()->wallet();
-
-            // Figure out the cost for a new object of the specified type
-            $response = $response->map(static function ($sku) use ($wallet) {
-                $sku['nextCost'] = $sku['cost'];
-                if ($sku['cost'] && $sku['units_free']) {
-                    $count = $wallet->entitlements()->where('sku_id', $sku['id'])->count();
-
-                    if ($count < $sku['units_free']) {
-                        $sku['nextCost'] = 0;
-                    }
-                }
-
-                return $sku;
-            });
-        }
-
-        return response()->json($response->all());
+        return response()->json([
+            // @var array<SkuResource> List of SKUs
+            'list' => $list,
+            // @var int Number of entries in the list
+            'count' => $list->count(),
+        ]);
     }
 
     /**
@@ -60,41 +49,31 @@ class SkusController extends ResourceController
      */
     public static function objectSkus($object): JsonResponse
     {
-        $response = [];
+        $user = Auth::guard()->user();
 
         // Note: Order by title for consistent ordering in tests
-        $skus = Sku::withObjectTenantContext($object)->orderBy('title')->get();
+        $list = Sku::withObjectTenantContext($object)->orderBy('title')
+            ->get()
+            ->filter(static function ($sku) use ($object) {
+                return class_exists($sku->handler_class)
+                    && $object::class == $sku->handler_class::entitleableClass()
+                    && $sku->handler_class::isAvailable($sku, $object);
+            })
+            ->transform(function ($sku) {
+                return self::skuElement($sku);
+            })
+            ->filter(static function ($sku) use ($user) {
+                return !empty($sku) && (empty($sku->controllerOnly) || $user->wallet()->isController($user));
+            })
+            ->sortByDesc('prio')
+            ->values();
 
-        foreach ($skus as $sku) {
-            if (!class_exists($sku->handler_class)) {
-                continue;
-            }
-
-            if ($object::class != $sku->handler_class::entitleableClass()) {
-                continue;
-            }
-
-            if (!$sku->handler_class::isAvailable($sku, $object)) {
-                continue;
-            }
-
-            if ($data = self::skuElement($sku)) {
-                if (!empty($data['controllerOnly'])) {
-                    $user = Auth::guard()->user();
-                    if (!$user->wallet()->isController($user)) {
-                        continue;
-                    }
-                }
-
-                $response[] = $data;
-            }
-        }
-
-        usort($response, static function ($a, $b) {
-            return $b['prio'] <=> $a['prio'];
-        });
-
-        return response()->json($response);
+        return response()->json([
+            // @var array<SkuResource> List of SKUs
+            'list' => $list,
+            // @var int Number of entries in the list
+            'count' => $list->count(),
+        ]);
     }
 
     /**
@@ -157,31 +136,26 @@ class SkusController extends ResourceController
      * Convert SKU information to metadata used by UI to
      * display the form control
      *
-     * @param Sku $sku SKU object
-     *
-     * @return array|null Metadata
+     * @param Sku    $sku  SKU object
+     * @param string $type Type filter
      */
-    protected static function skuElement($sku): ?array
+    protected static function skuElement($sku, $type = null): ?SkuResource
     {
         if (!class_exists($sku->handler_class)) {
             \Log::warning("Missing handler {$sku->handler_class}");
             return null;
         }
 
-        $data = array_merge($sku->toArray(), $sku->handler_class::metadata($sku));
+        $resource = new SkuResource($sku);
 
         // ignore incomplete handlers
-        if (empty($data['type'])) {
+        if (empty($resource->metadata['type'])) {
             \Log::warning("Incomplete handler {$sku->handler_class}");
             return null;
         }
 
-        // Use localized value, toArray() does not get them right
-        $data['name'] = $sku->name;
-        $data['description'] = $sku->description;
+        $resource->type = $type;
 
-        unset($data['handler_class'], $data['created_at'], $data['updated_at'], $data['fee'], $data['tenant_id']);
-
-        return $data;
+        return $resource;
     }
 }

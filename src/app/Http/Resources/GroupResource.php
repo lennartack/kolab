@@ -28,6 +28,19 @@ class GroupResource extends ApiResource
             // Group name
             'name' => $this->resource->name,
 
+            $this->mergeWhen(self::isAdmin(), [
+                /*
+                 * @var string Group creation date-time
+                 * @format date-time
+                 */
+                'created_at' => (string) $this->resource->created_at,
+                /*
+                 * @var string Group deletion date-time
+                 * @format date-time
+                 */
+                'deleted_at' => (string) $this->resource->deleted_at,
+            ]),
+
             // @var bool Is group active?
             'isActive' => $state['isActive'] ?? false,
             // @var bool Is group deleted?

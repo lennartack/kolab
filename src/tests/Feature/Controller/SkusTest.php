@@ -59,19 +59,19 @@ class SkusTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(12, $json);
+        $this->assertCount(12, $json['list']);
 
-        $this->assertSame(100, $json[0]['prio']);
-        $this->assertSame($sku->id, $json[0]['id']);
-        $this->assertSame($sku->title, $json[0]['title']);
-        $this->assertSame($sku->name, $json[0]['name']);
-        $this->assertSame($sku->description, $json[0]['description']);
-        $this->assertSame($sku->cost, $json[0]['cost']);
-        $this->assertSame($sku->units_free, $json[0]['units_free']);
-        $this->assertSame($sku->period, $json[0]['period']);
-        $this->assertSame($sku->active, $json[0]['active']);
-        $this->assertSame('user', $json[0]['type']);
-        $this->assertSame('Mailbox', $json[0]['handler']);
+        $this->assertSame(100, $json['list'][0]['prio']);
+        $this->assertSame($sku->id, $json['list'][0]['id']);
+        $this->assertSame($sku->title, $json['list'][0]['title']);
+        $this->assertSame($sku->name, $json['list'][0]['name']);
+        $this->assertSame($sku->description, $json['list'][0]['description']);
+        $this->assertSame($sku->cost, $json['list'][0]['cost']);
+        $this->assertSame($sku->units_free, $json['list'][0]['units_free']);
+        $this->assertSame($sku->period, $json['list'][0]['period']);
+        $this->assertSame($sku->active, $json['list'][0]['active']);
+        $this->assertSame('user', $json['list'][0]['type']);
+        $this->assertSame('Mailbox', $json['list'][0]['handler']);
 
         // Test the type filter, and nextCost property (user with one domain)
         $response = $this->actingAs($john)->get("api/v4/skus?type=domain");
@@ -79,9 +79,9 @@ class SkusTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(1, $json);
-        $this->assertSame('domain-hosting', $json[0]['title']);
-        $this->assertSame(100, $json[0]['nextCost']); // second domain costs 100
+        $this->assertCount(1, $json['list']);
+        $this->assertSame('domain-hosting', $json['list'][0]['title']);
+        $this->assertSame(100, $json['list'][0]['nextCost']); // second domain costs 100
 
         // Test the type filter, and nextCost property (user with no domain)
         $jane = $this->getTestUser('jane@kolabnow.com');
@@ -92,9 +92,9 @@ class SkusTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(1, $json);
-        $this->assertSame('domain-hosting', $json[0]['title']);
-        $this->assertSame(0, $json[0]['nextCost']); // first domain costs 0
+        $this->assertCount(1, $json['list']);
+        $this->assertSame('domain-hosting', $json['list'][0]['title']);
+        $this->assertSame(0, $json['list'][0]['nextCost']); // first domain costs 0
     }
 
     /**

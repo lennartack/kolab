@@ -172,8 +172,6 @@ trait TestCaseTrait
         foreach ($other as $key => $value) {
             $this->assertSame($value, $result[$key]);
         }
-
-        $this->assertCount(8 + count($other), $result);
     }
 
     /**

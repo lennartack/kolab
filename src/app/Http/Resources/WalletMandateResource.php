@@ -29,10 +29,10 @@ class WalletMandateResource extends ApiResource
             'isPending' => $this->resource['isPending'] ?? false,
             // @var bool Is the mandate existing and valid?
             'isValid' => $this->resource['isValid'] ?? false,
-            // @var string|null Payment method name
+            // @var string|null Payment method description
             'method' => $this->resource['method'] ?? null,
             // @var string|null Payment method identifier
-            'methodId' => $this->resource['method'] ?? null,
+            'methodId' => $this->resource['methodId'] ?? null,
         ];
     }
 }

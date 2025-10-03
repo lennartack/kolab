@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V4;
 
 use App\Documents\Receipt;
 use App\Http\Controllers\ResourceController;
+use App\Http\Resources\TransactionResource;
 use App\Http\Resources\WalletInfoResource;
 use App\Payment;
 use App\ReferralCode;
@@ -238,7 +239,6 @@ class WalletsController extends ResourceController
         $pageSize = 10;
         $page = (int) (request()->input('page')) ?: 1;
         $hasMore = false;
-        $isAdmin = $this instanceof Admin\WalletsController;
 
         if ($transaction = request()->input('transaction')) {
             // Get sub-transactions for the specified transaction ID, first
@@ -271,27 +271,15 @@ class WalletsController extends ResourceController
             }
         }
 
-        $result = $result->map(static function ($item) use ($isAdmin, $wallet) {
-            $entry = [
-                'id' => $item->id,
-                'createdAt' => $item->created_at->format('Y-m-d H:i'),
-                'type' => $item->type,
-                'description' => $item->shortDescription(),
-                'amount' => $item->amount,
-                'currency' => $wallet->currency,
-                'hasDetails' => !empty($item->cnt),
-            ];
-
-            if ($isAdmin && $item->user_email) {
-                $entry['user'] = $item->user_email;
-            }
-
+        $result = $result->map(static function ($item) use ($wallet) {
+            $entry = new TransactionResource($item);
+            $entry->wallet = $wallet;
             return $entry;
         });
 
         return response()->json([
             'status' => 'success',
-            // @var array<array> List of transactions (properties: id, createdAt, type, description, amount, currency, hasDetails, user)
+            // @var array<TransactionResource> List of transactions
             'list' => $result,
             // @var int Number of entries in the list
             'count' => count($result),

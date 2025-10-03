@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\API\V4;
 
-use App\Entitlement;
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\RoomInfoResource;
+use App\Http\Resources\RoomResource;
 use App\Meet\Room;
 use App\Permission;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +30,7 @@ class RoomsController extends RelationController
     /**
      * Delete a room
      *
-     * @param string $id Room identifier
+     * @param int|string $id Room identifier (or name)
      */
     public function destroy($id): JsonResponse
     {
@@ -65,19 +67,16 @@ class RoomsController extends RelationController
             $room->assignToWallet($user->wallets()->first());
         }
 
-        $rooms = $user->rooms(true)
-            ->union($shared)
-            ->orderBy('name')
-            ->get()
-            ->map(function ($room) {
-                return $this->objectToClient($room);
-            });
+        $rooms = $user->rooms(true)->union($shared)->orderBy('name')->get();
 
         $result = [
-            // @var array List of rooms
-            'list' => $rooms,
+            'status' => 'success',
+            // List of rooms
+            'list' => RoomResource::collection($rooms),
             // @var int Number of entries in the list
             'count' => count($rooms),
+            // @var bool Indicates that there are more entries available
+            'hasMore' => false,
         ];
 
         return response()->json($result);
@@ -105,7 +104,7 @@ class RoomsController extends RelationController
         $errors = $room->setConfig($request);
 
         if (!empty($errors)) {
-            return response()->json(['status' => 'error', 'errors' => $errors], 422);
+            return response()->json(['status' => 'error', /* @var array */ 'errors' => $errors], 422);
         }
 
         return response()->json([
@@ -117,7 +116,7 @@ class RoomsController extends RelationController
     /**
      * Get room information.
      *
-     * @param string $id Room identifier
+     * @param string $id Room identifier (or name)
      */
     public function show($id): JsonResponse
     {
@@ -126,41 +125,16 @@ class RoomsController extends RelationController
             return $this->errorResponse($room);
         }
 
-        $wallet = $room->wallet();
-        $user = $this->guard()->user();
+        $resource = new RoomInfoResource($room);
+        $resource->permission = $permission;
 
-        $response = $this->objectToClient($room, true);
-
-        unset($response['session_id']);
-
-        $response['config'] = $room->getConfig();
-
-        // Room sharees can't manage/see room ACL
-        if ($permission) {
-            unset($response['config']['acl']);
-        }
-
-        $response['skus'] = Entitlement::objectEntitlementsSummary($room);
-        $response['wallet'] = $wallet->toArray();
-
-        if ($wallet->discount) {
-            $response['wallet']['discount'] = $wallet->discount->discount;
-            $response['wallet']['discount_description'] = $wallet->discount->description;
-        }
-
-        $isOwner = $user->canDelete($room);
-        $response['canUpdate'] = $isOwner || $room->permissions()->where('user', $user->email)->exists();
-        $response['canDelete'] = $isOwner && $user->wallet()->isController($user);
-        $response['canShare'] = $isOwner && $room->hasSKU('group-room');
-        $response['isOwner'] = $isOwner;
-
-        return response()->json($response);
+        return $resource->response();
     }
 
     /**
      * Get a list of SKUs available to the room.
      *
-     * @param int $id Room identifier
+     * @param int $id Room identifier (or name)
      */
     public function skus($id): JsonResponse
     {
@@ -173,10 +147,11 @@ class RoomsController extends RelationController
     }
 
     /**
-     * Create a new room.
+     * Create a room.
      *
      * @param Request $request the API request
      */
+    #[BodyParameter('skus', description: 'Enabled SKUs', type: 'array')]
     public function store(Request $request): JsonResponse
     {
         $user = $this->guard()->user();
@@ -187,11 +162,12 @@ class RoomsController extends RelationController
         }
 
         $v = Validator::make($request->all(), [
+            // Room description
             'description' => 'nullable|string|max:191',
         ]);
 
         if ($v->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
+            return response()->json(['status' => 'error', /* @var array */ 'errors' => $v->errors()], 422);
         }
 
         DB::beginTransaction();
@@ -220,6 +196,7 @@ class RoomsController extends RelationController
      * @param Request $request the API request
      * @param string  $id      Room identifier
      */
+    #[BodyParameter('skus', description: 'Enabled SKUs', type: 'array')]
     public function update(Request $request, $id): JsonResponse
     {
         $room = $this->inputRoom($id, Permission::ADMIN);
@@ -228,6 +205,7 @@ class RoomsController extends RelationController
         }
 
         $v = Validator::make($request->all(), [
+            // Room description
             'description' => 'nullable|string|max:191',
         ]);
 
@@ -242,7 +220,7 @@ class RoomsController extends RelationController
 
         SkusController::updateEntitlements($room, $request->skus);
 
-        if (!$room->hasSKU('group-room')) {
+        if (!$room->hasSku('group-room')) {
             $room->setSetting('acl', null);
         }
 

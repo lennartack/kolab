@@ -277,8 +277,8 @@ class ResourcesTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(1, $json);
-        $this->assertSkuElement('resource', $json[0], [
+        $this->assertCount(1, $json['list']);
+        $this->assertSkuElement('resource', $json['list'][0], [
             'prio' => 0,
             'type' => 'resource',
             'handler' => 'Resource',

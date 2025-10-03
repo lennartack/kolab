@@ -89,8 +89,8 @@ class Room extends Page
             '@chat-list' => '#meet-chat .chat',
 
             '@login-form' => '#meet-auth',
-            '@login-email-input' => '#inputEmail',
-            '@login-password-input' => '#inputPassword',
+            '@login-email-input' => '#email',
+            '@login-password-input' => '#password',
             '@login-second-factor-input' => '#secondfactor',
             '@login-button' => '#meet-auth button',
         ];

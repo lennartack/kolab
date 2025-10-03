@@ -449,7 +449,7 @@
                     axios.get('/api/v4/users/' + user_id + '/skus')
                         .then(response => {
                             // "merge" SKUs with user entitlement-SKUs
-                            response.data.forEach(sku => {
+                            response.data.list.forEach(sku => {
                                 const userSku = this.user.skus[sku.id]
                                 if (userSku) {
                                     let cost = userSku.costs.reduce((sum, current) => sum + current)

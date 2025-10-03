@@ -283,8 +283,8 @@ class GroupsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(1, $json);
-        $this->assertSkuElement('group', $json[0], [
+        $this->assertCount(1, $json['list']);
+        $this->assertSkuElement('group', $json['list'][0], [
             'prio' => 0,
             'type' => 'group',
             'handler' => 'Group',

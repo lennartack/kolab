@@ -218,11 +218,10 @@ class WalletTest extends TestCaseDusk
             $browser->refresh()
                 ->on(new WalletPage())
                 ->click('@nav #tab-refprograms')
-                ->whenAvailable('@refprograms-tab', static function (Browser $browser) use ($program, $user) {
+                ->whenAvailable('@refprograms-tab ul', static function (Browser $browser) use ($program, $user) {
                     $code = $program->codes()->where('user_id', $user->id)->first();
 
-                    $browser->waitFor('ul')
-                        ->assertElementsCount('ul > li', 1)
+                    $browser->assertElementsCount('li', 1)
                         ->assertVisible('li:nth-child(1) img')
                         ->assertSeeIn('li:nth-child(1) p.name', $program->name)
                         ->assertSeeIn('li:nth-child(1) p.description', $program->description)

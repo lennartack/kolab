@@ -61,8 +61,9 @@ class PolicyController extends Controller
     }
 
     /**
-     * Fetch the account policies for the current user account.
-     * The result includes all supported policy rules.
+     * List the account policies.
+     *
+     * The result includes all supported policy rules for the current user account.
      */
     public function index(Request $request): JsonResponse
     {
@@ -114,7 +115,9 @@ class PolicyController extends Controller
         return Mailfilter::handle($request);
     }
 
-    // Apply a sensible rate limitation to a request.
+    /**
+     * Apply a sensible rate limitation to a request.
+     */
     public function ratelimit(): JsonResponse
     {
         $response = RateLimit::handle(\request()->input());
@@ -132,7 +135,9 @@ class PolicyController extends Controller
         return $response->jsonResponse();
     }
 
-    // Apply the sender policy framework to a request.
+    /**
+     * Apply the sender policy framework to a request.
+     */
     public function senderPolicyFramework(): JsonResponse
     {
         $response = SPF::handle(\request()->input());
@@ -140,7 +145,9 @@ class PolicyController extends Controller
         return $response->jsonResponse();
     }
 
-    // Validate sender/recipients in an SMTP submission request.
+    /**
+     * Validate sender/recipients in an SMTP submission request.
+     */
     public function submission(): JsonResponse
     {
         $response = SmtpAccess::submission(\request()->input());

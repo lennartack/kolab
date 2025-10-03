@@ -20,12 +20,6 @@ class SharedFolderInfoResource extends SharedFolderResource
 
             // @var int Folder status
             'status' => $this->resource->status,
-            // Folder creation date-time
-            'created_at' => (string) $this->resource->created_at,
-            // Folder modification date-time
-            'updated_at' => (string) $this->resource->updated_at,
-            // @var string|null Folder deletion date-time
-            'deleted_at' => (string) $this->resource->deleted_at,
 
             // @var array Folder aliases (email addresses)
             'aliases' => $this->resource->aliases()->pluck('alias')->all(),
@@ -37,7 +31,7 @@ class SharedFolderInfoResource extends SharedFolderResource
             'statusInfo' => SharedFoldersController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(self::objectEntitlements($this->resource)),
+            $this->merge($this->objectEntitlements()),
         ];
     }
 }

@@ -97,11 +97,11 @@ class Room extends Model
      *
      * @param int $role User role (see self::ROLE_* constants)
      *
-     * @return array|null Token data on success, NULL otherwise
+     * @return string|null Session token on success, NULL otherwise
      *
      * @throws \Exception if session does not exist
      */
-    public function getSessionToken($role = self::ROLE_SUBSCRIBER): ?array
+    public function getSessionToken($role = self::ROLE_SUBSCRIBER): ?string
     {
         if (!$this->session_id) {
             throw new \Exception("The room session does not exist");
@@ -115,10 +115,7 @@ class Room extends Model
         $response = $this->client()->post($url, $post);
 
         if ($response->status() == 200) {
-            return [
-                'token' => $response->json('token'),
-                'role' => $role,
-            ];
+            return $response->json('token');
         }
 
         $this->logError("Failed to create the meet peer connection", $response);

@@ -15,13 +15,13 @@ use Lcobucci\JWT\Token\Builder;
 class VPNController extends Controller
 {
     /**
-     * Token request from the vpn module
+     * Get a token from the VPN module
      */
     public function token(Request $request): JsonResponse
     {
-        $signingKey = \config("app.vpn.token_signing_key");
+        $signingKey = \config('app.vpn.token_signing_key');
         if (empty($signingKey)) {
-            throw new \Exception("app.vpn.token_signing_key is not set");
+            throw new \Exception('app.vpn.token_signing_key is not set');
         }
 
         $tokenBuilder = (new Builder(new JoseEncoder(), ChainedFormatter::default()));
@@ -29,7 +29,7 @@ class VPNController extends Controller
             ->issuedAt(Carbon::now()->toImmutable())
             // The entitlement is hardcoded for now to default.
             // Can be extended in the future based on user entitlements.
-            ->withClaim('entitlement', "default")
+            ->withClaim('entitlement', 'default')
             ->getToken(new Rsa\Sha256(), InMemory::plainText($signingKey));
 
         return response()->json(['status' => 'ok', 'token' => $token->toString()]);

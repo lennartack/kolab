@@ -414,8 +414,8 @@ class DomainsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(1, $json);
-        $this->assertSkuElement('domain-hosting', $json[0], [
+        $this->assertCount(1, $json['list']);
+        $this->assertSkuElement('domain-hosting', $json['list'][0], [
             'prio' => 0,
             'type' => 'domain',
             'handler' => 'DomainHosting',

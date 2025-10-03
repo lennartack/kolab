@@ -21,12 +21,6 @@ class DomainInfoResource extends DomainResource
 
             // @var int Domain status
             'status' => $this->resource->status,
-            // Domain creation date-time
-            'created_at' => (string) $this->resource->created_at,
-            // Domain modification date-time
-            'updated_at' => (string) $this->resource->updated_at,
-            // @var string|null Domain deletion date-time
-            'deleted_at' => (string) $this->resource->deleted_at,
 
             // Domain DNS hash
             'hash_text' => $this->resource->hash(Domain::HASH_TEXT),
@@ -47,7 +41,7 @@ class DomainInfoResource extends DomainResource
             'statusInfo' => DomainsController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(self::objectEntitlements($this->resource)),
+            $this->merge($this->objectEntitlements()),
         ];
     }
 

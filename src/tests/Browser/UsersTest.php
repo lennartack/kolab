@@ -224,7 +224,7 @@ class UsersTest extends TestCaseDusk
                                 $browser->assertQuotaValue(5)->setQuotaValue(6);
                             })
                             ->assertSeeIn('tr:nth-child(2) td.price', '0,25 CHF/month')
-                            // groupware SKU
+                            // Groupware SKU
                             ->assertSeeIn('tbody tr:nth-child(3) td.name', 'Groupware Features')
                             ->assertSeeIn('tbody tr:nth-child(3) td.price', '4,90 CHF/month')
                             ->assertChecked('tbody tr:nth-child(3) td.selection input')

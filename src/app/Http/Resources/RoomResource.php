@@ -3,15 +3,15 @@
 namespace App\Http\Resources;
 
 use App\Http\Controllers\RelationController;
-use App\Resource;
+use App\Meet\Room;
 use Illuminate\Http\Request;
 
 /**
- * Resource response
+ * Room response
  *
- * @mixin Resource
+ * @mixin Room
  */
-class ResourceResource extends ApiResource
+class RoomResource extends ApiResource
 {
     /**
      * Transform the resource into an array.
@@ -21,38 +21,30 @@ class ResourceResource extends ApiResource
         $state = RelationController::objectState($this->resource);
 
         return [
-            // @var int Resource identifier
+            // Room identifier
             'id' => $this->resource->id,
-            // Resource email address
-            'email' => $this->resource->email,
-            // Resource name
+            // Room name
             'name' => $this->resource->name,
+            // Room description
+            'description' => $this->resource->description,
 
             $this->mergeWhen(self::isAdmin(), [
                 /*
-                 * @var string Resource creation date-time
+                 * @var string Room creation date-time
                  * @format date-time
                  */
                 'created_at' => (string) $this->resource->created_at,
                 /*
-                 * @var string Resource deletion date-time
+                 * @var string Room deletion date-time
                  * @format date-time
                  */
                 'deleted_at' => (string) $this->resource->deleted_at,
             ]),
 
-            // @var bool Is resource active?
-            'isActive' => $state['isActive'] ?? false,
-            // @var bool Is resource deleted?
+            // @var bool Is room deleted?
             'isDeleted' => $state['isDeleted'] ?? false,
             // @var bool Readiness state
             'isReady' => $state['isReady'],
-            // @var bool IMAP readiness state
-            'isImapReady' => $state['isImapReady'] ?? false,
-            // @var bool LDAP readiness state
-            'isLdapReady' => $this->when(isset($state['isLdapReady']), $state['isLdapReady'] ?? false),
-            // @var bool Is resource suspended?
-            // 'isSuspended' => $state['isSuspended'] ?? false,
         ];
     }
 }

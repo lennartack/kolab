@@ -21,12 +21,6 @@ class ResourceInfoResource extends GroupResource
 
             // @var int Resource status
             'status' => $this->resource->status,
-            // Resource creation date-time
-            'created_at' => (string) $this->resource->created_at,
-            // Resource modification date-time
-            'updated_at' => (string) $this->resource->updated_at,
-            // @var string|null Resource deletion date-time
-            'deleted_at' => (string) $this->resource->deleted_at,
 
             // @var array<string, mixed> Resource configuration
             'config' => $this->resource->getConfig(),
@@ -35,7 +29,7 @@ class ResourceInfoResource extends GroupResource
             'statusInfo' => ResourcesController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(self::objectEntitlements($this->resource)),
+            $this->merge($this->objectEntitlements()),
         ];
     }
 }

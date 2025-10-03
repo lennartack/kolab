@@ -23,18 +23,16 @@ class ApiResource extends JsonResource
 
     /**
      * Include SKUs/Wallet information in the object's response.
-     *
-     * @param object $object User/Domain/etc object
      */
-    public static function objectEntitlements($object): array
+    public function objectEntitlements(): array
     {
-        $wallet = $object->wallet();
+        $wallet = $this->resource->wallet();
 
         return [
-            // Entitlements information
-            'skus' => Entitlement::objectEntitlementsSummary($object),
+            // @var array<string, array> Entitlements information
+            'skus' => Entitlement::objectEntitlementsSummary($this->resource),
             // Wallet information
-            'wallet' => $wallet ? new WalletResource($wallet) : null,
+            'wallet' => $this->when($wallet, new WalletResource($wallet)),
         ];
     }
 }

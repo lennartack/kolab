@@ -54,8 +54,6 @@ class CompanionAppsController extends ResourceController
      */
     public function store(Request $request): JsonResponse
     {
-        $user = $this->guard()->user();
-
         $v = Validator::make(
             $request->all(),
             [
@@ -64,12 +62,12 @@ class CompanionAppsController extends ResourceController
         );
 
         if ($v->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
+            return response()->json(['status' => 'error', /* @var array */ 'errors' => $v->errors()], 422);
         }
 
         $app = CompanionApp::create([
             'name' => $request->name,
-            'user_id' => $user->id,
+            'user_id' => $this->guard()->user()->id,
         ]);
 
         return response()->json([
@@ -98,7 +96,7 @@ class CompanionAppsController extends ResourceController
         );
 
         if ($v->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
+            return response()->json(['status' => 'error', /* @var array */ 'errors' => $v->errors()], 422);
         }
 
         $notificationToken = $request->notificationToken;
@@ -184,7 +182,7 @@ class CompanionAppsController extends ResourceController
      *
      * @param string $id Companion app identifier
      */
-    public function show($id): CompanionAppResource|JsonResponse
+    public function show($id): JsonResponse
     {
         $result = CompanionApp::find($id);
         if (!$result) {
@@ -196,7 +194,7 @@ class CompanionAppsController extends ResourceController
             return $this->errorResponse(403);
         }
 
-        return new CompanionAppResource($result);
+        return (new CompanionAppResource($result))->response();
     }
 
     /**

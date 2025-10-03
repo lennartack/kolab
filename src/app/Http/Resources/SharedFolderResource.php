@@ -30,6 +30,19 @@ class SharedFolderResource extends ApiResource
             // Folder type
             'type' => $this->resource->type,
 
+            $this->mergeWhen(self::isAdmin(), [
+                /*
+                 * @var string Folder creation date-time
+                 * @format date-time
+                 */
+                'created_at' => (string) $this->resource->created_at,
+                /*
+                 * @var string Folder deletion date-time
+                 * @format date-time
+                 */
+                'deleted_at' => (string) $this->resource->deleted_at,
+            ]),
+
             // @var bool Is folder active?
             'isActive' => $state['isActive'] ?? false,
             // @var bool Is folder deleted?

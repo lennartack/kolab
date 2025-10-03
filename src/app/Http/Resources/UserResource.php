@@ -29,9 +29,15 @@ class UserResource extends ApiResource
             'status' => $this->resource->status,
 
             $this->mergeWhen(self::isAdmin(), [
-                // User creation date-time
+                /*
+                 * @var string User creation date-time
+                 * @format date-time
+                 */
                 'created_at' => (string) $this->resource->created_at,
-                // User deletion date-time
+                /*
+                 * @var string User deletion date-time
+                 * @format date-time
+                 */
                 'deleted_at' => (string) $this->resource->deleted_at,
             ]),
 

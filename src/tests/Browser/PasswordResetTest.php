@@ -235,7 +235,8 @@ class PasswordResetTest extends TestCaseDusk
 
             // Submit invalid data
             $browser->with('@step3', static function ($step) use ($browser) {
-                $step->assertFocused('#reset_password')
+                $step->waitFor('#reset_password')
+                    ->assertFocused('#reset_password')
                     ->whenAvailable('#reset_password_policy', static function (Browser $browser) {
                         $browser->assertElementsCount('li', 2)
                             ->assertMissing('li:first-child svg.text-success')

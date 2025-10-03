@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\API\V4;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\RoomSessionResource;
 use App\Meet\Room;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,11 +14,18 @@ use Illuminate\Support\Facades\Auth;
 class MeetController extends Controller
 {
     /**
-     * Join the room session. Each room has one owner, and the room isn't open until the owner
+     * Join the room session.
+     *
+     * Each room has one owner, and the room isn't open until the owner
      * joins (and effectively creates the session).
      *
      * @param string $id Room identifier (name)
      */
+    #[BodyParameter('password', description: 'Room password', type: 'string')]
+    #[BodyParameter('requestId', description: 'Unique client identifier', type: 'string')]
+    #[BodyParameter('picture', description: 'User image', type: 'string')]
+    #[BodyParameter('nickname', description: 'User nickname', type: 'string')]
+    #[BodyParameter('canPublish', description: 'Client has media device(s)', type: 'bool')]
     public function joinRoom($id): JsonResponse
     {
         $room = Room::where('name', $id)->first();
@@ -27,21 +36,27 @@ class MeetController extends Controller
         }
 
         $user = Auth::guard()->user();
-        $isOwner = $user && (
+        $init = !empty(request()->input('init'));
+        $settings = $room->getSettings(['locked', 'nomedia', 'password']);
+        $password = (string) $settings['password'];
+
+        $response = new RoomSessionResource($settings);
+        $response->isOwner = $user && (
             $user->id == $wallet->owner->id || $room->permissions()->where('user', $user->email)->exists()
         );
-        $init = !empty(request()->input('init'));
 
         // There's no existing session
         if (!$room->hasSession()) {
             // Participants can't join the room until the session is created by the owner
-            if (!$isOwner) {
-                return $this->errorResponse(422, self::trans('meet.session-not-found'), ['code' => 323]);
+            if (!$response->isOwner) {
+                $response->code = 323;
+                return $response->response()->setStatusCode(422);
             }
 
             // The room owner can create the session on request
             if (!$init) {
-                return $this->errorResponse(422, self::trans('meet.session-not-found'), ['code' => 324]);
+                $response->code = 324;
+                return $response->response()->setStatusCode(422);
             }
 
             $session = $room->createSession();
@@ -51,49 +66,37 @@ class MeetController extends Controller
             }
         }
 
-        $settings = $room->getSettings(['locked', 'nomedia', 'password']);
-        $password = (string) $settings['password'];
-
-        $config = [
-            'locked' => $settings['locked'] === 'true',
-            'nomedia' => $settings['nomedia'] === 'true',
-            'password' => $isOwner ? $password : '',
-            'requires_password' => !$isOwner && strlen($password),
-        ];
-
-        $response = ['config' => $config];
-
         // Validate room password
-        if (!$isOwner && strlen($password)) {
+        if (!$response->isOwner && strlen($password)) {
             $request_password = request()->input('password');
             if ($request_password !== $password) {
-                $response['code'] = 325;
-                return $this->errorResponse(422, self::trans('meet.session-password-error'), $response);
+                $response->code = 325;
+                return $response->response()->setStatusCode(422);
             }
         }
 
         // Handle locked room
-        if (!$isOwner && $config['locked']) {
+        if (!$response->isOwner && $settings['locked']) {
             $nickname = request()->input('nickname');
             $picture = request()->input('picture');
             $requestId = request()->input('requestId');
 
             $request = $requestId ? $room->requestGet($requestId) : null;
 
-            $error = self::trans('meet.session-room-locked-error');
-
             // Request already has been processed (not accepted yet, but it could be denied)
             if (empty($request['status']) || $request['status'] != Room::REQUEST_ACCEPTED) {
                 if (!$request) {
                     if (empty($nickname) || empty($requestId) || !preg_match('/^[a-z0-9]{8,32}$/i', $requestId)) {
-                        return $this->errorResponse(422, $error, $response + ['code' => 326]);
+                        $response->code = 326;
+                        return $response->response()->setStatusCode(422);
                     }
 
                     if (empty($picture)) {
                         $svg = file_get_contents(resource_path('images/user.svg'));
                         $picture = 'data:image/svg+xml;base64,' . base64_encode($svg);
                     } elseif (!preg_match('|^data:image/png;base64,[a-zA-Z0-9=+/]+$|', $picture)) {
-                        return $this->errorResponse(422, $error, $response + ['code' => 326]);
+                        $response->code = 326;
+                        return $response->response()->setStatusCode(422);
                     }
 
                     // TODO: Resize when big/make safe the user picture?
@@ -102,43 +105,39 @@ class MeetController extends Controller
 
                     if (!$room->requestSave($requestId, $request)) {
                         // FIXME: should we use error code 500?
-                        return $this->errorResponse(422, $error, $response + ['code' => 326]);
+                        $response->code = 326;
+                        return $response->response()->setStatusCode(422);
                     }
 
                     // Send the request (signal) to all moderators
-                    $result = $room->signal('joinRequest', $request, Room::ROLE_MODERATOR);
+                    $room->signal('joinRequest', $request, Room::ROLE_MODERATOR);
                 }
 
-                return $this->errorResponse(422, $error, $response + ['code' => 327]);
+                $response->code = 327;
+                return $response->response()->setStatusCode(422);
             }
         }
 
-        // Initialize connection tokens
-        if ($init) {
-            // Choose the connection role
-            $canPublish = !empty(request()->input('canPublish')) && (empty($config['nomedia']) || $isOwner);
-            $role = $canPublish ? Room::ROLE_PUBLISHER : Room::ROLE_SUBSCRIBER;
-            if ($isOwner) {
-                $role |= Room::ROLE_MODERATOR;
-                $role |= Room::ROLE_OWNER;
-            }
-
-            // Create session token for the current user/connection
-            $response = $room->getSessionToken($role);
-
-            if (empty($response)) {
-                return $this->errorResponse(500, self::trans('meet.session-join-error'));
-            }
-
-            $response_code = 200;
-            $response['role'] = $role;
-            $response['config'] = $config;
-        } else {
-            $response_code = 422;
-            $response['code'] = 322;
+        if (!$init) {
+            $response->code = 322;
+            return $response->response()->setStatusCode(422);
         }
 
-        return response()->json($response, $response_code);
+        // Choose the connection role
+        $canPublish = !empty(request()->input('canPublish')) && (empty($settings['nomedia']) || $response->isOwner);
+        $response->role = $canPublish ? Room::ROLE_PUBLISHER : Room::ROLE_SUBSCRIBER;
+        if ($response->isOwner) {
+            $response->role |= Room::ROLE_MODERATOR | Room::ROLE_OWNER;
+        }
+
+        // Create session token for the current user/connection
+        $response->token = $room->getSessionToken($response->role);
+
+        if (empty($response->token)) {
+            return $this->errorResponse(500, self::trans('meet.session-join-error'));
+        }
+
+        return $response->response();
     }
 
     /**

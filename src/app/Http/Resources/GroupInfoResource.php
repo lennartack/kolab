@@ -21,12 +21,6 @@ class GroupInfoResource extends GroupResource
 
             // @var int Group status
             'status' => $this->resource->status,
-            // Group creation date-time
-            'created_at' => (string) $this->resource->created_at,
-            // Group modification date-time
-            'updated_at' => (string) $this->resource->updated_at,
-            // @var string|null Group deletion date-time
-            'deleted_at' => (string) $this->resource->deleted_at,
 
             // @var array<string, mixed> Group configuration, e.g. spf whitelist
             'config' => $this->resource->getConfig(),
@@ -38,7 +32,7 @@ class GroupInfoResource extends GroupResource
             'statusInfo' => GroupsController::statusInfo($this->resource),
 
             // Entitlements/Wallet information
-            $this->merge(self::objectEntitlements($this->resource)),
+            $this->merge($this->objectEntitlements()),
         ];
     }
 }

@@ -28,6 +28,7 @@ class UserTest extends TestCaseDusk
         $john->setSettings([
             'phone' => '+48123123123',
             'external_email' => 'john.doe.external@gmail.com',
+            'greylist_enabled' => null,
             'greylist_policy' => null,
         ]);
         if ($john->isSuspended()) {
@@ -47,6 +48,8 @@ class UserTest extends TestCaseDusk
         $john->setSettings([
             'phone' => null,
             'external_email' => 'john.doe.external@gmail.com',
+            'greylist_enabled' => null,
+            'greylist_policy' => null,
         ]);
         if ($john->isSuspended()) {
             User::where('email', $john->email)->update(['status' => $john->status - User::STATUS_SUSPENDED]);
@@ -189,7 +192,7 @@ class UserTest extends TestCaseDusk
                 ->whenAvailable('@user-settings form', static function (Browser $browser) {
                     $browser->assertElementsCount('.row', 3)
                         ->assertSeeIn('.row:first-child label', 'Greylisting')
-                        ->assertSeeIn('.row:first-child .text-success', 'enabled')
+                        ->assertSeeIn('.row:first-child .text-danger', 'disabled')
                         ->assertSeeIn('.row:nth-child(2) label', 'IMAP proxy')
                         ->assertSeeIn('.row:nth-child(2) .text-danger', 'disabled')
                         ->assertSeeIn('.row:nth-child(3) label', 'Geo-lockin')

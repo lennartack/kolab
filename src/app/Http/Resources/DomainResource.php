@@ -28,6 +28,19 @@ class DomainResource extends ApiResource
             // Domain type
             'type' => $this->resource->type,
 
+            $this->mergeWhen(self::isAdmin(), [
+                /*
+                 * @var string Domain creation date-time
+                 * @format date-time
+                 */
+                'created_at' => (string) $this->resource->created_at,
+                /*
+                 * @var string Domain deletion date-time
+                 * @format date-time
+                 */
+                'deleted_at' => (string) $this->resource->deleted_at,
+            ]),
+
             // @var bool Is domain active?
             'isActive' => $state['isActive'] ?? false,
             // @var bool Is domain deleted?

@@ -43,7 +43,7 @@ trait RoomConfigTrait
             } elseif ($key == 'locked' || $key == 'nomedia') {
                 $this->setSetting($key, $value ? 'true' : null);
             } elseif ($key == 'acl') {
-                if (!empty($value) && !$this->hasSKU('group-room')) {
+                if (!empty($value) && !$this->hasSku('group-room')) {
                     $errors[$key] = \trans('validation.invalid-config-parameter');
                     continue;
                 }

@@ -32,7 +32,7 @@ class SupportController extends Controller
         ]);
 
         if ($v->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
+            return response()->json(['status' => 'error', /* @var array */ 'errors' => $v->errors()], 422);
         }
 
         $params = $request->only(array_keys($rules));

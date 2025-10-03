@@ -321,11 +321,11 @@ class RoomsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(2, $json);
-        $this->assertSame('room', $json[0]['title']);
-        $this->assertTrue($json[0]['enabled']);
-        $this->assertSame('group-room', $json[1]['title']);
-        $this->assertFalse($json[1]['enabled']);
+        $this->assertCount(2, $json['list']);
+        $this->assertSame('room', $json['list'][0]['title']);
+        $this->assertTrue($json['list'][0]['enabled']);
+        $this->assertSame('group-room', $json['list'][1]['title']);
+        $this->assertFalse($json['list'][1]['enabled']);
 
         // Room's wallet controller, not owner
         $response = $this->actingAs($ned)->get("api/v4/rooms/{$room->id}/skus");
@@ -333,11 +333,11 @@ class RoomsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(2, $json);
-        $this->assertSame('room', $json[0]['title']);
-        $this->assertTrue($json[0]['enabled']);
-        $this->assertSame('group-room', $json[1]['title']);
-        $this->assertFalse($json[1]['enabled']);
+        $this->assertCount(2, $json['list']);
+        $this->assertSame('room', $json['list'][0]['title']);
+        $this->assertTrue($json['list'][0]['enabled']);
+        $this->assertSame('group-room', $json['list'][1]['title']);
+        $this->assertFalse($json['list'][1]['enabled']);
 
         // Test non-controller user, expect no group-room SKU on the list
         $room = $this->getTestRoom('test', $jack->wallets()->first());
@@ -347,9 +347,9 @@ class RoomsTest extends TestCase
 
         $json = $response->json();
 
-        $this->assertCount(1, $json);
-        $this->assertSame('room', $json[0]['title']);
-        $this->assertTrue($json[0]['enabled']);
+        $this->assertCount(1, $json['list']);
+        $this->assertSame('room', $json['list'][0]['title']);
+        $this->assertTrue($json['list'][0]['enabled']);
     }
 
     /**
