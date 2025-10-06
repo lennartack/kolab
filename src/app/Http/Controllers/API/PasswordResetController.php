@@ -13,7 +13,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 /**
  * Password reset API
@@ -93,14 +92,10 @@ class PasswordResetController extends Controller
         }
 
         // Validate the verification code
-        $code = VerificationCode::where('code', $request->code)->where('active', true)->first();
+        $code = VerificationCode::where('code', $request->code)->where('active', true)
+            ->where('mode', VerificationCode::MODE_PASSWORD)->first();
 
-        if (
-            empty($code)
-            || $code->isExpired()
-            || $code->mode !== VerificationCode::MODE_PASSWORD
-            || Str::upper($request->short_code) !== Str::upper($code->short_code)
-        ) {
+        if (empty($code) || !$code->codeValidate($request->short_code)) {
             $errors = ['short_code' => self::trans('validation.verificationcodeinvalid')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }

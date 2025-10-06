@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Device;
 use App\Discount;
 use App\Domain;
 use App\Group;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\DeviceInfoResource;
 use App\Http\Resources\PlanResource;
 use App\Jobs\Mail\SignupVerificationJob;
 use App\Payment;
@@ -252,7 +254,7 @@ class SignupController extends Controller
     #[BodyParameter('domain', description: 'User domain namespace', type: 'string', required: true)]
     #[BodyParameter('password', description: 'User password', type: 'string', required: true)]
     #[BodyParameter('voucher', description: 'Voucher code', type: 'string')]
-    #[BodyParameter('plan', description: 'Plan identifier (required when not using a verification code)', type: 'string')]
+    #[BodyParameter('plan', description: 'Plan identifier (required when not using a verification code or token)', type: 'string')]
     #[BodyParameter('invitation', description: 'Signup invitation identifier', type: 'string')]
     #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
     #[BodyParameter('first_name', description: 'First name', type: 'string')]
@@ -287,6 +289,14 @@ class SignupController extends Controller
 
         // Direct signup by token
         if ($request->token) {
+            if (!$request->plan) {
+                $plan = Device::defaultPlan($request->token, false);
+                if ($plan) {
+                    $request->merge(['plan' => $plan]);
+                    unset($rules['plan']);
+                }
+            }
+
             // This will validate the token and the plan mode
             $rules['token'] = ['required', 'string', new SignupTokenRule($plan)];
         }
@@ -377,7 +387,7 @@ class SignupController extends Controller
     #[BodyParameter('domain', description: 'User domain namespace', type: 'string', required: true)]
     #[BodyParameter('password', description: 'User password', type: 'string', required: true)]
     #[BodyParameter('voucher', description: 'Voucher code', type: 'string')]
-    #[BodyParameter('plan', description: 'Plan identifier (required when not using a verification code)', type: 'string')]
+    #[BodyParameter('plan', description: 'Plan identifier (required when not using a verification code or token)', type: 'string')]
     #[BodyParameter('invitation', description: 'Signup invitation identifier', type: 'string')]
     #[BodyParameter('token', description: 'Signup token (required for mode=token plans)', type: 'string')]
     #[BodyParameter('first_name', description: 'First name', type: 'string')]
@@ -467,9 +477,17 @@ class SignupController extends Controller
             }
         }
 
-        // Bump up counter on the signup token
         if (!empty($request->settings['signup_token'])) {
-            SignupToken::where('id', $request->settings['signup_token'])->increment('counter');
+            $token = $request->settings['signup_token'];
+
+            // Bump up counter on the signup token
+            SignupToken::where('id', $token)->increment('counter');
+
+            // Bind the device with the user
+            if ($request->plan->hasSku(Device::class)) {
+                $device = Device::initDevice($token);
+                $device->assignPlan($request->plan, $user->wallets()->first());
+            }
         }
 
         DB::commit();
@@ -478,6 +496,10 @@ class SignupController extends Controller
 
         if ($request->plan->mode == Plan::MODE_MANDATE) {
             $response->checkout = $this->mandateForPlan($request->plan, $request->discount, $user);
+        }
+
+        if (!empty($device)) {
+            $response->device = new DeviceInfoResource($device);
         }
 
         return $response;

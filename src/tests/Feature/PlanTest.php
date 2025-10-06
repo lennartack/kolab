@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Domain;
 use App\Plan;
 use App\Tenant;
+use App\User;
 use Tests\TestCase;
 
 class PlanTest extends TestCase
@@ -72,6 +74,22 @@ class PlanTest extends TestCase
         $plan = Plan::where('title', 'group')->first();
 
         $this->assertTrue($plan->hasDomain() === true);
+    }
+
+    /**
+     * Tests for Plan::hasSku()
+     */
+    public function testHasSku(): void
+    {
+        $plan = Plan::where('title', 'individual')->first();
+
+        $this->assertFalse($plan->hasSku(Domain::class));
+        $this->assertTrue($plan->hasSku(User::class));
+
+        $plan = Plan::where('title', 'group')->first();
+
+        $this->assertTrue($plan->hasSku(Domain::class));
+        $this->assertTrue($plan->hasSku(User::class));
     }
 
     /**

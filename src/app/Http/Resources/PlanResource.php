@@ -24,6 +24,8 @@ class PlanResource extends ApiResource
         }
 
         return [
+            // @var string Plan identifier
+            'id' => $this->resource->id,
             // @var string Plan title (identifier)
             'title' => $this->resource->title,
             // @var string Plan name

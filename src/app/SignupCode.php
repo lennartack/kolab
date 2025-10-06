@@ -88,6 +88,12 @@ class SignupCode extends Model
      */
     public static function generateShortCode(): string
     {
+        $test_code = \config('app.test_verification_code');
+
+        if (strlen($test_code)) {
+            return $test_code;
+        }
+
         $code_length = env('SIGNUP_CODE_LENGTH', self::SHORTCODE_LENGTH);
 
         return Utils::randStr($code_length);

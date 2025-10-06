@@ -30,16 +30,31 @@ class DeviceController extends Controller
         }
 
         $device = Device::where('hash', strtoupper($token))->first();
+        $user = $this->guard()->user();
 
-        if (empty($device)) {
-            return $this->errorResponse(404);
+        if ($device) {
+            $device_wallet = $device->wallet();
+            $user_wallet = $user->wallets()->first();
+
+            // Does the existing device already belong to this user?
+            if ($device_wallet && $device_wallet->id == $user_wallet->id) {
+                response()->json([
+                    'status' => 'success',
+                    'message' => self::trans('app.device-claim-success'),
+                ]);
+            }
+        } else {
+            if (!SignupToken::where('id', strtoupper($token))->exists()) {
+                return $this->errorResponse(404);
+            }
         }
 
-        $device->bindTo($this->guard()->user());
+        $device = Device::claim($token, $user);
 
         return response()->json([
             'status' => 'success',
             'message' => self::trans('app.device-claim-success'),
+            'device' => new DeviceInfoResource($device),
         ]);
     }
 
@@ -106,38 +121,39 @@ class DeviceController extends Controller
      *
      * @unauthenticated
      */
-    #[BodyParameter('plan', description: 'Plan title', type: 'string', required: true)]
+    #[BodyParameter('plan', description: 'Plan title', type: 'string')]
     public function signup(Request $request, string $token)
     {
-        $v = Validator::make($request->all(), ['plan' => ['required', 'string']]);
-
-        if ($v->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
-        }
-
         // Signup plan
-        $plan = Plan::withEnvTenantContext()->where('title', $request->plan)->first();
+        if ($request->plan) {
+            $plan = Plan::withEnvTenantContext()->where('title', $request->plan)->first();
+        } else {
+            $plan = Device::defaultPlan($token, true);
+        }
 
         if (!$plan) {
             $errors = ['plan' => self::trans('validation.invalidvalue')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }
 
-        $request->merge([
-            'plan' => $plan,
-            'token' => \strtoupper($token),
-        ]);
+        // Validate token (needed when using non-default plan)
+        if ($request->plan) {
+            $request->merge([
+                'plan' => $plan,
+                'token' => \strtoupper($token),
+            ]);
 
-        // Validate input
-        $v = Validator::make(
-            $request->all(),
-            [
-                'token' => ['required', 'string', new SignupTokenRule($plan)],
-            ]
-        );
+            // Validate input
+            $v = Validator::make(
+                $request->all(),
+                [
+                    'token' => ['required', 'string', new SignupTokenRule($plan)],
+                ]
+            );
 
-        if ($v->fails()) {
-            return response()->json(['status' => 'error', /* @var array */ 'errors' => $v->errors()], 422);
+            if ($v->fails()) {
+                return response()->json(['status' => 'error', /* @var array */ 'errors' => $v->errors()], 422);
+            }
         }
 
         // TODO: Validate that the plan is device-only, don't accept a user plan here
@@ -156,6 +172,8 @@ class DeviceController extends Controller
             'email' => $device->account->email,
             'password' => $password,
         ];
+
+        $response->device = new DeviceInfoResource($device);
 
         return $response;
     }

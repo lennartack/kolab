@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Controller;
 
+use App\Device;
 use App\Discount;
 use App\Domain;
 use App\Http\Controllers\API\SignupController;
@@ -14,8 +15,10 @@ use App\ReferralProgram;
 use App\SignupCode;
 use App\SignupInvitation as SI;
 use App\SignupToken;
+use App\Sku;
 use App\User;
 use App\VatRate;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -43,7 +46,9 @@ class SignupTest extends TestCase
 
         SI::truncate();
         SignupToken::truncate();
-        Plan::where('title', 'test')->delete();
+        Plan::whereIn('title', ['test', 'user-test'])->delete();
+        Package::where('title', 'test')->delete();
+        Device::query()->forceDelete();
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
         VatRate::query()->delete();
         ReferralProgram::query()->delete();
@@ -63,7 +68,9 @@ class SignupTest extends TestCase
 
         SI::truncate();
         SignupToken::truncate();
-        Plan::where('title', 'test')->delete();
+        Plan::whereIn('title', ['test', 'user-test'])->delete();
+        Package::where('title', 'test')->delete();
+        Device::query()->forceDelete();
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
         VatRate::query()->delete();
         ReferralProgram::query()->delete();
@@ -994,8 +1001,9 @@ class SignupTest extends TestCase
     {
         Queue::fake();
 
+        $sku = Sku::withEnvTenantContext()->where('title', 'device')->first();
         $plan = Plan::create([
-            'title' => 'test',
+            'title' => 'user-test',
             'name' => 'Test Account',
             'description' => 'Test',
             'free_months' => 1,
@@ -1003,6 +1011,16 @@ class SignupTest extends TestCase
             'discount_rate' => 0,
             'mode' => Plan::MODE_TOKEN,
         ]);
+        $package = Package::create([
+            'title' => 'test',
+            'name' => 'Device Account',
+            'description' => 'A device account.',
+            'discount_rate' => 0,
+        ]);
+        $plan->packages()->saveMany([$package]);
+        $package->skus()->saveMany([$sku]);
+
+        Carbon::setTestNow(Carbon::createFromDate(2025, 2, 2));
 
         $post = [
             'plan' => $plan->title,
@@ -1023,7 +1041,6 @@ class SignupTest extends TestCase
 
         // Test valid token
         $token = SignupToken::create(['id' => 'abc', 'plans' => [$plan->id]]);
-        $post['plan'] = $plan->title;
         $response = $this->post('/api/auth/signup', $post);
         $response->assertStatus(200);
 
@@ -1041,6 +1058,45 @@ class SignupTest extends TestCase
 
         // Token's counter bumped up
         $this->assertSame(1, $token->fresh()->counter);
+
+        // Device registered
+        $device = Device::where('hash', $token->id)->first();
+        $this->assertSame($device->account->email, $user->email);
+        $entitlements = $device->wallet()->entitlements()->get();
+        $this->assertCount(1, $entitlements);
+        $this->assertSame($sku->id, $entitlements[0]->sku_id);
+        $this->assertStringContainsString('2026-02-02', $entitlements[0]->updated_at->toDateString());
+        $this->assertStringContainsString('2025-02-02', $json['device']['created_at']);
+        $this->assertSame(12, $json['device']['freeMonths']);
+
+        // Signup a new user with the same token/device (use default plan)
+        Carbon::setTestNow(Carbon::createFromDate(2025, 4, 2));
+        $post = [
+            'token' => 'abc',
+            'login' => 'signuplogin',
+            'domain' => $this->domain,
+            'password' => 'testtest',
+            'password_confirmation' => 'testtest',
+        ];
+
+        $response = $this->post('/api/auth/signup', $post);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $user2 = User::where('email', $post['login'] . '@' . $post['domain'])->first();
+        $this->assertSame($plan->id, $user->getSetting('plan_id'));
+        $this->assertSame($token->id, $user->getSetting('signup_token'));
+        $this->assertSame(2, $token->fresh()->counter);
+
+        $device->refresh();
+        $this->assertSame($device->account->email, $user2->email);
+        $entitlements = $device->entitlements()->get();
+        $this->assertCount(1, $entitlements);
+        $this->assertSame($sku->id, $entitlements[0]->sku_id);
+        $this->assertStringContainsString('2026-02-02', $entitlements[0]->updated_at->toDateString());
+        $this->assertCount(1, $user->wallets()->first()->entitlements()->withTrashed()
+            ->where('sku_id', $sku->id)->whereNotNull('deleted_at')->get());
     }
 
     /**

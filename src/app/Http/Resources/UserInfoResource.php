@@ -24,6 +24,9 @@ class UserInfoResource extends UserResource
         'last_name',
         'organization',
         'phone',
+        'password_expired',
+        'debug',
+        'plan_id',
     ];
 
     /**
@@ -37,8 +40,7 @@ class UserInfoResource extends UserResource
         $isLocked = !$this->resource->isActive() && $wallet->plan()?->mode == Plan::MODE_MANDATE;
 
         // Settings
-        $keys = array_merge(self::USER_SETTINGS, ['password_expired', 'debug']);
-        $settings = $this->resource->settings()->whereIn('key', $keys)->pluck('value', 'key')->all();
+        $settings = $this->resource->settings()->whereIn('key', self::USER_SETTINGS)->pluck('value', 'key')->all();
 
         return [
             $this->merge(parent::toArray($request)),

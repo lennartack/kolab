@@ -55,14 +55,14 @@ class VerificationCode extends Model
     /**
      * Apply action on verified code.
      */
-    public function applyAction(): ?string
+    protected function applyAction(&$message): bool
     {
         switch ($this->mode) {
             case self::MODE_EMAIL:
                 $settings = $this->user->getSettings(['external_email_new', 'external_email_code']);
 
                 if ($settings['external_email_code'] != $this->code) {
-                    return null;
+                    return false;
                 }
 
                 $this->user->setSettings([
@@ -72,11 +72,30 @@ class VerificationCode extends Model
                 ]);
 
                 $this->delete();
-
-                return \trans('app.code-verified-email');
-            default:
-                return null;
+                $message = \trans('app.code-verified-email');
+                break;
         }
+
+        return true;
+    }
+
+    /**
+     * Validate a code and execute defined action if valid.
+     *
+     * @param string  $short_code Short code
+     * @param ?string $message    Success message
+     */
+    public function codeValidate(string $short_code, &$message = null): bool
+    {
+        if (!$this->active || $this->isExpired()) {
+            return false;
+        }
+
+        if (\strtoupper($short_code) !== \strtoupper($this->short_code)) {
+            return false;
+        }
+
+        return $this->applyAction($message);
     }
 
     /**
@@ -84,6 +103,12 @@ class VerificationCode extends Model
      */
     public static function generateShortCode(): string
     {
+        $test_code = \config('app.test_verification_code');
+
+        if (strlen($test_code)) {
+            return $test_code;
+        }
+
         $code_length = env('VERIFICATION_CODE_LENGTH', self::SHORTCODE_LENGTH);
 
         return Utils::randStr($code_length, 1, '', '1234567890');

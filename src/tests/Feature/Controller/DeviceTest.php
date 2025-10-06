@@ -24,7 +24,7 @@ class DeviceTest extends TestCase
         $this->hash = str_repeat('1', 64);
 
         Device::query()->forceDelete();
-        Plan::where('title', 'test')->delete();
+        Plan::whereIn('title', ['device-test', 'device-test-default'])->delete();
         Package::where('title', 'test')->delete();
         User::where('role', User::ROLE_DEVICE)->forceDelete();
         $this->deleteTestUser('jane@kolabnow.com');
@@ -34,7 +34,7 @@ class DeviceTest extends TestCase
     protected function tearDown(): void
     {
         SignupToken::query()->delete();
-        Plan::where('title', 'test')->delete();
+        Plan::whereIn('title', ['device-test', 'device-test-default'])->delete();
         Package::where('title', 'test')->delete();
         $this->deleteTestUser('jane@kolabnow.com');
         User::where('role', User::ROLE_DEVICE)->forceDelete();
@@ -65,6 +65,28 @@ class DeviceTest extends TestCase
         $json = $response->json();
 
         $this->assertStringContainsString('2025-02-02', $json['created_at']);
+        $this->assertSame(12, $json['freeMonths']);
+
+        // Assert freeMonths after 2 months
+        Carbon::setTestNow(Carbon::createFromDate(2025, 4, 2));
+        $response = $this->get('api/v4/device/' . $this->hash);
+        $json = $response->json();
+
+        $this->assertSame(10, $json['freeMonths']);
+
+        // Assert freeMonths after 12 months
+        Carbon::setTestNow(Carbon::createFromDate(2026, 2, 2));
+        $response = $this->get('api/v4/device/' . $this->hash);
+        $json = $response->json();
+
+        $this->assertSame(0, $json['freeMonths']);
+
+        // Assert freeMonths after 13 months
+        Carbon::setTestNow(Carbon::createFromDate(2026, 3, 2));
+        $response = $this->get('api/v4/device/' . $this->hash);
+        $json = $response->json();
+
+        $this->assertSame(0, $json['freeMonths']);
     }
 
     /**
@@ -95,6 +117,40 @@ class DeviceTest extends TestCase
 
         $this->assertSame('success', $json['status']);
         $this->assertSame('The device has been claimed successfully.', $json['message']);
+        $this->assertStringContainsString('2025-02-02', $json['device']['created_at']);
+        $this->assertSame(12, $json['device']['freeMonths']);
+        $device = Device::where('hash', $this->hash)->first();
+        $this->assertCount(1, $device->entitlements);
+        $this->assertSame($user->wallets()->first()->id, $device->entitlements[0]->wallet_id);
+
+        // Claim a soft-deleted device, no token registered
+        $device->delete();
+        $response = $this->actingAs($user)->post('api/v4/device/' . $this->hash . '/claim', []);
+        $response->assertStatus(404);
+
+        // Claim a soft-deleted device, token registered
+        SignupToken::create(['id' => $this->hash, 'plans' => [$plan->id]]);
+        $response = $this->actingAs($user)->post('api/v4/device/' . $this->hash . '/claim', []);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('The device has been claimed successfully.', $json['message']);
+        $device = Device::where('hash', $this->hash)->first();
+        $this->assertCount(1, $device->entitlements);
+        $this->assertSame($user->wallets()->first()->id, $device->entitlements[0]->wallet_id);
+
+        // Claim a non-existing device
+        $device->forceDelete();
+        $response = $this->actingAs($user)->post('api/v4/device/' . $this->hash . '/claim', []);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('The device has been claimed successfully.', $json['message']);
+        $device = Device::where('hash', $this->hash)->first();
         $this->assertCount(1, $device->entitlements);
         $this->assertSame($user->wallets()->first()->id, $device->entitlements[0]->wallet_id);
 
@@ -111,7 +167,7 @@ class DeviceTest extends TestCase
         $response->assertStatus(404);
 
         $plan = Plan::create([
-            'title' => 'test',
+            'title' => 'device-test',
             'name' => 'Test',
             'description' => 'Test',
             'mode' => Plan::MODE_TOKEN,
@@ -138,7 +194,7 @@ class DeviceTest extends TestCase
     {
         $sku = Sku::withEnvTenantContext()->where('title', 'device')->first();
         $plan = Plan::create([
-            'title' => 'test',
+            'title' => 'device-test-default',
             'name' => 'Test',
             'description' => 'Test',
             'mode' => Plan::MODE_TOKEN,
@@ -151,16 +207,6 @@ class DeviceTest extends TestCase
         ]);
         $plan->packages()->saveMany([$package]);
         $package->skus()->saveMany([$sku]);
-
-        // Signup, missing plan
-        $post = [];
-        $response = $this->post("api/v4/device/{$this->hash}/signup", $post);
-        $response->assertStatus(422);
-
-        $json = $response->json();
-
-        $this->assertSame('error', $json['status']);
-        $this->assertSame(['plan' => ['The plan field is required.']], $json['errors']);
 
         // Signup, invalid plan
         $post = ['plan' => 'invalid'];
@@ -194,6 +240,8 @@ class DeviceTest extends TestCase
         $this->assertSame('bearer', $json['token_type']);
         $this->assertTrue(!empty($json['expires_in']) && is_int($json['expires_in']) && $json['expires_in'] > 0);
         $this->assertNotEmpty($json['access_token']);
+        $this->assertStringContainsString('2025-02-02', $json['device']['created_at']);
+        $this->assertSame(12, $json['device']['freeMonths']);
 
         $device = Device::where('hash', $this->hash)->first();
         $account = $device->account;
@@ -215,7 +263,8 @@ class DeviceTest extends TestCase
         // Note: without this finding the proper wallet may not work because of how Device::wallet() works
         Carbon::setTestNow(Carbon::createFromDate(2025, 3, 4));
 
-        // Signup again
+        // Signup again (w/o a plan now)
+        unset($post['plan']);
         $response = $this->post("api/v4/device/{$this->hash}/signup", $post);
         $response->assertStatus(200);
 
@@ -245,7 +294,7 @@ class DeviceTest extends TestCase
     {
         $sku = Sku::withEnvTenantContext()->where('title', 'device')->first();
         $plan = Plan::create([
-            'title' => 'test',
+            'title' => 'device-test',
             'name' => 'Test',
             'description' => 'Test',
             'mode' => Plan::MODE_TOKEN,

@@ -82,12 +82,7 @@ class UsersController extends RelationController
             return $this->errorResponse(403);
         }
 
-        if (
-            empty($code)
-            || $code->isExpired()
-            || Str::upper($request->short_code) !== Str::upper($code->short_code)
-            || empty($message = $code->applyAction())
-        ) {
+        if (empty($code) || !$code->codeValidate($request->short_code, $message)) {
             $errors = ['short_code' => self::trans('validation.verificationcodeinvalid')];
             return response()->json(['status' => 'error', 'errors' => $errors], 422);
         }

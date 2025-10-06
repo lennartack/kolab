@@ -134,4 +134,20 @@ class Plan extends Model
 
         return false;
     }
+
+    /**
+     * Checks if the plan has a SKU assigned.
+     */
+    public function hasSku(string $class): bool
+    {
+        foreach ($this->packages as $package) {
+            foreach ($package->skus as $sku) {
+                if ($sku->handler_class::entitleableClass() == $class) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }
