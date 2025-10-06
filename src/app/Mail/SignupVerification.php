@@ -35,15 +35,8 @@ class SignupVerification extends Mailable
             $this->code->tenant_id
         );
 
-        $username = $this->code->first_name ?? '';
-        if (!empty($this->code->last_name)) {
-            $username .= ' ' . $this->code->last_name;
-        }
-        $username = trim($username);
-
         $vars = [
             'site' => $appName,
-            'name' => $username ?: 'User',
         ];
 
         $this->view('emails.html.signup_verification')

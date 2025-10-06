@@ -101,6 +101,7 @@ return [
         . ":site Support is here to help.",
 
     'signupverification-subject' => ":site Registration",
+    'signupverification-header' => "Hi,",
     'signupverification-body1' => "This is your verification code for the :site registration process:",
     'signupverification-body2' => "You can also click the link below to continue the registration process:",
 

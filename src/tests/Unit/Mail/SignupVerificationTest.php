@@ -35,9 +35,9 @@ class SignupVerificationTest extends TestCase
 
         $this->assertStringStartsWith('<!DOCTYPE html>', $html);
         $this->assertTrue(strpos($html, $link) > 0);
-        $this->assertTrue(strpos($html, 'First Last') > 0);
+        $this->assertStringContainsString('Hi', $html);
 
-        $this->assertStringStartsWith('Dear First Last', $plain);
+        $this->assertStringStartsWith('Hi,', $plain);
         $this->assertTrue(strpos($plain, $url) > 0);
     }
 

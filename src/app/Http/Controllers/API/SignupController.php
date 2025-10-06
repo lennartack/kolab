@@ -90,7 +90,6 @@ class SignupController extends Controller
     public function init(Request $request): JsonResponse
     {
         // Don't allow URLs in user names preventing abuse of signup email
-        // FIXME: I suppose we could also not use "Dear <user name>" in email
         $name_validator = static function (string $attribute, mixed $value, \Closure $fail) {
             if (str_contains($value, '://') || str_contains($value, '/')) {
                 $fail(self::trans('validation.invalidvalue'));

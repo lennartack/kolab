@@ -4,7 +4,7 @@
         <meta charset="utf-8">
     </head>
     <body>
-        <p>{{ __('mail.header', $vars) }}</p>
+        <p>{{ __('mail.signupverification-header', $vars) }}</p>
 
         <p>{{ __('mail.signupverification-body1', $vars) }}</p>
 

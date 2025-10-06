@@ -1,4 +1,4 @@
-{!! __('mail.header', $vars) !!}
+{!! __('mail.signupverification-header', $vars) !!}
 
 {!! __('mail.signupverification-body1', $vars) !!}
 
