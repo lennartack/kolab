@@ -49,7 +49,7 @@ class AuthResource extends ApiResource
             'message' => $this->when(isset($this->message), $this->message),
             // @var array Payment checkout information (on signup)
             'checkout' => $this->when(isset($this->checkout), $this->checkout),
-            // @var array New user credentials (on device signup)
+            // @var array{'email': string, 'password': string} New user credentials (on device signup)
             'credentials' => $this->when(isset($this->credentials), $this->credentials),
             // @var DeviceInfoResource Device information (on device signup)
             'device' => $this->when(isset($this->device), $this->device),
