@@ -131,12 +131,14 @@ class DAV implements ExporterInterface, ImporterInterface
             throw new \Exception("Failed to list folders on the DAV server");
         }
 
+        $target_name = $folder->targetname ?: $folder->fullname;
+
         // Note: iRony flattens the list by modifying the folder name
         // This is not going to work with Cyrus DAV, but anyway folder
         // hierarchies support is not full in Kolab 4.
         $href = false;
         foreach ($folders as $dav_folder) {
-            if (str_replace(' » ', '/', $dav_folder->name) === $folder->fullname) {
+            if (str_replace(' » ', '/', $dav_folder->name) === $target_name) {
                 $href = $dav_folder->href;
                 break;
             }
@@ -149,7 +151,7 @@ class DAV implements ExporterInterface, ImporterInterface
 
             // We create all folders on the top-level
             $dav_folder = new DAVFolder();
-            $dav_folder->name = $folder->fullname;
+            $dav_folder->name = $target_name;
             $dav_folder->href = $href = rtrim($home, '/') . '/' . $folder_id;
             $dav_folder->components = [$dav_type];
             $dav_folder->types = ['collection', $collection_type];
@@ -429,7 +431,9 @@ class DAV implements ExporterInterface, ImporterInterface
      */
     public function getFolderPath(Folder $folder): string
     {
-        $cache_key = $folder->type . '!' . $folder->fullname;
+        $target_name = $folder->targetname ?: $folder->fullname;
+        $cache_key = $folder->type . '!' . $target_name;
+
         if (isset($this->folderPaths[$cache_key])) {
             return $this->folderPaths[$cache_key];
         }
@@ -445,14 +449,14 @@ class DAV implements ExporterInterface, ImporterInterface
             // This is not going to work with Cyrus DAV, but anyway folder
             // hierarchies support is not full in Kolab 4.
             foreach ($folders as $dav_folder) {
-                if (str_replace(' » ', '/', $dav_folder->name) === $folder->fullname) {
+                if (str_replace(' » ', '/', $dav_folder->name) === $target_name) {
                     return $this->folderPaths[$cache_key] = rtrim($dav_folder->href, '/');
                 }
             }
             sleep(1);
         }
 
-        throw new \Exception("Folder not found: {$folder->fullname}");
+        throw new \Exception("Folder not found: {$target_name}");
     }
 
     /**
