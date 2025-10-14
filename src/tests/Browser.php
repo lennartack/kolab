@@ -296,7 +296,7 @@ class Browser extends \Laravel\Dusk\Browser
                 if (
                     $entry['level'] != 'SEVERE'
                     || strpos($entry['message'], 'Failed to load resource: the server responded with a status of')
-                    || strpos($entry['message'], 'Uncaught H: Request failed with status code 422')
+                    || preg_match('/Uncaught .?: Request failed with status code 422/', $entry['message'])
                     || preg_match('/^\S+\.js [0-9]+:[0-9]+\s*$/', $entry['message'])
                 ) {
                     $console[$idx] = null;
