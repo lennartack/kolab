@@ -29,9 +29,9 @@ class WalletInfoResource extends WalletResource
         return [
             $this->merge(parent::toArray($request)),
 
-            // Wallet state notice
+            // Wallet status notice
             'notice' => $this->getWalletNotice(),
-            // Recurring payment mandate information
+            // @var WalletMandateResource Recurring payment mandate information
             'mandate' => $this->when($isAdmin, $mandate ?? null),
             // Link to the customer page at the payment provider site
             'providerLink' => $this->when($isAdmin, $providerLink ?? null),

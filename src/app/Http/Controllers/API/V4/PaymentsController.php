@@ -11,6 +11,7 @@ use App\Tenant;
 use App\Utils;
 use App\Wallet;
 use Dedoc\Scramble\Attributes\BodyParameter;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -335,7 +336,23 @@ class PaymentsController extends Controller
 
     /**
      * List payment methods.
+     *
+     * @response array<array{
+     *   // method identifier
+     *   id: string,
+     *   // User readable name
+     *   name: string,
+     *   // Minimum amount to be charged in cents
+     *   minimumAmount: float,
+     *   // Currency used for the method
+     *   currency: string,
+     *    // The projected exchange rate (actual rate is determined during payment)
+     *   exchangeRate: float,
+     *   // An icon (icon name) representing the method
+     *   icon: array
+     * }>
      */
+    #[QueryParameter('type', description: 'Payment type (oneoff or recurring)', type: 'string', required: true)]
     public function paymentMethods(Request $request): JsonResponse
     {
         $user = $this->guard()->user();

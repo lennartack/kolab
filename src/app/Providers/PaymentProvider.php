@@ -276,13 +276,20 @@ abstract class PaymentProvider
      * @param Wallet $wallet The wallet
      * @param string $type   The payment type for which we require a method (oneoff/recurring)
      *
-     * @return array<array> Array of array with available payment methods:
-     *                      - id: id of the method
-     *                      - name: User readable name of the payment method
-     *                      - minimumAmount: Minimum amount to be charged in cents
-     *                      - currency: Currency used for the method
-     *                      - exchangeRate: The projected exchange rate (actual rate is determined during payment)
-     *                      - icon: An icon (icon name) representing the method
+     * @return array<array{
+     *   // id of the method
+     *   id: string,
+     *   // User readable name of the payment method
+     *   name: string,
+     *   // Minimum amount to be charged in cents
+     *   minimumAmount: float,
+     *   // Currency used for the method
+     *   currency: string,
+     *    // The projected exchange rate (actual rate is determined during payment)
+     *   exchangeRate: float,
+     *   // An icon (icon name) representing the method
+     *   icon: array
+     * }>
      */
     public static function paymentMethods(Wallet $wallet, $type): array
     {
