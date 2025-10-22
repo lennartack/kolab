@@ -179,6 +179,9 @@ return [
     'password-rule-special' => 'Password contains a special character',
     'password-rule-last' => 'Password cannot be the same as the last :param passwords',
 
+    'wallet-add-controller-success' => 'Account controller role set successfully.',
+    'wallet-delete-controller-success' => 'Account controller role removed successfully.',
+
     'wallet-notice-date' => 'With your current subscriptions your account balance will last until about :date (:days).',
     'wallet-notice-nocredit' => 'You are out of credit, top up your balance now.',
     'wallet-notice-today' => 'You will run out of credit today, top up your balance now.',

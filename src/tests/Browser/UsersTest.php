@@ -847,6 +847,58 @@ class UsersTest extends TestCaseDusk
     }
 
     /**
+     * Test controller "role"
+     */
+    public function testControllerRole(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $john = User::where('email', 'john@kolab.org')->first();
+            $julia = $this->getTestUser('julia.roberts@kolab.org');
+            $storage_sku = Sku::withEnvTenantContext()->where('title', 'storage')->first();
+            $wallet = $john->wallets()->first();
+            $julia->assignSku($storage_sku, 1, $wallet);
+
+            $browser->visit('/logout')
+                ->on(new Home())
+                ->submitLogon('john@kolab.org', 'simple123', true)
+                // Disabling wallets is required to access this feature
+                ->withConfig(['app.with_wallet' => false])
+                ->visit('/user/' . $julia->id)
+                ->on(new UserInfo())
+                ->assertSeeIn('#user_role', 'User')
+                ->click('#user_role')
+                ->with(new Dialog('#role-select'), static function (Browser $browser) {
+                    $browser->assertSeeIn('@title', 'Select a role')
+                        ->assertFocused('#user_role_select')
+                        ->assertSelected('#user_role_select', 'user')
+                        ->assertSelectHasOptions('#user_role_select', ['user', 'controller'])
+                        ->assertVisible('span.form-text')
+                        ->select('#user_role_select', 'controller')
+                        ->assertSeeIn('@button-cancel', 'Cancel')
+                        ->assertSeeIn('@button-action', 'Save')
+                        ->click('@button-action');
+                })
+                ->waitUntilMissing('#role-select')
+                ->assertToast(Toast::TYPE_SUCCESS, 'Account controller role set successfully.')
+                ->assertSeeIn('#user_role', 'Controller');
+
+            $this->assertTrue($wallet->fresh()->isController($julia));
+
+            $browser->click('#user_role')
+                ->with(new Dialog('#role-select'), static function (Browser $browser) {
+                    $browser->assertSelected('#user_role_select', 'controller')
+                        ->select('#user_role_select', 'user')
+                        ->click('@button-action');
+                })
+                ->waitUntilMissing('#role-select')
+                ->assertToast(Toast::TYPE_SUCCESS, 'Account controller role removed successfully.')
+                ->assertSeeIn('#user_role', 'User');
+
+            $this->assertFalse($wallet->fresh()->isController($julia));
+        });
+    }
+
+    /**
      * Test non-default currency in the UI
      */
     public function testCurrency(): void

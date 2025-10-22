@@ -291,6 +291,28 @@ class UsersTest extends TestCase
         $this->assertCount(1, $json['list']);
         $this->assertSame($ned->email, $json['list'][0]['email']);
 
+        // Search by role:controller and role:user
+        $response = $this->actingAs($john)->get("/api/v4/users?search=role:controller");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertFalse($json['hasMore']);
+        $this->assertSame(1, $json['count']);
+        $this->assertCount(1, $json['list']);
+        $this->assertSame($ned->email, $json['list'][0]['email']);
+
+        $response = $this->actingAs($john)->get("/api/v4/users?search=role:user");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame(3, $json['count']);
+        $this->assertCount(3, $json['list']);
+        $this->assertSame($jack->email, $json['list'][0]['email']);
+        $this->assertSame($joe->email, $json['list'][1]['email']);
+        $this->assertSame($john->email, $json['list'][2]['email']);
+
         // TODO: Test paging
     }
 

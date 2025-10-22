@@ -10,6 +10,7 @@ use App\Payment;
 use App\ReferralCode;
 use App\ReferralProgram;
 use App\Transaction;
+use App\User;
 use App\Wallet;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Dedoc\Scramble\Attributes\Response as ResponseDefinition;
@@ -18,11 +19,82 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
-/**
- * API\WalletsController
- */
 class WalletsController extends ResourceController
 {
+    /**
+     * Add controller.
+     *
+     * @param string $id     Wallet identifier
+     * @param int    $userid User identifier
+     */
+    public function controllerAdd($id, $userid): JsonResponse
+    {
+        $wallet = Wallet::find($id);
+
+        if (empty($wallet) || !$this->checkTenant($wallet->owner)) {
+            return $this->errorResponse(404);
+        }
+
+        $user = User::find($userid);
+
+        if (empty($user) || !$this->checkTenant($user)) {
+            return $this->errorResponse(404);
+        }
+
+        $actor = $this->guard()->user();
+
+        // Only wallet owner can add controllers
+        if ($wallet->user_id != $actor->id || $user->id == $wallet->user_id || !$actor->canRead($user)) {
+            return $this->errorResponse(403);
+        }
+
+        $wallet->addController($user);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => self::trans('app.wallet-add-controller-success'),
+        ]);
+    }
+
+    /**
+     * Delete controller.
+     *
+     * @param string $id     Wallet identifier
+     * @param int    $userid User identifier
+     */
+    public function controllerDelete($id, $userid): JsonResponse
+    {
+        $wallet = Wallet::find($id);
+
+        if (empty($wallet) || !$this->checkTenant($wallet->owner)) {
+            return $this->errorResponse(404);
+        }
+
+        $user = User::find($userid);
+
+        if (empty($user) || !$this->checkTenant($user)) {
+            return $this->errorResponse(404);
+        }
+
+        $actor = $this->guard()->user();
+
+        if (!$wallet->isController($user)) {
+            return $this->errorResponse(404);
+        }
+
+        // Only wallet owner can remove controllers
+        if ($wallet->user_id != $actor->id || $user->id == $wallet->user_id) {
+            return $this->errorResponse(403);
+        }
+
+        $wallet->removeController($user);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => self::trans('app.wallet-delete-controller-success'),
+        ]);
+    }
+
     /**
      * Wallet information.
      *

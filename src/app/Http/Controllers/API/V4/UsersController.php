@@ -113,8 +113,22 @@ class UsersController extends RelationController
 
         $result = $user->users();
 
+        // Search by role
+        if (str_starts_with($search, 'role:')) {
+            // Finding out account controllers is tricky. Which wallet(s)?
+            $wallets = array_filter($result->getBindings(), fn ($v) => !str_contains($v, '\\'));
+
+            $controllers = User::whereIn('id', DB::table('user_accounts')->select('user_id')->whereIn('wallet_id', $wallets));
+
+            if ($search == 'role:controller') {
+                $result = $controllers;
+            } else {
+                // role:user
+                $result = $result->whereNotIn('users.id', $controllers->pluck('id')->all());
+            }
+        }
         // Search by user email, alias or name
-        if ($search !== '') {
+        elseif ($search !== '') {
             // thanks to cloning we skip some extra queries in $user->users()
             $allUsers1 = clone $result;
             $allUsers2 = clone $result;

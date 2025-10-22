@@ -23,7 +23,13 @@
                                     <div class="col-sm-8">
                                         <span class="form-control-plaintext">
                                             <span id="status" :class="$root.statusClass(user)">{{ $root.statusText(user) }}</span>
-                                            <span id="userid" v-if="$route.name === 'settings'">&nbsp;({{ user_id }})</span>
+                                            <span v-if="$route.name === 'settings'" id="userid">&nbsp;({{ user_id }})</span>
+                                            <btn v-else-if="!$root.hasPermission('wallets')" id="user_role"
+                                                 class="ms-2 badge rounded-pill btn-secondary" :title="$t('user.role')"
+                                                 @click="!isSelf && $refs.roleSelectDialog.show()"
+                                            >
+                                                {{ $t(user.isController ? 'user.role-controller' : 'user.role-user') }}
+                                            </btn>
                                         </span>
                                     </div>
                                 </div>
@@ -279,6 +285,17 @@
                 <p><input type="text" class="form-control" id="short_code" value=""></p>
             </div>
         </modal-dialog>
+        <modal-dialog id="role-select" ref="roleSelectDialog" :buttons="['save']" @click="roleSelect()" :title="$t('user.roleselect')">
+            <div>
+                <p>
+                    <select class="form-select" id="user_role_select">
+                        <option value="user" selected>{{ $t('user.role-user') }}</option>
+                        <option value="controller">{{ $t('user.role-controller') }}</option>
+                    </select>
+                </p>
+                <span class="form-text">{{ $t('user.roleselectbody') }}</span>
+            </div>
+        </modal-dialog>
     </div>
 </template>
 
@@ -423,6 +440,7 @@
                         this.user = { ...response.data, ...response.data.settings }
                         this.status = response.data.statusInfo
                         this.passwordLinkCode = this.user.passwordLinkCode
+                        this.user.isController = this.user.statusInfo.enableUsers
                     })
                     .catch(this.$root.errorHandler)
 
@@ -447,6 +465,12 @@
             this.$refs.delegationDialog.events({
                 show: (event) => {
                     this.delegatee = null
+                }
+            })
+
+            this.$refs.roleSelectDialog.events({
+                show: (event) => {
+                    $('select', this.$refs.roleSelectDialog.$el).val(this.user.isController ? 'controller' : 'user')
                 }
             })
         },
@@ -484,6 +508,22 @@
                         if (response.data.status == 'success') {
                             this.$toast.success(response.data.message)
                         }
+                    })
+            },
+            roleSelect() {
+                const dialog = this.$refs.roleSelectDialog
+                const role = $('select', dialog.$el).val()
+
+                if (role == (this.user.isController ? 'controller' : 'user')) {
+                   dialog.hide()
+                   return
+                }
+
+                axios[role == 'user' ? 'delete' : 'post']('/api/v4/wallets/' + this.user.wallet.id + '/controllers/' + this.user_id)
+                    .then(response => {
+                        dialog.hide()
+                        this.user = { ...this.user, ...{ isController: (role == 'controller') } }
+                        this.$toast.success(response.data.message)
                     })
             },
             setPasswordMode(event) {

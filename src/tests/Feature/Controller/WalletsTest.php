@@ -5,6 +5,7 @@ namespace Tests\Feature\Controller;
 use App\Package;
 use App\Payment;
 use App\ReferralProgram;
+use App\Sku;
 use App\Transaction;
 use Carbon\Carbon;
 use Tests\TestCase;
@@ -16,15 +17,117 @@ class WalletsTest extends TestCase
         parent::setUp();
 
         $this->deleteTestUser('wallets-controller@kolabnow.com');
+        $this->deleteTestUser('jane@kolabnow.com');
         ReferralProgram::query()->delete();
     }
 
     protected function tearDown(): void
     {
         $this->deleteTestUser('wallets-controller@kolabnow.com');
+        $this->deleteTestUser('jane@kolabnow.com');
         ReferralProgram::query()->delete();
 
         parent::tearDown();
+    }
+
+    /**
+     * Test adding a wallet controller
+     */
+    public function testControllerAdd(): void
+    {
+        $user = $this->getTestUser('wallets-controller@kolabnow.com');
+        $jane = $this->getTestUser('jane@kolabnow.com');
+        $wallet = $user->wallets()->first();
+        $janes_wallet = $jane->wallets()->first();
+
+        // Unauth access not allowed
+        $response = $this->post("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(401);
+
+        // Unknown wallet or user
+        $response = $this->actingAs($user)->post("api/v4/wallets/{$wallet->id}/controllers/123");
+        $response->assertStatus(404);
+        $response = $this->actingAs($user)->post("api/v4/wallets/123/controllers/{$jane->id}");
+        $response->assertStatus(404);
+
+        // Other user's wallet
+        $response = $this->actingAs($user)->post("api/v4/wallets/{$janes_wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(403);
+
+        // Wallet owner can't make himself a controller
+        $response = $this->actingAs($user)->post("api/v4/wallets/{$wallet->id}/controllers/{$user->id}");
+        $response->assertStatus(403);
+
+        // Target user is not part of the same account
+        $response = $this->actingAs($user)->post("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(403);
+
+        // Valid user
+        $sku = Sku::withObjectTenantContext($user)->where(['title' => 'storage'])->first();
+        $jane->assignSku($sku, 1, $wallet);
+
+        $response = $this->actingAs($user)->post("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('Account controller role set successfully.', $json['message']);
+        $wallet->refresh();
+        $this->assertTrue($wallet->isController($jane));
+        $this->assertSame(1, $wallet->controllers()->count());
+
+        // Controller already assigned
+        $response = $this->actingAs($user)->post("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(200);
+
+        $wallet->refresh();
+        $this->assertTrue($wallet->isController($jane));
+        $this->assertSame(1, $wallet->controllers()->count());
+    }
+
+    /**
+     * Test deleting a wallet controller
+     */
+    public function testControllerDelete(): void
+    {
+        $user = $this->getTestUser('wallets-controller@kolabnow.com');
+        $jane = $this->getTestUser('jane@kolabnow.com');
+        $wallet = $user->wallets()->first();
+        $janes_wallet = $jane->wallets()->first();
+
+        // Unauth access not allowed
+        $response = $this->delete("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(401);
+
+        // Unknown wallet or user
+        $response = $this->actingAs($user)->delete("api/v4/wallets/{$wallet->id}/controllers/123");
+        $response->assertStatus(404);
+        $response = $this->actingAs($user)->delete("api/v4/wallets/123/controllers/{$jane->id}");
+        $response->assertStatus(404);
+
+        // Other user's wallet
+        $response = $this->actingAs($user)->delete("api/v4/wallets/{$janes_wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(403);
+
+        // Wallet owner can't remove himself
+        $response = $this->actingAs($user)->delete("api/v4/wallets/{$wallet->id}/controllers/{$user->id}");
+        $response->assertStatus(403);
+
+        // Target user is not the wallet controller
+        $response = $this->actingAs($user)->delete("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(404);
+
+        $wallet->addController($jane);
+
+        $response = $this->actingAs($user)->delete("api/v4/wallets/{$wallet->id}/controllers/{$jane->id}");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('Account controller role removed successfully.', $json['message']);
+        $this->assertFalse($wallet->fresh()->isController($jane));
     }
 
     /**
