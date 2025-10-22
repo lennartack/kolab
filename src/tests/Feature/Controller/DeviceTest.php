@@ -290,6 +290,43 @@ class DeviceTest extends TestCase
         $this->assertStringContainsString('2026-01-02', $entitlements[0]->updated_at->toDateString());
     }
 
+    /**
+     * Test unclaiming a device (POST /api/v4/device/<hash>/unclaim)
+     */
+    public function testUnclaim(): void
+    {
+        $user = $this->getTestUser('jane@kolabnow.com');
+
+        // Unauthenticated
+        $response = $this->post('api/v4/device/unknown/unclaim');
+        $response->assertStatus(401);
+
+        // Unknown device hash
+        $response = $this->actingAs($user)->post('api/v4/device/unknown/unclaim', []);
+        $response->assertStatus(404);
+
+        [$device] = $this->initTestDevice();
+
+        $this->assertTrue($user->id != $device->account->id);
+        $this->assertCount(1, $device->entitlements);
+
+        // Unclaim an existing device owned by another user
+        $response = $this->actingAs($user)->post('api/v4/device/' . $this->hash . '/unclaim', []);
+        $response->assertStatus(403);
+
+        // Unclaim an existing device
+        $response = $this->actingAs($device->account)->post('api/v4/device/' . $this->hash . '/unclaim', []);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $device->refresh();
+        $this->assertSame('success', $json['status']);
+        $this->assertSame('The device has been unclaimed successfully.', $json['message']);
+        $this->assertTrue($device->trashed());
+        $this->assertCount(0, $device->entitlements);
+    }
+
     private function initTestDevice(): array
     {
         $sku = Sku::withEnvTenantContext()->where('title', 'device')->first();

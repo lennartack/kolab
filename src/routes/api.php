@@ -198,6 +198,7 @@ Route::group(
         Route::get('config/webmail', [API\V4\ConfigController::class, 'webmail']);
 
         Route::post('device/{token}/claim', [API\V4\DeviceController::class, 'claim']);
+        Route::post('device/{token}/unclaim', [API\V4\DeviceController::class, 'unclaim']);
         Route::get('device/{token}', [API\V4\DeviceController::class, 'info'])
             ->withoutMiddleware(['auth:api', 'scope:api']);
         Route::get('device/{token}/plans', [API\V4\DeviceController::class, 'plans'])

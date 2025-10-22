@@ -177,4 +177,37 @@ class DeviceController extends Controller
 
         return $response;
     }
+
+    /**
+     * Unclaim a device.
+     *
+     * @param string $token Device secret token
+     */
+    public function unclaim(string $token): JsonResponse
+    {
+        if (strlen($token) > 191) {
+            return $this->errorResponse(404);
+        }
+
+        $device = Device::where('hash', strtoupper($token))->first();
+
+        if (!$device) {
+            return $this->errorResponse(404);
+        }
+
+        $user = $this->guard()->user();
+
+        if (!$user->canDelete($device)) {
+            return $this->errorResponse(403);
+        }
+
+        $device->delete();
+
+        // TODO: Remove the role=device user account that owns the device?
+
+        return response()->json([
+            'status' => 'success',
+            'message' => self::trans('app.device-unclaim-success'),
+        ]);
+    }
 }
