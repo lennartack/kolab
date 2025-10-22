@@ -39,6 +39,13 @@ class UserEmailDomainTest extends TestCase
         $this->assertTrue($v->fails());
         $this->assertSame(['domain' => ['The specified domain is invalid.']], $v->errors()->toArray());
 
+        // invalid domain (utf8)
+        // For now IDN domains aren't allowed because it seems ldap_add() fails (and who knows what else)
+        $v = Validator::make(['domain' => 'tİktok.com'], $rules);
+
+        $this->assertTrue($v->fails());
+        $this->assertSame(['domain' => ['The specified domain is invalid.']], $v->errors()->toArray());
+
         // Valid domain
         $domain = str_repeat('abcdefghi.', 18) . 'abcdefgh.pl'; // 191 chars
         $v = Validator::make(['domain' => $domain], $rules);

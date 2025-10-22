@@ -52,7 +52,8 @@ class UserEmailDomain implements Rule
         $domain = Str::lower($domain);
 
         // Use email validator to validate the domain part
-        $v = Validator::make(['email' => 'user@' . $domain], ['email' => 'required|email']);
+        // Note: The 'filter' validator does not allow IDN domains
+        $v = Validator::make(['email' => 'user@' . $domain], ['email' => 'required|email:filter']);
         if ($v->fails()) {
             $this->message = \trans('validation.domaininvalid');
             return false;
