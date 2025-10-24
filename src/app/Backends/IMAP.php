@@ -898,6 +898,8 @@ class IMAP
         $config = self::getConfig();
         $imap = self::initIMAP($config);
 
+        Log::info("Acl cleanup on $domain");
+
         // Collect available (existing) users/groups
         // FIXME: Should we limit this to the requested domain or account?
         // FIXME: For groups should we use name or email?
@@ -920,7 +922,7 @@ class IMAP
                     }
                     if (!in_array($key, $idents)) {
                         if ($dry_run) {
-                            echo "{$folder} {$key} {$acl[$key]}\n";
+                            echo "{$folder} {$key} " . var_export($acl[$key], true) . "\n";
                         } else {
                             \Log::info("Cleanup: Removing {$key} from ACL on {$folder}");
                             $imap->deleteACL($folder, $key);
