@@ -102,6 +102,7 @@ scache              unix        -       -       n       -       1       scache
 
 # Filter email through Amavisd
 smtp-amavis         unix        -       -       n       -       3       smtp
+    -o syslog_name=amavis
     -o smtp_data_done_timeout=1800
     -o disable_dns_lookups=yes
     -o smtp_send_xforward_command=yes
