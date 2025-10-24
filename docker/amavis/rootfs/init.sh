@@ -22,6 +22,7 @@ sed -i -r \
     -e "s|DB_HOST|$DB_HOST|g" \
     -e "s|DB_DATABASE|$DB_DATABASE|g" \
     -e "s|DB_USERNAME|$DB_USERNAME|g" \
+    -e "s|DB_PASSWORD|$DB_PASSWORD|g" \
     -e "s|SPAM_DETECTED_LEVEL|$SPAM_DETECTED_LEVEL|g" \
     -e "s|SPAM_KILL_LEVEL|$SPAM_KILL_LEVEL|g" \
     -e "s|SPAM_KILL_ACTION|$SPAM_KILL_ACTION|g" \
