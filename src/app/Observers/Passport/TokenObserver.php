@@ -17,7 +17,7 @@ class TokenObserver
             if (!empty($allowedScopes)) {
                 $scopes = array_intersect($scopes, $allowedScopes);
             }
-            $scopes = array_unique($scopes, \SORT_REGULAR);
+            $scopes = array_values(array_unique($scopes));
             $token->scopes = $scopes;
         }
     }
