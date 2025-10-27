@@ -325,10 +325,12 @@ class Vevent extends CommonObject
                     $exception->ORGANIZER = $master->ORGANIZER;
                     $attendee = null;
 
-                    foreach ($exception->ATTENDEE as $_attendee) {
-                        if ((string) $_attendee == (string) $chair) {
-                            $attendee = $_attendee;
-                            break;
+                    if ($exception->ATTENDEE) {
+                        foreach ($exception->ATTENDEE as $_attendee) {
+                            if ((string) $_attendee == (string) $chair) {
+                                $attendee = $_attendee;
+                                break;
+                            }
                         }
                     }
 
