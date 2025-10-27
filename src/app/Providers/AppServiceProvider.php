@@ -66,6 +66,7 @@ use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use GuzzleHttp\TransferStats;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Blade;
@@ -289,6 +290,8 @@ class AppServiceProvider extends ServiceProvider
         Http::globalOptions([
             'allow_redirects' => ['strict' => true],
         ]);
+
+        RequestException::dontTruncate();
 
         $this->applyOverrideConfig();
     }
