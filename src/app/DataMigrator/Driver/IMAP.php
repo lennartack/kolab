@@ -17,7 +17,7 @@ use App\User;
 class IMAP implements ExporterInterface, ImporterInterface
 {
     /** @var int Max number of items to migrate in one go */
-    protected const CHUNK_SIZE = 100;
+    protected const CHUNK_SIZE = 50;
 
     /** @var ?\rcube_imap_generic Imap backend */
     protected $imap;
