@@ -12,6 +12,7 @@ use App\Http\Resources\UserResource;
 use App\Jobs\Mail\EmailVerificationJob;
 use App\Jobs\User\CreateJob;
 use App\Package;
+use App\Plan;
 use App\Resource;
 use App\Rules\Password;
 use App\Rules\UserEmailLocal;
@@ -373,6 +374,7 @@ class UsersController extends RelationController
     #[BodyParameter('passwordLinkCode', description: 'Code for a by-link password reset', type: 'string')]
     #[BodyParameter('skus', description: 'Enabled SKUs', type: 'array')]
     #[BodyParameter('aliases', description: 'Email address aliases', type: 'array<string>')]
+    #[BodyParameter('plan_id', description: 'Plan identifier', type: 'string')]
     public function update(Request $request, $id): JsonResponse
     {
         $user = User::find($id);
@@ -508,6 +510,17 @@ class UsersController extends RelationController
             if (empty($ignorePassword)) {
                 $rules['password'] = ['required', 'confirmed', new Password($controller)];
             }
+        }
+
+        if (!empty($user) && !empty($request->plan_id)) {
+            $rules['plan_id'] = [
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) use ($user) {
+                    if (!$this->validatePlan($user, $value)) {
+                        $fail(self::trans('validation.invalidvalue'));
+                    }
+                },
+            ];
         }
 
         $errors = [];
@@ -730,6 +743,37 @@ class UsersController extends RelationController
         }
 
         return null;
+    }
+
+    /**
+     * Validate if plan change is possible
+     */
+    protected static function validatePlan(User $user, $plan_id): bool
+    {
+        // Note: For now only mode=token plans can be changed from/into
+        // Note: For now old and new plan title must use the same prefix
+        // Note: Checking the current plan also makes sure this is allowed only on wallet owners
+
+        $plan = Plan::withObjectTenantContext($user)->find($plan_id);
+
+        if (!$plan || $plan->mode != Plan::MODE_TOKEN) {
+            return false;
+        }
+
+        $current_plan_id = $user->getSetting('plan_id');
+
+        if (!$current_plan_id) {
+            return false;
+        }
+
+        $current_plan = Plan::find($current_plan_id);
+
+        if (!$current_plan || $current_plan->mode != Plan::MODE_TOKEN) {
+            return false;
+        }
+
+        // Make sure plan title's prefix is the same
+        return explode('-', $plan->title)[0] === explode('-', $current_plan->title)[0];
     }
 
     /**

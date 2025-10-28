@@ -52,6 +52,7 @@ class UsersTest extends TestCase
         $user->status |= User::STATUS_IMAP_READY | User::STATUS_LDAP_READY | User::STATUS_ACTIVE;
         $user->save();
         Plan::withEnvTenantContext()->where('title', 'individual')->update(['mode' => 'email']);
+        Plan::withEnvTenantContext()->where('name', 'Test')->delete();
         $user->setSettings(['plan_id' => null]);
     }
 
@@ -82,6 +83,7 @@ class UsersTest extends TestCase
         $user->status |= User::STATUS_IMAP_READY | User::STATUS_LDAP_READY | User::STATUS_ACTIVE;
         $user->save();
         Plan::withEnvTenantContext()->where('title', 'individual')->update(['mode' => 'email']);
+        Plan::withEnvTenantContext()->where('name', 'Test')->delete();
         $user->setSettings(['plan_id' => null]);
         $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->setAliases([]);
@@ -1497,6 +1499,82 @@ class UsersTest extends TestCase
                 'storage',
             ]
         );
+    }
+
+    /**
+     * Test updating a user plan
+     */
+    public function testUpdatePlan(): void
+    {
+        Queue::fake();
+
+        $user = $this->getTestUser('UsersControllerTest1@userscontroller.com');
+        $plan = Plan::withEnvTenantContext()->where('title', 'individual')->first();
+
+        $plan1 = Plan::create([
+            'title' => 'user-test1',
+            'name' => 'Test',
+            'description' => 'Test',
+            'mode' => Plan::MODE_TOKEN,
+        ]);
+        $plan2 = Plan::create([
+            'title' => 'user-test2',
+            'name' => 'Test',
+            'description' => 'Test',
+            'mode' => Plan::MODE_TOKEN,
+        ]);
+        $plan3 = Plan::create([
+            'title' => 'device-test',
+            'name' => 'Test',
+            'description' => 'Test',
+            'mode' => Plan::MODE_TOKEN,
+        ]);
+
+        // User has no plan
+        $post = ['plan_id' => $plan2->id];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(422);
+
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertSame(['plan_id' => ['Invalid value']], $json['errors']);
+
+        $user->setSetting('plan_id', $plan1->id);
+
+        // Invalid plan id
+        $post = ['plan_id' => 'unknown'];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(422);
+
+        // Non-token plan
+        $post = ['plan_id' => $plan->id];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(422);
+
+        // From test- to device-
+        $post = ['plan_id' => $plan3->id];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(422);
+
+        // Successful plan change
+        $post = ['plan_id' => $plan2->id];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(200);
+
+        $this->assertSame($plan2->id, $user->getSetting('plan_id'));
+
+        // Also allow to use the current plan
+        $post = ['plan_id' => $plan2->id];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(200);
+
+        // Make sure an empty plan does not unset the user plan
+        $post = ['plan_id' => null];
+        $response = $this->actingAs($user)->put("/api/v4/users/{$user->id}", $post);
+        $response->assertStatus(200);
+
+        $this->assertSame($plan2->id, $user->getSetting('plan_id'));
     }
 
     /**
