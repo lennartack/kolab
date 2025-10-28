@@ -106,6 +106,8 @@ class DAV implements ExporterInterface, ImporterInterface
             }
         } catch (RequestException $e) {
             \Log::warning("Failed (code {$e->getCode()}) to save DAV object at {$href}:\n  {$e->getMessage()}");
+            // Log the dav object so we can learn
+            \Log::info($object);
             // 400 is returned on errors that only affect individual events,
             // so we don't abort the migration because of that.
             // 403 is returned if validation checks fail
