@@ -308,6 +308,10 @@ class Vevent extends CommonObject
 
         foreach ($this->vobject->getComponents() as $component) {
             if ($component->name == $selfType) {
+                // DTEND MUST be later than DTSTART (RFC5545 3.8.2.2)
+                if ($component->DTSTART->getDateTime() == $component->DTEND->getDateTime()) {
+                    unset($component->DTEND);
+                }
                 if (empty($master) && empty($component->{'RECURRENCE-ID'})) {
                     $master = $component;
                 } elseif ($this->uid && $this->uid == $component->UID && !empty($component->{'RECURRENCE-ID'})) {
