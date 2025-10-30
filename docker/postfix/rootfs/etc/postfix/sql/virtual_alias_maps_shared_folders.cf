@@ -2,5 +2,9 @@ hosts = DB_HOST
 user = DB_USERNAME
 password = DB_PASSWORD
 dbname = DB_DATABASE
-query = SELECT f.email FROM shared_folders f LEFT JOIN shared_folder_aliases a ON f.id = a.shared_folder_id
-    WHERE (f.email = '%s' OR a.alias = '%s') AND f.type = 'mail' AND f.status & 2 AND NOT f.status & 4 AND f.deleted_at IS NULL
+query = SELECT s.value FROM shared_folder_settings s WHERE s.key = 'folder' AND s.shared_folder_id IN (
+        SELECT f.id FROM  shared_folders f LEFT JOIN shared_folder_aliases a ON f.id = a.shared_folder_id
+        WHERE (f.email = '%s' OR a.alias = '%s') AND f.type = 'mail' AND f.status & 2 AND NOT f.status & 4 AND f.deleted_at IS NULL
+    )
+# shared+ is the cyrus-imap postuser in imapd.conf
+result_format = "shared+%s"
