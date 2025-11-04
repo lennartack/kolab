@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
  */
 class WalletInfoResource extends WalletResource
 {
+    protected ?string $next_payment_date;
+
     /**
      * Transform the resource into an array.
      */
@@ -26,11 +28,15 @@ class WalletInfoResource extends WalletResource
             $providerLink = $provider->customerLink($this->resource);
         }
 
+        $notice = $this->getWalletNotice();
+
         return [
             $this->merge(parent::toArray($request)),
 
-            // Wallet status notice
-            'notice' => $this->getWalletNotice(),
+            // @var string|null Next payment date (Y-m-d) if expected
+            'nextPaymentDate' => $this->next_payment_date,
+            // @var string|null Wallet status notice
+            'notice' => $notice,
             // @var WalletMandateResource Recurring payment mandate information
             'mandate' => $this->when($isAdmin, $mandate ?? null),
             // Link to the customer page at the payment provider site
@@ -43,6 +49,8 @@ class WalletInfoResource extends WalletResource
      */
     protected function getWalletNotice(): ?string
     {
+        $this->next_payment_date = null;
+
         // there is no credit
         if ($this->resource->balance < 0) {
             return Controller::trans('app.wallet-notice-nocredit');
@@ -68,6 +76,8 @@ class WalletInfoResource extends WalletResource
         }
 
         if ($until = $this->resource->balanceLastsUntil()) {
+            $this->next_payment_date = $until->toDateString();
+
             if ($until->isToday()) {
                 return Controller::trans('app.wallet-notice-today');
             }

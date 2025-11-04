@@ -324,10 +324,12 @@ class WalletsTest extends TestCase
      */
     public function testShow(): void
     {
+        Carbon::setTestNow(Carbon::createFromDate(2022, 2, 2));
+
         $john = $this->getTestUser('john@kolab.org');
         $jack = $this->getTestUser('jack@kolab.org');
         $wallet = $john->wallets()->first();
-        $wallet->balance = -100;
+        $wallet->balance = 1000;
         $wallet->save();
 
         // Accessing a wallet of someone else
@@ -348,7 +350,8 @@ class WalletsTest extends TestCase
         $this->assertSame('CHF', $json['currency']);
         $this->assertSame($wallet->balance, $json['balance']);
         $this->assertTrue(empty($json['description']));
-        $this->assertTrue(!empty($json['notice']));
+        $this->assertStringContainsString('until about 2025-08-11', $json['notice']);
+        $this->assertSame('2025-08-11', $json['nextPaymentDate']);
     }
 
     /**
