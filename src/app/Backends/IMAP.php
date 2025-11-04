@@ -898,7 +898,7 @@ class IMAP
         $config = self::getConfig();
         $imap = self::initIMAP($config);
 
-        Log::info("Acl cleanup on $domain");
+        \Log::info("Acl cleanup on {$domain}");
 
         // Collect available (existing) users/groups
         // FIXME: Should we limit this to the requested domain or account?

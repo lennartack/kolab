@@ -310,7 +310,7 @@ class Vevent extends CommonObject
             if ($component->name == $selfType) {
                 // DTEND MUST be later than DTSTART (RFC5545 3.8.2.2)
                 if ($component->DTSTART->getDateTime() == $component->DTEND->getDateTime()) {
-                    unset($component->DTEND);
+                    $component->DTEND = null;
                 }
                 if (empty($master) && empty($component->{'RECURRENCE-ID'})) {
                     $master = $component;
