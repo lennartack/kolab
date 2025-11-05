@@ -57,7 +57,7 @@ class Password
      *
      * @return array Password policy rules with validation status
      */
-    public static function checkPolicy($password, ?User $user = null, ?User $owner = null): array
+    public static function checkPolicy(string $password, ?User $user = null, ?User $owner = null): array
     {
         $rules = self::rules($owner);
 

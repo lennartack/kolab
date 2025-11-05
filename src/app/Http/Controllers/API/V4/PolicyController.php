@@ -31,7 +31,7 @@ class PolicyController extends Controller
         $user = !empty($userId) ? User::find($userId) : null;
 
         // Check the password
-        $status = Password::checkPolicy($request->input('password'), $user, $user ? $user->walletOwner() : null);
+        $status = Password::checkPolicy($request->input('password') ?? "", $user, $user ? $user->walletOwner() : null);
 
         $passed = array_filter(
             $status,
