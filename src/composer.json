@@ -17,6 +17,7 @@
         "php": "^8.2",
         "bacon/bacon-qr-code": "^2.0",
         "barryvdh/laravel-dompdf": "^2.0.1",
+        "dedoc/scramble": "~0.10",
         "doctrine/dbal": "^3.6",
         "dyrynda/laravel-nullable-fields": "^4.3.0",
         "garethp/php-ews": "~0.10.3",
@@ -38,7 +39,7 @@
         "spatie/laravel-translatable": "^6.5",
         "spomky-labs/otphp": "~10.0.0",
         "stripe/stripe-php": "^10.7",
-        "dedoc/scramble": "~0.10"
+        "symfony/polyfill-php85": "^1.33.0"
     },
     "require-dev": {
         "code-lts/doctum": "dev-main",

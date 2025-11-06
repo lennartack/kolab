@@ -238,7 +238,7 @@ class IMAP implements ExporterInterface, ImporterInterface
         // Get message flags
         $header = $this->imap->fetchHeader($mailbox, (int) $uid, true, false, ['FLAGS']);
 
-        if ($header === false) {
+        if (empty($header)) {
             throw new \Exception("Failed to get IMAP message headers for {$mailbox}/{$uid}");
         }
 
