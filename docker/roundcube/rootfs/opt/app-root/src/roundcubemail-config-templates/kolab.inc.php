@@ -8,7 +8,7 @@ $config['kolab_api_debug'] = getenv('KOLAB_API_DEBUG');
 
 // List of allowed tasks in helpdesk mode. If empty there's no limits.
 // For example, to limit user to the Settings section only: ['settings'].
-$config['kolab_helpdesk_allowed_tasks'] = [];
+$config['kolab_helpdesk_allowed_tasks'] = getenvlist('KOLAB_HELPDESK_ALLOWED_TASKS') ?: [];
 
 // Type of cache for API requests. Supported values: 'db', 'redis' and 'memcache' or 'memcached'.
 $config['kolab_client_cache'] = 'redis';
