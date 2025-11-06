@@ -309,6 +309,7 @@
     import PasswordInput from '../Widgets/PasswordInput'
     import StatusComponent from '../Widgets/Status'
     import SubscriptionSelect from '../Widgets/SubscriptionSelect'
+    import { userAutocomplete } from '../../js/utils'
 
     import { library } from '@fortawesome/fontawesome-svg-core'
 
@@ -467,6 +468,8 @@
                     this.delegatee = null
                 }
             })
+
+            userAutocomplete($('#delegation-email').get(0))
 
             this.$refs.roleSelectDialog.events({
                 show: (event) => {

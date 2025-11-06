@@ -26,6 +26,8 @@
 </template>
 
 <script>
+    import { userAutocomplete } from '../../js/utils'
+
     const DEFAULT_TYPES = [ 'read-only', 'read-write', 'full' ]
 
     export default {
@@ -54,6 +56,8 @@
                 this.updateList()
                 this.addItem(false)
             })
+
+            userAutocomplete(this.input)
         },
         methods: {
             aclIdent(item) {

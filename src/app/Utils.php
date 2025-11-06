@@ -450,6 +450,7 @@ class Utils
             'app.companion_download_link',
             'app.shared_folder_types',
             'app.with_signup',
+            'app.with_user_search',
             'mail.from.address',
         ];
 

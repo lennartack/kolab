@@ -179,11 +179,77 @@ const paymentCheckout = (component, data) => {
     return true
 }
 
+/**
+ * Initializes a user email autocompletion on a form input element.
+ *
+ * @param DOMElement $input  Input element
+ * @param array      $params Search parameters (alias, limit)
+ */
+const userAutocomplete = (input, params = {}) => {
+    if (!window.config['app.with_user_search']) {
+        return
+    }
+
+    const listId = input.id + '-datalist'
+
+    // Note: <datalist> element is a simple solution, it does not allow
+    // styling nor structured content though. It also displays differently
+    // in different browsers.
+
+    let controller = null
+    let timeout = null
+    let datalist = $('<datalist>').attr('id', listId)
+
+    const search_request = search => {
+        controller = new AbortController()
+
+        params = Object.assign({ alias: 0, limit: 10 }, params, { search })
+
+        axios.get('api/v4/search/user', { params, signal: controller.signal })
+            .then(response => {
+                datalist.empty()
+                response.data.list.forEach(user => {
+                    let label = user.name ? `${user.name} <${user.email}>` : user.email
+                    datalist.append($('<option>').val(user.email).text(label))
+                })
+            })
+            .catch(() => {
+                // ignore error
+            })
+            .finally(() => {
+                controller = null
+            })
+    }
+
+    $(input).attr({ autocomplete: 'off', list: listId })
+        .after(datalist)
+        .on('input', event => {
+            const search = input.value
+
+            window.clearTimeout(timeout)
+
+            if (controller) {
+                controller.abort()
+            }
+
+            // Reset the list when user selected an autocomplete entry or the input is not long enough
+            // Note: inputType is undefined in Chrome, and 'insertReplacementText' in Firefox
+            if (!search.length || !event.inputType || event.inputType == 'insertReplacementText') {
+                datalist.empty()
+                return
+            }
+
+            // Execute the search (with a delay, to limit number of requests when the user is typing fast)
+            timeout = window.setTimeout(() => search_request(search), 250)
+        })
+}
+
 export {
     clearFormValidation,
     downloadFile,
     paymentCheckout,
     pick,
     startLoading,
-    stopLoading
+    stopLoading,
+    userAutocomplete
 }

@@ -16,6 +16,7 @@ use Tests\Browser\Components\Dialog;
 use Tests\Browser\Components\ListInput;
 use Tests\Browser\Components\QuotaInput;
 use Tests\Browser\Components\Toast;
+use Tests\Browser\Components\UserAutocomplete;
 use Tests\Browser\Pages\Dashboard;
 use Tests\Browser\Pages\Home;
 use Tests\Browser\Pages\UserInfo;
@@ -1005,6 +1006,19 @@ class UsersTest extends TestCaseDusk
                         ->assertSelectHasOptions('#delegation-contact', ['', 'read-only', 'read-write'])
                         ->assertVisible('.row.form-text')
                         ->type('#delegation-email', 'john@kolab.org')
+                        /*
+                        FIXME: For some reason assertAutocompleteList() below does not work
+                        ->with(new UserAutocomplete('#delegation-email'), static function ($browser) {
+                            $list = [
+                                'joe@kolab.org' => 'joe@kolab.org',
+                                'jack@kolab.org' => 'Jack Daniels <jack@kolab.org>',
+                                'john@kolab.org' => 'John Doe <john@kolab.org>',
+                            ];
+                            $browser->autocomplete('j')
+                                ->assertAutocompleteList($list)
+                                ->selectAutocompleteUser('john@kolab.org');
+                        })
+                        */
                         ->select('#delegation-mail', 'read-only')
                         ->select('#delegation-contact', 'read-write')
                         ->assertSeeIn('@button-cancel', 'Cancel')

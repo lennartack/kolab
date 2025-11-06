@@ -70,6 +70,7 @@
     import ListInput from '../Widgets/ListInput'
     import StatusComponent from '../Widgets/Status'
     import SubscriptionSelect from '../Widgets/SubscriptionSelect'
+    import { userAutocomplete } from '../../js/utils'
 
     export default {
         components: {
@@ -92,12 +93,15 @@
                     .then(response => {
                         this.list = response.data
                         this.status = response.data.statusInfo
+
+                        this.$nextTick().then(() => { userAutocomplete($('#sender-policy-input').get(0)) })
                     })
                     .catch(this.$root.errorHandler)
             }
         },
         mounted() {
             $('#name').focus()
+            userAutocomplete($('#members-input').get(0))
         },
         methods: {
             deleteList() {
