@@ -22,7 +22,6 @@ trait UserConfigTrait
             'externalsender_policy_domains',
             'greylist_enabled',
             'greylist_policy',
-            'guam_enabled',
             'itip_config',
             'itip_policy',
             'limit_geo',
@@ -46,7 +45,6 @@ trait UserConfigTrait
                     $config[$key] = $value !== 'false';
                     break;
                 case 'externalsender_policy':
-                case 'guam_enabled':
                 case 'itip_policy':
                     $config[$key] = $value === 'true';
                     break;
@@ -87,8 +85,6 @@ trait UserConfigTrait
                 $this->setSetting($key, $value ? 'true' : 'false');
             } elseif (in_array($key, ['greylist_enabled', 'itip_config', 'externalsender_config'])) {
                 $this->setSetting($key, $value === null ? null : ($value ? 'true' : 'false'));
-            } elseif ($key == 'guam_enabled') {
-                $this->setSetting($key, $value ? 'true' : null);
             } elseif ($key == 'limit_geo') {
                 if ($error = $this->validateLimitGeo($value)) {
                     $errors[$key] = $error;

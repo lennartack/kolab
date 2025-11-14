@@ -229,7 +229,7 @@ class NGINXController extends Controller
         // All checks passed
         switch ($request->headers->get('Auth-Protocol')) {
             case 'imap':
-                return $this->authenticateIMAP($request, (bool) $user->getSetting('guam_enabled'), $password);
+                return $this->authenticateIMAP($request, $password);
             case 'smtp':
                 return $this->authenticateSMTP($request, $password);
             default:
@@ -273,7 +273,7 @@ class NGINXController extends Controller
         // All checks passed
         switch ($request->headers->get('Auth-Protocol')) {
             case 'imap':
-                return $this->authenticateIMAP($request, false, $password);
+                return $this->authenticateIMAP($request, $password);
             default:
                 return $this->byebye($request, "unknown protocol in request");
         }
@@ -283,22 +283,15 @@ class NGINXController extends Controller
      * Create an imap authentication response.
      *
      * @param Request $request  the API request
-     * @param bool    $prefGuam whether or not Guam is enabled
      * @param string  $password the password to include in the response
      */
-    private function authenticateIMAP(Request $request, $prefGuam, $password): Response
+    private function authenticateIMAP(Request $request, $password): Response
     {
-        if ($prefGuam) {
-            $port = \config('services.imap.guam_port');
-        } else {
-            $port = \config('services.imap.imap_port');
-        }
-
         $response = response('')->withHeaders(
             [
                 "Auth-Status" => "OK",
                 "Auth-Server" => gethostbyname(\config('services.imap.host')),
-                "Auth-Port" => $port,
+                "Auth-Port" => \config('services.imap.imap_port'),
                 "Auth-Pass" => $password,
             ]
         );

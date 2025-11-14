@@ -104,19 +104,7 @@
                             <accordion class="mt-3" id="settings-all" :names="settingsSections" :buttons="settingsButtons">
                                 <template #options v-if="settingsSections.options">
                                     <form @submit.prevent="submitSettings">
-                                        <div v-if="$root.hasPermission('beta')" class="row checkbox mb-3">
-                                            <label for="guam_enabled" class="col-sm-4 col-form-label">
-                                                {{ $t('user.imapproxy') }}
-                                                <sup class="badge bg-primary">{{ $t('dashboard.beta') }}</sup>
-                                            </label>
-                                            <div class="col-sm-8 pt-2">
-                                                <input type="checkbox" id="guam_enabled" name="guam_enabled" value="1" class="form-check-input d-block mb-2" :checked="user.config.guam_enabled">
-                                                <small id="guam-hint" class="text-muted">
-                                                    {{ $t('user.imapproxy-text') }}
-                                                </small>
-                                            </div>
-                                        </div>
-                                        <div v-if="$root.hasPermission('beta')" class="row mb-3">
+                                        <div v-if="$root.hasPermission('geoLockin')" class="row mb-3">
                                             <label for="limit_geo" class="col-sm-4 col-form-label">
                                                 {{ $t('user.geolimit') }}
                                                 <sup class="badge bg-primary">{{ $t('dashboard.beta') }}</sup>
@@ -386,7 +374,7 @@
             settingsSections: function () {
                 let opts = {}
                 if (this.isController) {
-                    if (this.$root.hasPermission('beta')) {
+                    if (this.$root.hasPermission('geoLockin')) {
                         opts.options = this.$t('form.mainopts')
                     }
                     opts.maildelivery = this.$t('policies.mailDelivery')
@@ -639,14 +627,8 @@
             submitSettings() {
                 this.$root.clearFormValidation($('#settings form'))
 
-                let post = this.$root.pick(this.user.config, ['limit_geo'])
-                const names = ['guam_enabled']
-
-                names.forEach(name => {
-                    if ($('#' + name).length) {
-                        post[name] = $('#' + name).prop('checked') ? 1 : 0
-                    }
-                })
+                let opts = this.$root.hasPermission('geoLockin') ? ['limit_geo'] : []
+                let post = this.$root.pick(this.user.config, opts)
 
                 axios.post('/api/v4/users/' + this.user_id + '/config', post)
                     .then(response => {

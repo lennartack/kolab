@@ -20,7 +20,6 @@ class NGINXTest extends TestCase
         AuthAttempt::where('user_id', $john->id)->delete();
         $john->setSettings([
             'limit_geo' => null,
-            'guam_enabled' => null,
             'password_expired' => null,
         ]);
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
@@ -35,7 +34,6 @@ class NGINXTest extends TestCase
         AuthAttempt::where('user_id', $john->id)->delete();
         $john->setSettings([
             'limit_geo' => null,
-            'guam_enabled' => null,
             'password_expired' => null,
         ]);
         IP4Net::where('net_number', inet_pton('128.0.0.0'))->delete();
@@ -129,15 +127,6 @@ class NGINXTest extends TestCase
         $response = $this->withHeaders($modifiedHeaders)->get("api/webhooks/nginx");
         $response->assertStatus(200);
         $response->assertHeader('auth-status', 'authentication failure');
-
-        // Guam
-        $john->setSettings(['guam_enabled' => 'true']);
-
-        $response = $this->withHeaders($headers)->get("api/webhooks/nginx");
-        $response->assertStatus(200);
-        $response->assertHeader('auth-status', 'OK');
-        $response->assertHeader('auth-server', gethostbyname(\config('services.imap.host')));
-        $response->assertHeader('auth-port', \config('services.imap.guam_port'));
 
         $companionApp = $this->getTestCompanionApp(
             'testdevice',

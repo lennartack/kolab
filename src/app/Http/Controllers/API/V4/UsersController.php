@@ -271,6 +271,7 @@ class UsersController extends RelationController
             'enableWalletMandates' => $isOwner,
             'enableCompanionapps' => $hasBeta && \config('app.with_companion_app'),
             'enableLoginAs' => $isController && \config('app.with_loginas'),
+            'enableGeoLockin' => $isController && $hasBeta && \config('app.with_geolockin'),
         ];
 
         return array_merge($process, $result);

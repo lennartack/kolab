@@ -92,7 +92,6 @@ class UserTest extends TestCaseDusk
             $jack->setSettings([
                 'limit_geo' => null,
                 'organization' => null,
-                'guam_enabled' => null,
                 'greylist_enabled' => null,
                 'greylist_policy' => null,
             ]);
@@ -765,8 +764,8 @@ class UserTest extends TestCaseDusk
             $browser->visit(new UserPage($user->id))
                 ->click('@nav #tab-settings')
                 ->whenAvailable('@user-settings form', static function (Browser $browser) {
-                    $browser->assertSeeIn('.row:nth-child(3) label', 'Geo-lockin')
-                        ->assertSeeIn('.row:nth-child(3) #limit_geo', 'Poland, Germany')
+                    $browser->assertSeeIn('.row:nth-child(2) label', 'Geo-lockin')
+                        ->assertSeeIn('.row:nth-child(2) #limit_geo', 'Poland, Germany')
                         ->assertSeeIn('#limit_geo + button', 'Reset')
                         ->click('#limit_geo + button');
                 })

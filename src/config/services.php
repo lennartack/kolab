@@ -72,7 +72,6 @@ return [
         'verify_host' => env('IMAP_VERIFY_HOST', true),
         'host' => env('IMAP_HOST', '172.18.0.5'),
         'imap_port' => env('IMAP_PORT', 12143),
-        'guam_port' => env('IMAP_GUAM_PORT', 9143),
         'default_folders' => Helper::defaultImapFolders(),
     ],
 

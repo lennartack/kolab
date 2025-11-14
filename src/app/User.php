@@ -855,6 +855,10 @@ class User extends Authenticatable
      */
     public function validateLocation($ip): bool
     {
+        if (!\config('app.with_geolockin')) {
+            return true;
+        }
+
         $countryCodes = json_decode($this->getSetting('limit_geo', "[]"));
 
         if (empty($countryCodes)) {

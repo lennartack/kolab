@@ -431,7 +431,6 @@ class UsersTest extends TestCaseDusk
         $john = $this->getTestUser('john@kolab.org');
         $john->setSetting('greylist_enabled', null);
         $john->setSetting('greylist_policy', null);
-        $john->setSetting('guam_enabled', null);
         $john->setSetting('limit_geo', null);
         $john->setSetting('externalsender_config', 'false');
 
@@ -477,32 +476,26 @@ class UsersTest extends TestCaseDusk
                 ->click('@nav #tab-settings')
                 ->assertSeeIn('@setting-options-head', 'Main options')
                 ->with('@setting-options', function (Browser $browser) use ($john) {
-                    $browser->assertSeeIn('div.row:nth-child(1) label', 'IMAP proxy')
-                        ->assertNotChecked('div.row:nth-child(1) input')
-                        ->assertSeeIn('div.row:nth-child(2) label', 'Geo-lockin')
+                    $browser->assertSeeIn('div.row:nth-child(1) label', 'Geo-lockin')
                         ->with(new CountrySelect('#limit_geo'), static function ($browser) {
                             $browser->assertCountries([])
                                 ->setCountries(['CH', 'PL'])
                                 ->assertCountries(['CH', 'PL']);
                         })
-                        ->click('div.row:nth-child(1) input')
                         ->click('button[type=submit]')
                         ->assertToast(Toast::TYPE_SUCCESS, 'User settings updated successfully.');
 
                     $this->assertSame('["CH","PL"]', $john->getSetting('limit_geo'));
-                    $this->assertSame('true', $john->getSetting('guam_enabled'));
 
                     $browser
                         ->with(new CountrySelect('#limit_geo'), static function ($browser) {
                             $browser->setCountries([])
                                 ->assertCountries([]);
                         })
-                        ->click('div.row:nth-child(1) input')
                         ->click('button[type=submit]')
                         ->assertToast(Toast::TYPE_SUCCESS, 'User settings updated successfully.');
 
                     $this->assertNull($john->getSetting('limit_geo'));
-                    $this->assertNull($john->getSetting('guam_enabled'));
                 });
         });
     }

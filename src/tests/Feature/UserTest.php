@@ -614,7 +614,6 @@ class UserTest extends TestCase
     {
         $user = $this->getTestUser('UserAccountA@UserAccount.com');
         $user->setSetting('greylist_enabled', null);
-        $user->setSetting('guam_enabled', null);
         $user->setSetting('password_policy', null);
         $user->setSetting('max_password_age', null);
         $user->setSetting('limit_geo', null);
@@ -634,21 +633,6 @@ class UserTest extends TestCase
         $this->assertSame([], $result);
         $this->assertTrue($user->getConfig()['greylist_enabled']);
         $this->assertSame('true', $user->getSetting('greylist_enabled'));
-
-        // guam_enabled
-        $this->assertFalse($user->getConfig()['guam_enabled']);
-
-        $result = $user->setConfig(['guam_enabled' => false]);
-
-        $this->assertSame([], $result);
-        $this->assertFalse($user->getConfig()['guam_enabled']);
-        $this->assertNull($user->getSetting('guam_enabled'));
-
-        $result = $user->setConfig(['guam_enabled' => true]);
-
-        $this->assertSame([], $result);
-        $this->assertTrue($user->getConfig()['guam_enabled']);
-        $this->assertSame('true', $user->getSetting('guam_enabled'));
 
         // max_apssword_age
         $this->assertNull($user->getConfig()['max_password_age']);

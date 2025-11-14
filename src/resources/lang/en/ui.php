@@ -547,8 +547,6 @@ return [
         'finances' => "Finances",
         'geolimit' => "Geo-lockin",
         'geolimit-text' => "Defines a list of locations that are allowed for logon. You will not be able to login from a country that is not listed here.",
-        'imapproxy' => "IMAP proxy",
-        'imapproxy-text' => "Enables IMAP proxy that filters out non-mail groupware folders, so your IMAP clients do not see them.",
         'list-title' => "User accounts",
         'list-empty' => "There are no users in this account.",
         'login-as' => "Log into webmail",

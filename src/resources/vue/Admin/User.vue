@@ -220,15 +220,6 @@
                                 </div>
                             </div>
                             <div class="row plaintext">
-                                <label for="guam_enabled" class="col-sm-4 col-form-label">{{ $t('user.imapproxy') }}</label>
-                                <div class="col-sm-8">
-                                    <span class="form-control-plaintext" id="guam_enabled">
-                                        <span v-if="user.config.guam_enabled" class="text-success">{{ $t('form.enabled') }}</span>
-                                        <span v-else class="text-danger">{{ $t('form.disabled') }}</span>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="row plaintext">
                                 <label for="limit_geo" class="col-sm-4 col-form-label">{{ $t('user.geolimit') }}</label>
                                 <div class="col-sm-8">
                                     <span class="form-control-plaintext" id="limit_geo">

@@ -48,11 +48,11 @@ class UsersTest extends TestCase
         $wallet->discount()->dissociate();
         $wallet->settings()->whereIn('key', ['mollie_id', 'stripe_id'])->delete();
         $wallet->save();
-        $user->settings()->whereIn('key', ['greylist_enabled', 'guam_enabled'])->delete();
+        $user->settings()->whereIn('key', ['greylist_enabled'])->delete();
         $user->status |= User::STATUS_IMAP_READY | User::STATUS_LDAP_READY | User::STATUS_ACTIVE;
         $user->save();
         Plan::withEnvTenantContext()->where('title', 'individual')->update(['mode' => 'email']);
-        Plan::withEnvTenantContext()->where('name', 'Test')->delete();
+        Plan::withEnvTenantContext()->whereIn('title', ['user-test1', 'user-test2', 'device-test'])->delete();
         $user->setSettings(['plan_id' => null]);
     }
 
@@ -79,11 +79,11 @@ class UsersTest extends TestCase
         $wallet->discount()->dissociate();
         $wallet->settings()->whereIn('key', ['mollie_id', 'stripe_id'])->delete();
         $wallet->save();
-        $user->settings()->whereIn('key', ['greylist_enabled', 'guam_enabled'])->delete();
+        $user->settings()->whereIn('key', ['greylist_enabled'])->delete();
         $user->status |= User::STATUS_IMAP_READY | User::STATUS_LDAP_READY | User::STATUS_ACTIVE;
         $user->save();
         Plan::withEnvTenantContext()->where('title', 'individual')->update(['mode' => 'email']);
-        Plan::withEnvTenantContext()->where('name', 'Test')->delete();
+        Plan::withEnvTenantContext()->whereIn('title', ['user-test1', 'user-test2', 'device-test'])->delete();
         $user->setSettings(['plan_id' => null]);
         $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->setAliases([]);
@@ -398,7 +398,6 @@ class UsersTest extends TestCase
         $this->assertTrue(is_array($json['statusInfo']));
         $this->assertTrue(is_array($json['settings']));
         $this->assertNull($json['config']['greylist_enabled']);
-        $this->assertFalse($json['config']['guam_enabled']);
         $this->assertSame([], $json['skus']);
         $this->assertSame([], $json['aliases']);
         // Values below are tested by Unit tests
@@ -784,7 +783,6 @@ class UsersTest extends TestCase
         $john = $this->getTestUser('john@kolab.org');
 
         $john->setSetting('greylist_enabled', null);
-        $john->setSetting('guam_enabled', null);
         $john->setSetting('password_policy', null);
         $john->setSetting('max_password_age', null);
 
@@ -833,7 +831,6 @@ class UsersTest extends TestCase
         // Test some valid data
         $post = [
             'greylist_enabled' => 1,
-            'guam_enabled' => 1,
             'password_policy' => 'min:10,max:255,upper,lower,digit,special',
             'max_password_age' => 6,
         ];
@@ -848,7 +845,6 @@ class UsersTest extends TestCase
         $this->assertSame('User settings updated successfully.', $json['message']);
 
         $this->assertSame('true', $john->getSetting('greylist_enabled'));
-        $this->assertSame('true', $john->getSetting('guam_enabled'));
         $this->assertSame('min:10,max:255,upper,lower,digit,special', $john->getSetting('password_policy'));
         $this->assertSame('6', $john->getSetting('max_password_age'));
 
