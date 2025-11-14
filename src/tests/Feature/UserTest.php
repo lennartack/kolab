@@ -408,6 +408,56 @@ class UserTest extends TestCase
     }
 
     /**
+     * Test User::canUpdateConfig() method
+     */
+    public function testCanUpdateConfig(): void
+    {
+        $john = $this->getTestUser('john@kolab.org');
+        $ned = $this->getTestUser('ned@kolab.org');
+        $jack = $this->getTestUser('jack@kolab.org');
+        $reseller1 = $this->getTestUser('reseller@' . \config('app.domain'));
+        $admin = $this->getTestUser('jeroen@jeroen.jeroen');
+        $domain = $this->getTestDomain('kolab.org');
+
+        // Admin
+        $this->assertFalse($admin->canUpdateConfig($john));
+        $this->assertFalse($admin->canUpdateConfig($jack));
+        $this->assertFalse($admin->canUpdateConfig($domain));
+        $this->assertFalse($admin->canUpdateConfig($reseller1));
+        $this->assertTrue($admin->canUpdateConfig($admin));
+
+        // Reseller
+        $this->assertFalse($reseller1->canUpdateConfig($john));
+        $this->assertFalse($reseller1->canUpdateConfig($jack));
+        $this->assertFalse($reseller1->canUpdateConfig($domain));
+        $this->assertTrue($reseller1->canUpdateConfig($reseller1));
+        $this->assertFalse($reseller1->canUpdateConfig($admin));
+
+        // Normal user - account owner
+        $this->assertTrue($john->canUpdateConfig($john));
+        $this->assertTrue($john->canUpdateConfig($ned));
+        $this->assertTrue($john->canUpdateConfig($jack));
+        $this->assertTrue($john->canUpdateConfig($domain));
+        $this->assertFalse($john->canUpdateConfig($reseller1));
+        $this->assertFalse($john->canUpdateConfig($admin));
+
+        // Normal user - a non-owner and non-controller
+        $this->assertFalse($jack->canUpdateConfig($jack));
+        $this->assertFalse($jack->canUpdateConfig($john));
+        $this->assertFalse($jack->canUpdateConfig($domain));
+        $this->assertFalse($jack->canUpdateConfig($reseller1));
+        $this->assertFalse($jack->canUpdateConfig($admin));
+
+        // Normal user - John's wallet controller
+        $this->assertTrue($ned->canUpdateConfig($ned));
+        $this->assertTrue($ned->canUpdateConfig($jack));
+        $this->assertTrue($ned->canUpdateConfig($domain));
+        $this->assertFalse($ned->canUpdateConfig($john));
+        $this->assertFalse($ned->canUpdateConfig($reseller1));
+        $this->assertFalse($ned->canUpdateConfig($admin));
+    }
+
+    /**
      * Test user created/creating/updated observers
      */
     public function testCreateAndUpdate(): void

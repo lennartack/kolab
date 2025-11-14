@@ -87,6 +87,8 @@ class UsersTest extends TestCase
         $user->setSettings(['plan_id' => null]);
         $folder = $this->getTestSharedFolder('folder-mail@kolab.org');
         $folder->setAliases([]);
+        $this->getTestUser('jack@kolab.org')->settings()->whereIn('key', ['greylist_enabled'])->delete();
+        $this->getTestUser('ned@kolab.org')->settings()->whereIn('key', ['greylist_enabled'])->delete();
 
         parent::tearDown();
     }
@@ -849,6 +851,16 @@ class UsersTest extends TestCase
         $this->assertSame('true', $john->getSetting('guam_enabled'));
         $this->assertSame('min:10,max:255,upper,lower,digit,special', $john->getSetting('password_policy'));
         $this->assertSame('6', $john->getSetting('max_password_age'));
+
+        // Another account controller can update other user's config
+        $post = ['greylist_enabled' => 1];
+        $response = $this->actingAs($ned)->post("/api/v4/users/{$jack->id}/config", $post);
+        $response->assertStatus(200);
+
+        // Another account controller can update his own config
+        $post = ['greylist_enabled' => 1];
+        $response = $this->actingAs($ned)->post("/api/v4/users/{$ned->id}/config", $post);
+        $response->assertStatus(200);
     }
 
     /**

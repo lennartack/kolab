@@ -293,6 +293,37 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if current user can update config of another object.
+     *
+     * @param mixed $object A user|domain|wallet|group object
+     *
+     * @return bool True if he can, False otherwise
+     */
+    public function canUpdateConfig($object): bool
+    {
+        if (!is_object($object) || !method_exists($object, 'wallet')) {
+            return false;
+        }
+
+        $wallet = $object->wallet();
+        if (!$wallet) {
+            return false;
+        }
+
+        // Wallet owner can do everything
+        if ($wallet->user_id == $this->id) {
+            return true;
+        }
+
+        // Other wallet controllers can update config of another user, except the wallet controller
+        if ($object instanceof self && $object->id == $wallet->user_id) {
+            return false;
+        }
+
+        return $wallet->isController($this);
+    }
+
+    /**
      * Contacts (global addressbook) for this user.
      *
      * @return HasMany<Contact, $this>
