@@ -87,6 +87,14 @@ class DeviceTest extends TestCase
         $json = $response->json();
 
         $this->assertSame(0, $json['freeMonths']);
+
+        // Test a soft-deleted device
+        $device->delete();
+        Carbon::setTestNow(Carbon::createFromDate(2025, 4, 2));
+        $response = $this->get('api/v4/device/' . $this->hash);
+        $json = $response->json();
+
+        $this->assertSame(10, $json['freeMonths']);
     }
 
     /**

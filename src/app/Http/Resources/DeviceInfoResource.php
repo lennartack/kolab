@@ -35,6 +35,7 @@ class DeviceInfoResource extends JsonResource
      */
     private function freeMonths(): int
     {
+        // Note: It is not 12 months of use, it is 12 months since first registration
         $until = (clone $this->created_at)->addYearWithoutOverflow()->floorMonth();
         $now = (clone \now())->floorMonth();
 

@@ -71,7 +71,7 @@ class DeviceController extends Controller
             return $this->errorResponse(404);
         }
 
-        $device = Device::where('hash', $token)->first();
+        $device = Device::withTrashed()->where('hash', $token)->first();
 
         if (!$device) {
             return $this->errorResponse(404);
