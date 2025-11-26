@@ -109,8 +109,8 @@ class CreateJob extends UserJob
                         throw new \Exception("Failed to create mailbox for user {$user->email}.");
                     }
                 } catch (MailboxExistsException $e) {
-                    $this->fail($e);
-                    return;
+                    // Ignore "mailbox exists" case, but we still have to set the IMAP_READY status.
+                    // So, there should be no fail() nor "return" here.
                 }
             } else {
                 if (!IMAP::verifyAccount($user->email)) {

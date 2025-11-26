@@ -69,10 +69,14 @@ class CreateTest extends TestCase
         $user->status ^= User::STATUS_IMAP_READY;
         $user->saveQuietly();
         IMAP::shouldReceive('createUser')->once()->with($user)->andThrow(new MailboxExistsException());
+        DAV::shouldReceive('initDefaultFolders')->once()->with($user);
 
         $job = (new CreateJob($user->id))->withFakeQueueInteractions();
         $job->handle();
-        $job->assertFailedWith(MailboxExistsException::class);
+        $job->assertNotFailed();
+
+        $user->refresh();
+        $this->assertTrue($user->isImapReady());
 
         // Test deleted user
         $user->deleteQuietly();
