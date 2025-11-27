@@ -10,6 +10,11 @@ if [ -d /src/kolabsrc.orig ] || [ -d /src/overlay ]; then
     REBUILD=true
 fi
 
+if [ -d /src/config.override ]; then
+    rsync -av \
+        /src/config.override/ /opt/app-root/src/config/
+fi
+
 cd /opt/app-root/src/
 
 # We rely on the environment for configuration
