@@ -157,10 +157,7 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertTrue(!empty($json['access_token']));
-        $this->assertTrue(
-            ($this->expectedExpiry - 5) < $json['expires_in']
-            && $json['expires_in'] < ($this->expectedExpiry + 5)
-        );
+        $this->assertEqualsWithDelta($this->expectedExpiry, $json['expires_in'], 5);
         $this->assertSame('bearer', $json['token_type']);
         $this->assertSame($user->id, $json['id']);
         $this->assertSame($user->email, $json['user']['email']);
@@ -181,10 +178,7 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertTrue(!empty($json['access_token']));
-        $this->assertTrue(
-            ($this->expectedExpiry - 5) < $json['expires_in']
-            && $json['expires_in'] < ($this->expectedExpiry + 5)
-        );
+        $this->assertEqualsWithDelta($this->expectedExpiry, $json['expires_in'], 5);
         $this->assertSame('bearer', $json['token_type']);
 
         // No user info in the response
@@ -298,13 +292,14 @@ class AuthTest extends TestCase
      */
     public function testRefresh(): void
     {
-        // Request with no token, testing that it requires auth
-        $response = $this->post("api/auth/refresh");
-        $response->assertStatus(401);
+        // Test refresh token requirement
+        $response = $this->post("api/auth/refresh", []);
+        $response->assertStatus(422);
 
-        // Test the same using JSON mode
-        $response = $this->json('POST', "api/auth/refresh", []);
-        $response->assertStatus(401);
+        $json = $response->json();
+
+        $this->assertSame('error', $json['status']);
+        $this->assertSame(['refresh_token' => ['The refresh token field is required.']], $json['errors']);
 
         // Login the user to get a valid token
         $post = ['email' => 'john@kolab.org', 'password' => 'simple123'];
@@ -317,25 +312,25 @@ class AuthTest extends TestCase
 
         // Request with a valid token (include user info in the response)
         $post = ['refresh_token' => $json['refresh_token'], 'info' => 1];
-        $response = $this->actingAs($user)->post("api/auth/refresh", $post);
+        $response = $this->post("api/auth/refresh", $post);
         $response->assertStatus(200);
 
         $json = $response->json();
 
-        $this->assertSame('john@kolab.org', $json['user']['email']);
+        $this->assertSame($user->email, $json['user']['email']);
         $this->assertTrue(is_array($json['user']['statusInfo']));
         $this->assertTrue(is_array($json['user']['settings']));
         $this->assertTrue($json['access_token'] != $token);
-        $this->assertTrue(
-            ($this->expectedExpiry - 5) < $json['expires_in']
-            && $json['expires_in'] < ($this->expectedExpiry + 5)
-        );
+        $this->assertEqualsWithDelta($this->expectedExpiry, $json['expires_in'], 5);
         $this->assertSame('bearer', $json['token_type']);
         $new_token = $json['access_token'];
+        $new_refresh_token = $json['refresh_token'];
 
-        // TODO: Shall we invalidate the old token?
+        // The old token should not work anymore
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])->get("api/auth/info");
+        $response->assertStatus(401);
 
-        // And if the new token is working
+        // Check if the new token is working
         $response = $this->withHeaders(['Authorization' => 'Bearer ' . $new_token])->get("api/auth/info");
         $response->assertStatus(200);
     }

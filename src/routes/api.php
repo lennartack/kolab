@@ -16,6 +16,7 @@ Route::group(
     ],
     static function () {
         Route::post('login', [API\AuthController::class, 'login']);
+        Route::post('refresh', [API\AuthController::class, 'refresh']);
 
         Route::post('password-policy-check', [API\V4\PolicyController::class, 'checkPassword']);
         Route::post('password-reset/init', [API\PasswordResetController::class, 'init']);
@@ -39,7 +40,6 @@ Route::group(
                 Route::get('info', [API\AuthController::class, 'info']);
                 Route::get('location', [API\AuthController::class, 'location']);
                 Route::post('logout', [API\AuthController::class, 'logout']);
-                Route::post('refresh', [API\AuthController::class, 'refresh']);
             }
         );
     }

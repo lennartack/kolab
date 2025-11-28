@@ -12,7 +12,9 @@ use App\User;
 use App\Utils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Passport\Events\AccessTokenCreated;
 use Laravel\Passport\RefreshTokenRepository;
 use Laravel\Passport\TokenRepository;
 use League\OAuth2\Server\AuthorizationServer;
@@ -172,6 +174,8 @@ class AuthController extends Controller
 
     /**
      * Refresh a session token.
+     *
+     * @unauthenticated
      */
     public function refresh(Request $request)
     {
@@ -186,7 +190,17 @@ class AuthController extends Controller
             return response()->json(['status' => 'error', 'errors' => $v->errors()], 422);
         }
 
-        $user = $request->info ? $this->guard()->user() : null;
+        $user = null;
+        if ($request->info) {
+            // We cannot use a refresh token for authentication, therefore this route
+            // is unauthenticated. This means we do not have $this->guard() available.
+            // A token refresh triggers generation of new token(s). We can bind to a Passport
+            // event that provides user identity. This seems to be the easiest way
+            // to obtain a user from the token.
+            Event::listen(static function (AccessTokenCreated $event) use (&$user) {
+                $user = User::find($event->userId);
+            });
+        }
 
         $proxyRequest = Request::create('/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',

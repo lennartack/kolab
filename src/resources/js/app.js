@@ -156,9 +156,11 @@ const app = new Vue({
             //       while the token is being refreshed
 
             this.refreshTimeout = setTimeout(() => {
-                axios.post('api/auth/refresh', { refresh_token: localStorage.getItem('refreshToken') }).then(response => {
-                    this.loginUser(response.data, false, true)
-                })
+                const refresh_token = localStorage.getItem('refreshToken')
+                axios.post('api/auth/refresh', { refresh_token }, { headers: { Authorization: null } })
+                    .then(response => {
+                        this.loginUser(response.data, false, true)
+                    })
             }, timeout * 1000)
         },
         // Set user state to "not logged in"

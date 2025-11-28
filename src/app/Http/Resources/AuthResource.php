@@ -54,7 +54,7 @@ class AuthResource extends ApiResource
             // @var DeviceInfoResource Device information (on device signup)
             'device' => $this->when(isset($this->device), $this->device),
             // @var int User identifier
-            'id' => $this->user_id,
+            'id' => $this->when(isset($this->user_id), $this->user_id),
             // @var UserInfoResource User information
             'user' => $this->when(isset($this->userinfo), $this->userinfo),
         ];

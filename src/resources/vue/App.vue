@@ -31,7 +31,7 @@
             if (token) {
                 const post = { refresh_token: localStorage.getItem("refreshToken"), info: 1 }
 
-                axios.post('/api/auth/refresh', post, { ignoreErrors: true, loader: true })
+                axios.post('/api/auth/refresh', post, { ignoreErrors: true, loader: true, headers: { Authorization: null } })
                     .then(response => {
                         this.$root.loginUser(response.data, false)
                     })
