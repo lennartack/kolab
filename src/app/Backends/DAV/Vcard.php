@@ -8,7 +8,7 @@ use Sabre\VObject\Property;
 use Sabre\VObject\Reader;
 use Sabre\VObject\Writer;
 
-class Vcard extends CommonObject
+class Vcard extends CommonObject implements \Stringable
 {
     /** @var string Object content type (of the string representation) */
     public $contentType = 'text/vcard; charset=utf-8';

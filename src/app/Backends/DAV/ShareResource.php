@@ -2,7 +2,7 @@
 
 namespace App\Backends\DAV;
 
-class ShareResource
+class ShareResource implements \Stringable
 {
     public const ACCESS_NONE = 'no-access';
     public const ACCESS_READ = 'read';

@@ -4,7 +4,7 @@ namespace App\Backends\DAV;
 
 use App\Backends\DAV;
 
-class Search
+class Search implements \Stringable
 {
     public $component;
 

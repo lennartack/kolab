@@ -8,7 +8,7 @@ use Sabre\VObject\Property;
 use Sabre\VObject\Reader;
 use Sabre\VObject\Writer;
 
-class Vevent extends CommonObject
+class Vevent extends CommonObject implements \Stringable
 {
     /** @var string Object content type (of the string representation) */
     public $contentType = 'text/calendar; charset=utf-8';

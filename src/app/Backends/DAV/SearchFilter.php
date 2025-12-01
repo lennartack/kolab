@@ -2,7 +2,7 @@
 
 namespace App\Backends\DAV;
 
-class SearchFilter
+class SearchFilter implements \Stringable
 {
     public $filters = [];
 

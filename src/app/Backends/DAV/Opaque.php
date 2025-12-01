@@ -2,7 +2,7 @@
 
 namespace App\Backends\DAV;
 
-class Opaque extends CommonObject
+class Opaque extends CommonObject implements \Stringable
 {
     protected $content;
 

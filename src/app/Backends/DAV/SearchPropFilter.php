@@ -2,7 +2,7 @@
 
 namespace App\Backends\DAV;
 
-class SearchPropFilter
+class SearchPropFilter implements \Stringable
 {
     public const IS_NOT_DEFINED = 'is-not-defined';
 

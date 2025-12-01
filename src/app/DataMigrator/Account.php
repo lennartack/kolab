@@ -7,7 +7,7 @@ use App\User;
 /**
  * Data object representing user account on an external service
  */
-class Account
+class Account implements \Stringable
 {
     /** @var string User name (login) */
     public $username;

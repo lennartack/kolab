@@ -2,7 +2,7 @@
 
 namespace App\Backends\DAV;
 
-class InviteReply
+class InviteReply implements \Stringable
 {
     public const INVITE_ACCEPTED = 'accepted';
     public const INVITE_DECLINED = 'declined';

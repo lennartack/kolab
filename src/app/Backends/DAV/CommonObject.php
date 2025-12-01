@@ -2,7 +2,7 @@
 
 namespace App\Backends\DAV;
 
-class CommonObject
+class CommonObject implements \Stringable
 {
     /** @var string Object content type (of the string representation) */
     public $contentType = '';
