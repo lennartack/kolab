@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\DB;
 
+use App\Fs\Lock;
 use App\Policy\Greylist\Connect;
 use App\Policy\Greylist\Whitelist;
 use App\Policy\RateLimit;
@@ -46,6 +47,10 @@ class ExpungeCommand extends Command
             ->forceDelete();
 
         DB::table('failed_jobs')->where('failed_at', '<', Carbon::now()->subMonthsWithoutOverflow(6))
+            ->delete();
+
+        // Remove expired filesystem locks
+        Lock::where('timeout', '>=', '0')->whereRaw('created_at > now() - interval timeout second')
             ->delete();
 
         // TODO: What else? Should we force-delete deleted "dummy/spammer" accounts?

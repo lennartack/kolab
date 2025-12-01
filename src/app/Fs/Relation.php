@@ -3,6 +3,7 @@
 namespace App\Fs;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * The eloquent definition of a filesystem relation.
@@ -21,4 +22,24 @@ class Relation extends Model
 
     /** @var bool Indicates if the model should be timestamped. */
     public $timestamps = false;
+
+    /**
+     * The item to which this relation belongs.
+     *
+     * @return BelongsTo<Item, $this>
+     */
+    public function item()
+    {
+        return $this->belongsTo(Item::class, 'item_id');
+    }
+
+    /**
+     * The item to which it relates.
+     *
+     * @return BelongsTo<Item, $this>
+     */
+    public function related()
+    {
+        return $this->belongsTo(Item::class, 'related_id');
+    }
 }

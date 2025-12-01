@@ -66,4 +66,8 @@ Route::group(
     }
 );
 
+if (\config('app.with_webdav')) {
+    Controllers\DAVController::registerRoutes();
+}
+
 Controllers\DiscoveryController::registerRoutes();

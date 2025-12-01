@@ -62,6 +62,10 @@ return [
         'uri' => env('DAV_URI', 'https://proxy/'),
         'default_folders' => Helper::defaultDavFolders(),
         'verify' => (bool) env('DAV_VERIFY', true),
+
+        // Kolab3 used just /files, Cyrus DAV uses /dav/drive/user/{email}.
+        // We chose /dav/files/user/{email}, for consistency with CalDAV/CardDAV.
+        'webdav_root' => env('DAV_WEBDAV_ROOT', 'dav/files'),
     ],
 
     'imap' => [

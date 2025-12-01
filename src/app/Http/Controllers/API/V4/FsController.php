@@ -49,7 +49,7 @@ class FsController extends RelationController
         // storage later with the fs:expunge command
         $file->delete();
 
-        if ($file->type & Item::TYPE_COLLECTION) {
+        if ($file->isCollection()) {
             $message = self::trans('app.collection-delete-success');
         }
 
@@ -468,7 +468,7 @@ class FsController extends RelationController
             return $this->errorResponse($file);
         }
 
-        if ($file->type == Item::TYPE_COLLECTION) {
+        if ($file->isCollection()) {
             // Updating a collection is not supported yet
             return $this->errorResponse(405);
         }
@@ -748,16 +748,12 @@ class FsController extends RelationController
 
         $file = Item::find($fileId);
 
-        if (!$file) {
+        if (!$file || $file->isIncomplete()) {
             return 404;
         }
 
         if (!$isShare && $user->id != $file->user_id) {
             return 403;
-        }
-
-        if ($file->type & Item::TYPE_FILE && $file->type & Item::TYPE_INCOMPLETE) {
-            return 404;
         }
 
         return $file;
@@ -774,9 +770,9 @@ class FsController extends RelationController
     protected function objectToClient($object, bool $full = false): array
     {
         $result = ['id' => $object->id];
-        if ($object->type & Item::TYPE_COLLECTION) {
+        if ($object->isCollection()) {
             $result['type'] = self::TYPE_COLLECTION;
-        } elseif ($object->type & Item::TYPE_FILE) {
+        } elseif ($object->isFile()) {
             $result['type'] = self::TYPE_FILE;
         } else {
             $result['type'] = self::TYPE_UNKNOWN;

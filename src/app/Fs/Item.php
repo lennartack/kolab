@@ -2,6 +2,7 @@
 
 namespace App\Fs;
 
+use App\Backends\Storage;
 use App\Traits\BelongsToUserTrait;
 use App\Traits\UuidStrKeyTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -48,6 +49,52 @@ class Item extends Model
     public function chunks()
     {
         return $this->hasMany(Chunk::class);
+    }
+
+    /**
+     * Copy the item to another location
+     *
+     * @param ?self   $target Target folder
+     * @param ?string $name   Optional name (for rename)
+     *
+     * @return self Created copy item
+     */
+    public function copy(?self $target, ?string $name = null): self
+    {
+        // Create the new item and copy its properties
+        $copy = new self();
+        $copy->type = $this->type;
+        $copy->user_id = $this->user_id;
+        $copy->updated_at = $this->updated_at;
+        $copy->save();
+
+        $props = $this->properties()->get()->mapWithKeys(function ($property) {
+            return [$property->key => new Property(['key' => $property->key, 'value' => $property->value])];
+        });
+
+        if (is_string($name) && strlen($name)) {
+            $props['name']->value = $name;
+        }
+
+        $copy->properties()->saveMany($props);
+
+        // Assign to the target folder
+        if ($target) {
+            $this->parents()->attach($target);
+        }
+
+        // FIXME: What can we do if copying content fails for any reason?
+
+        // Copy the file/folder contents
+        if ($this->isFile()) {
+            Storage::fileCopy($this, $copy);
+        } else {
+            $this->children()->get()->each(function ($item) use ($copy) {
+                $item->copy($copy);
+            });
+        }
+
+        return $copy;
     }
 
     /**
@@ -113,6 +160,51 @@ class Item extends Model
     }
 
     /**
+     * Check if the item is a collection (folder)
+     */
+    public function isCollection(): bool
+    {
+        return (bool) ($this->type & self::TYPE_COLLECTION);
+    }
+
+    /**
+     * Check if the item is a file
+     */
+    public function isFile(): bool
+    {
+        return (bool) ($this->type & self::TYPE_FILE);
+    }
+
+    /**
+     * Check if the item is incomplete
+     */
+    public function isIncomplete(): bool
+    {
+        return (bool) ($this->type & self::TYPE_INCOMPLETE);
+    }
+
+    /**
+     * Move the item to another location
+     *
+     * @param ?self   $target Target folder
+     * @param ?string $name   Optional name (for rename)
+     */
+    public function move(?self $target, ?string $name = null): void
+    {
+        if ($target) {
+            // move to another folder
+            $this->parents()->sync([$target]);
+        } else {
+            // move to the root
+            $this->parents()->sync([]);
+        }
+
+        if (is_string($name) && strlen($name)) {
+            $this->setProperty('name', $name);
+        }
+    }
+
+    /**
      * Remove a property
      *
      * @param string $key Property name
@@ -174,6 +266,16 @@ class Item extends Model
     public function relations()
     {
         return $this->hasMany(Relation::class);
+    }
+
+    /**
+     * All locks for this item
+     *
+     * @return HasMany<Lock, $this>
+     */
+    public function locks()
+    {
+        return $this->hasMany(Lock::class);
     }
 
     /**

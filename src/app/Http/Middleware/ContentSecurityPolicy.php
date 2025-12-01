@@ -21,7 +21,10 @@ class ContentSecurityPolicy
         ];
 
         // Exclude horizon routes, per https://github.com/laravel/horizon/issues/576
-        if ($request->is('horizon*')) {
+        // Exclude WebDAV routes, as it is a service not for a web browser
+        $dav_prefix = trim(\config('services.dav.webdav_root'), '/') . '/user/*';
+
+        if ($request->is('horizon*') || $request->is($dav_prefix)) {
             $headers = [];
         }
 

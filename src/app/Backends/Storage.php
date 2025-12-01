@@ -69,6 +69,33 @@ class Storage
     }
 
     /**
+     * Copy file content.
+     *
+     * @param Item $source Source file
+     * @param Item $target Target file
+     *
+     * @throws \Exception
+     */
+    public static function fileCopy(Item $source, Item $target): void
+    {
+        $disk = LaravelStorage::disk(\config('filesystems.default'));
+
+        $source->chunks()->orderBy('sequence')->get()->each(static function ($chunk) use ($disk, $source, $target) {
+            $id = Utils::uuidStr();
+            $source_path = Storage::chunkLocation($chunk->chunk_id, $source);
+            $target_path = Storage::chunkLocation($id, $target);
+
+            $disk->copy($source_path, $target_path);
+
+            $target->chunks()->create([
+                'chunk_id' => $id,
+                'sequence' => $chunk->sequence,
+                'size' => $chunk->size,
+            ]);
+        });
+    }
+
+    /**
      * File download handler.
      *
      * @param Item $file File object
@@ -154,6 +181,15 @@ class Storage
 
         $fileSize = $disk->size($path);
 
+        // Pick the client-supplied mimetype if available, otherwise detect.
+        if (!empty($params['mimetype'])) {
+            $mimetype = $params['mimetype'];
+        } elseif (!$fileSize) {
+            $mimetype = 'application/x-empty';
+        } else {
+            $mimetype = self::mimetype($stream);
+        }
+
         if ($file->type & Item::TYPE_INCOMPLETE) {
             $file->type -= Item::TYPE_INCOMPLETE;
             $file->save();
@@ -162,8 +198,7 @@ class Storage
         // Update the file type and size information
         $file->setProperties([
             'size' => $fileSize,
-            // Pick the client-supplied mimetype if available, otherwise detect.
-            'mimetype' => !empty($params['mimetype']) ? $params['mimetype'] : self::mimetype($path),
+            'mimetype' => $mimetype,
         ]);
 
         // Assign the node to the file, "unlink" any old nodes of this file
@@ -245,7 +280,7 @@ class Storage
 
         // Detect file type using the first chunk
         if ($from == 0) {
-            $upload['mimetype'] = self::mimetype($path);
+            $upload['mimetype'] = self::mimetype($stream);
             $upload['chunks'] = [];
         }
 
@@ -297,22 +332,18 @@ class Storage
     /**
      * Get the file mime type.
      *
-     * @param string $path File location
+     * @param resource $stream File stream
      *
      * @return string File mime type
      */
-    protected static function mimetype(string $path): string
+    protected static function mimetype($stream): string
     {
-        $disk = LaravelStorage::disk(\config('filesystems.default'));
+        rewind($stream);
 
-        $mimetype = $disk->mimeType($path);
+        $detector = new \League\MimeTypeDetection\FinfoMimeTypeDetector();
+        $mimetype = $detector->detectMimeTypeFromBuffer(stream_get_contents($stream, 1024 * 1024));
 
-        // The mimetype may contain e.g. "; charset=UTF-8", remove this
-        if ($mimetype) {
-            return explode(';', $mimetype)[0];
-        }
-
-        return 'application/octet-stream';
+        return $mimetype ?: 'application/octet-stream';
     }
 
     /**

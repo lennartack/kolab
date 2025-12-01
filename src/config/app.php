@@ -249,6 +249,7 @@ return [
 
     'with_admin' => (bool) env('APP_WITH_ADMIN', false),
     'with_files' => (bool) env('APP_WITH_FILES', false),
+    'with_webdav' => (bool) env('APP_WITH_WEBDAV', env('APP_WITH_FILES', false)),
     'with_reseller' => (bool) env('APP_WITH_RESELLER', false),
     'with_services' => (bool) env('APP_WITH_SERVICES', false),
     'with_signup' => (bool) env('APP_WITH_SIGNUP', true),
