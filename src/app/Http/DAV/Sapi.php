@@ -22,11 +22,10 @@ class Sapi extends \Sabre\HTTP\Sapi
 
         $headers = [];
         foreach ($request->headers as $key => $val) {
-            if (is_array($val)) {
+            if (is_array($val) && !in_array($key, ['php-auth-user', 'php-auth-pw'])) {
                 $headers[$key] = implode("\n", $val);
             }
         }
-
         // TODO: For now we create the Sabre's Request object. For better performance
         // and memory usage we should replece it completely with a "direct" access to Laravel's Request.
 
@@ -34,8 +33,29 @@ class Sapi extends \Sabre\HTTP\Sapi
         $r->setHttpVersion('1.1');
         // $r->setRawServerData($_SERVER);
         $r->setAbsoluteUrl($request->url());
-        $r->setBody($request->getContent(true));
+        $r->setBody($body = $request->getContent(true));
         $r->setPostData($request->all());
+
+        // Input debug logging
+        if (\config('app.debug')) {
+            $msg = sprintf("[DAV] %s %s\n", $request->method(), $request->path());
+
+            foreach ($headers as $key => $val) {
+                if ($key == 'authorization') {
+                    $msg .= 'Authorization: ' . explode(' ', $val, 2)[0] . " ***\n";
+                } else {
+                    $msg .= preg_replace_callback('/(^|-)[a-z]/', fn ($m) => strtoupper($m[0]), $key) . ": {$val}\n";
+                }
+            }
+
+            if (!\request()->isMethod('put')) {
+                $msg .= "\n" . stream_get_contents($body);
+                rewind($body);
+                // TODO: Format XML
+            }
+
+            \Log::debug($msg);
+        }
 
         return $r;
     }
@@ -82,6 +102,29 @@ class Sapi extends \Sabre\HTTP\Sapi
                 fclose($body);
             }
         };
+
+        // Output debug logging
+        if (\config('app.debug')) {
+            $msg = sprintf("[DAV] HTTP/%s %s %s\n", $response->getHttpVersion(), $response->getStatus(), $response->getSTatusText());
+
+            foreach ($response->getHeaders() as $key => $val) {
+                $msg .= $key . ": " . implode("\n", $val) . "\n";
+            }
+
+            if (!\request()->isMethod('get')) {
+                $body = $response->getBody();
+                $msg .= "\n";
+                if (is_resource($body)) {
+                    $msg .= stream_get_contents($body);
+                    rewind($body);
+                } else {
+                    $msg .= $body;
+                }
+                // TODO: Format XML
+            }
+
+            \Log::debug($msg);
+        }
 
         // FIXME: Should we use non-streamed responses for small bodies?
 
