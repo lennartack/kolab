@@ -194,12 +194,16 @@ class Node implements INode
             if ($item === null) {
                 $query = Auth::$user->fsItems()->select('fs_items.*', 'fs_properties.value as name')
                     ->join('fs_properties', 'fs_items.id', '=', 'fs_properties.item_id')
+                    ->whereNot('type', '&', Item::TYPE_INCOMPLETE)
                     ->where('key', 'name')
                     ->where('value', $item_name); // TODO: Make sure it's a case-sensitive match?
 
                 if ($parent) {
                     $query->join('fs_relations', 'fs_items.id', '=', 'fs_relations.related_id')
                         ->where('fs_relations.item_id', $parent->id);
+                } else {
+                    $query->leftJoin('fs_relations', 'fs_items.id', '=', 'fs_relations.related_id')
+                        ->whereNull('fs_relations.related_id');
                 }
 
                 $item = $query->first();
