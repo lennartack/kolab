@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\DAV;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Sabre\DAV\Server;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -58,6 +59,10 @@ class DAVController extends Controller
         $server->on('exception', function ($e) {
             if (!($e instanceof \Sabre\DAV\Exception) || $e->getHTTPCode() == 500) {
                 \Log::error($e);
+            }
+            // Rollback uncommitted transactions
+            while (DB::transactionLevel() > 0) {
+                DB::rollBack();
             }
         });
 
