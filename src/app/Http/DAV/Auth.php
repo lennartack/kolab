@@ -67,6 +67,6 @@ class Auth extends AbstractBasic
         $root = trim(\config('services.dav.webdav_root'), '/') . '/user/';
         $path = substr($path, strlen($root));
 
-        return explode('/', $path)[0];
+        return rawurldecode(explode('/', $path)[0]);
     }
 }

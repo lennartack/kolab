@@ -612,7 +612,9 @@ class DAVTest extends TestCaseFs
         [$folders, $files] = $this->initTestStorage($john);
 
         // Test with valid Authorization header
-        $response = $this->davRequest('PROPFIND', $root, '<d:propfind xmlns:d="DAV:"><d:allprop/></d:propfind>', $john);
+        // Also make sure that encoded username is working
+        $enc_root = str_replace('@', '%40', $root);
+        $response = $this->davRequest('PROPFIND', $enc_root, '<d:propfind xmlns:d="DAV:"><d:allprop/></d:propfind>', $john);
         $response->assertStatus(207);
 
         $doc = $this->responseXML($response);
