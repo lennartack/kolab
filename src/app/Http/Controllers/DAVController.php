@@ -65,9 +65,9 @@ class DAVController extends Controller
         $server->addPlugin(new \Sabre\DAV\Auth\Plugin($auth_backend));
 
         // Unauthenticated access doesn't work for us since we require credentials to get access to the data in the first place.
-        $acl_plugin = new \Sabre\DAVACL\Plugin();
-        $acl_plugin->allowUnauthenticatedAccess = false;
-        $server->addPlugin($acl_plugin);
+        // $acl_plugin = new \Sabre\DAVACL\Plugin();
+        // $acl_plugin->allowUnauthenticatedAccess = false;
+        // $server->addPlugin($acl_plugin);
 
         // The lock manager is responsible for making sure users don't overwrite each others changes.
         $server->addPlugin(new \Sabre\DAV\Locks\Plugin($locks_backend));

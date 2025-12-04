@@ -168,9 +168,9 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
      */
     public function delete()
     {
-        DB::beginTransaction();
-
         parent::delete();
+
+        DB::beginTransaction();
 
         // Delete the files/folders inside
         // TODO: This may not be optimal for a case with a lot of files/folders

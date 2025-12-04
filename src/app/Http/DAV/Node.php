@@ -52,6 +52,10 @@ class Node implements INode
     {
         \Log::debug('[DAV] DELETE: ' . $this->path);
 
+        if (!strlen($this->path)) {
+            throw new Exception\Forbidden('Deleting the root is forbidden');
+        }
+
         // Here we're just marking the nodes as deleted, they will be removed from the
         // storage later with the fs:expunge command
         // FIXME: This will also bump the updated_at timestamp, should we prevent that?

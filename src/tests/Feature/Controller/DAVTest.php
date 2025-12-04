@@ -583,8 +583,7 @@ class DAVTest extends TestCaseFs
         $response = $this->davRequest('OPTIONS', $root, '', $john);
         $response->assertNoContent(200);
 
-        // TODO: Verify the supported feature set
-        $this->assertSame('1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, 2', $response->headers->get('DAV'));
+        $this->assertSame('1, 3, extended-mkcol, 2', $response->headers->get('DAV'));
     }
 
     /**
