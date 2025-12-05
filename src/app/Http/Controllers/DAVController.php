@@ -55,12 +55,13 @@ class DAVController extends Controller
         // 207 instead of 404. And our response handling is not working with this either.
         // $server::$streamMultiStatus = true;
 
-        // Log important exceptions catched by Sabre
         $server->on('exception', function ($e) {
+            // Log important exceptions catched by Sabre
             if (!($e instanceof \Sabre\DAV\Exception) || $e->getHTTPCode() == 500) {
                 \Log::error($e);
             }
-            // Rollback uncommitted transactions
+            // Rollback uncommitted transactions. The exceptions are catched by Sabre
+            // so our Laravel exception handler is not triggered.
             while (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }

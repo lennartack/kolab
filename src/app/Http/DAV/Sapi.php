@@ -49,12 +49,13 @@ class Sapi extends \Sabre\HTTP\Sapi
             }
 
             if (!\request()->isMethod('put')) {
-                $msg .= "\n" . stream_get_contents($body);
-                rewind($body);
-                // TODO: Format XML
+                if ($str = stream_get_contents($body)) {
+                    $msg .= "\n" . self::formatXML($str);
+                    rewind($body);
+                }
             }
 
-            \Log::debug($msg);
+            \Log::debug(rtrim($msg));
         }
 
         return $r;
@@ -113,21 +114,35 @@ class Sapi extends \Sabre\HTTP\Sapi
 
             if (!\request()->isMethod('get')) {
                 $body = $response->getBody();
-                $msg .= "\n";
+
                 if (is_resource($body)) {
-                    $msg .= stream_get_contents($body);
+                    $str = stream_get_contents($body);
                     rewind($body);
-                } else {
-                    $msg .= $body;
+                    $body = $str;
                 }
-                // TODO: Format XML
+
+                if ($body) {
+                    $msg .= "\n" . self::formatXML($body);
+                }
             }
 
-            \Log::debug($msg);
+            \Log::debug(rtrim($msg));
         }
 
         // FIXME: Should we use non-streamed responses for small bodies?
 
         self::$response = new StreamedResponse($callback, $response->getStatus(), $response->getHeaders());
+    }
+
+    /**
+     * Convert XML into human-readable format (wrap lines).
+     */
+    private static function formatXML(string $xml): string
+    {
+        $doc = new \DOMDocument('1.0', 'UTF-8');
+        $doc->loadXML($xml);
+        $doc->formatOutput = true;
+
+        return $doc->saveXML() ?: '';
     }
 }
