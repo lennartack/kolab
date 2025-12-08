@@ -317,6 +317,36 @@ class WalletsTest extends TestCase
         $this->assertCount(1, $program->codes->fresh());
         $this->assertStringContainsString("/signup/referral/{$code->code}", $json['list'][0]['url']);
         $this->assertSame(2, $json['list'][0]['refcount']);
+
+        // Add another program and check if counters are ok
+        $program2 = ReferralProgram::create([
+            'name' => "Test 2 Referral",
+            'description' => "Test Referral Description",
+            'active' => true,
+        ]);
+        $program2->created_at = \now()->subDays(1);
+        $program2->save();
+
+        $response = $this->actingAs($user)->get("api/v4/wallets/{$wallet->id}/referral-programs");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame($program->id, $json['list'][0]['id']);
+        $this->assertSame($program2->id, $json['list'][1]['id']);
+        $this->assertSame(2, $json['list'][0]['refcount']);
+        $this->assertSame(0, $json['list'][1]['refcount']);
+
+        // And again with codes created
+        $response = $this->actingAs($user)->get("api/v4/wallets/{$wallet->id}/referral-programs");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame($program->id, $json['list'][0]['id']);
+        $this->assertSame($program2->id, $json['list'][1]['id']);
+        $this->assertSame(2, $json['list'][0]['refcount']);
+        $this->assertSame(0, $json['list'][1]['refcount']);
     }
 
     /**
@@ -326,11 +356,14 @@ class WalletsTest extends TestCase
     {
         Carbon::setTestNow(Carbon::createFromDate(2022, 2, 2));
 
-        $john = $this->getTestUser('john@kolab.org');
-        $jack = $this->getTestUser('jack@kolab.org');
-        $wallet = $john->wallets()->first();
+        $package_kolab = Package::where('title', 'kolab')->first();
+        $user = $this->getTestUser('wallets-controller@kolabnow.com');
+        $user->assignPackage($package_kolab);
+        $wallet = $user->wallets()->first();
         $wallet->balance = 1000;
         $wallet->save();
+
+        $jack = $this->getTestUser('jack@kolab.org');
 
         // Accessing a wallet of someone else
         $response = $this->actingAs($jack)->get("api/v4/wallets/{$wallet->id}");
@@ -341,7 +374,7 @@ class WalletsTest extends TestCase
         $response->assertStatus(404);
 
         // Wallet owner
-        $response = $this->actingAs($john)->get("api/v4/wallets/{$wallet->id}");
+        $response = $this->actingAs($user)->get("api/v4/wallets/{$wallet->id}");
         $response->assertStatus(200);
 
         $json = $response->json();
@@ -350,8 +383,8 @@ class WalletsTest extends TestCase
         $this->assertSame('CHF', $json['currency']);
         $this->assertSame($wallet->balance, $json['balance']);
         $this->assertTrue(empty($json['description']));
-        $this->assertStringContainsString('until about 2025-08-11', $json['notice']);
-        $this->assertSame('2025-08-11', $json['nextPaymentDate']);
+        $this->assertStringContainsString('until about 2022-04-02 (2 months)', $json['notice']);
+        $this->assertSame('2022-04-02', $json['nextPaymentDate']);
     }
 
     /**

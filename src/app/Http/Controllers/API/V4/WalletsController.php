@@ -245,7 +245,7 @@ class WalletsController extends ResourceController
             return $this->errorResponse(403);
         }
 
-        $raw_count = DB::raw('(select count(*) from referrals where referrals.code = code) as refcount');
+        $raw_count = DB::raw('(select count(*) from referrals where referrals.code = referral_codes.code) as refcount');
         $codes = ReferralCode::where('user_id', $wallet->user_id)->select('code', 'program_id', $raw_count);
 
         $result = ReferralProgram::withObjectTenantContext($wallet->owner)
@@ -254,6 +254,7 @@ class WalletsController extends ResourceController
                 $join->on('referral_programs.id', '=', 'codes.program_id');
             })
             ->select('id', 'name', 'description', 'tenant_id', 'codes.code', 'codes.refcount')
+            ->orderByDesc('created_at')
             ->get()
             ->map(static function ($program) use ($wallet) {
                 if (empty($program->code)) {
