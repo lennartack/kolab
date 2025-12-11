@@ -114,9 +114,27 @@ class DAVTest extends TestCaseFs
         $this->assertSame('copied1.txt', $copied[0]->getProperty('name'));
         $this->assertSame('Test con5', $this->getTestFileContent($copied[0]));
 
-        // TODO: Test copying a collection with Depth:0 (and Depth:1) header
-        // TODO: Make sure a copy /A/ into /A/B/ does not lead to an infinite recursion
-        $this->markTestIncomplete();
+        // Test copying a folder with Depth:0
+        /* Sabre bug https://github.com/sabre-io/dav/pull/1495
+        $response = $this->davRequest('COPY', "{$root}/folder-copy/folder1", '', $john, ['Destination' => "{$host}/{$root}/folderA", 'Depth' => '0']);
+        $response->assertNoContent(201);
+
+        $copied = $john->fsItems()
+            ->whereRaw('id in (select item_id from fs_properties where `key` = \'name\' and `value` = \'folderA\')')
+            ->first();
+        $this->assertCount(0, $copied->parents()->get());
+        $this->assertCount(0, $copied->children()->get());
+        */
+
+        // Make sure a copy /A/ into /A/B/ does not lead to an infinite recursion
+        $folderB = $this->getTestCollection($john, 'folderB');
+        $folderC = $this->getTestCollection($john, 'folderC');
+        $file = $this->getTestFile($john, 'test.txt', 'Test', ['mimetype' => 'text/plain']);
+        $folderB->children()->attach($folderC);
+        $folderB->children()->attach($file);
+
+        $response = $this->davRequest('COPY', "{$root}/folderB", '', $john, ['Destination' => "{$host}/{$root}/folderB/folderX", 'Depth' => 'infinity']);
+        $response->assertStatus(409);
     }
 
     /**
