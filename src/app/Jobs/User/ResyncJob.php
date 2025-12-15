@@ -20,11 +20,7 @@ class ResyncJob extends UserJob
 
         $user = $this->getUser();
 
-        if (!$user) {
-            return;
-        }
-
-        if ($user->role == User::ROLE_SERVICE || $user->role == User::ROLE_DEVICE) {
+        if (!$user || $user->isVirtual()) {
             return;
         }
 

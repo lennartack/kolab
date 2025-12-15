@@ -36,21 +36,7 @@ class CreateJob extends UserJob
 
         $user = $this->getUser();
 
-        if (!$user) {
-            return;
-        }
-
-        if ($user->role == User::ROLE_SERVICE || $user->role == User::ROLE_DEVICE) {
-            return;
-        }
-
-        // TODO: this can be removed in favor of the above once we are sure the role is set everywhere.
-        if ($user->email == \config('services.imap.admin_login')) {
-            // Ignore Cyrus admin account
-            return;
-        }
-
-        if ($user->trashed()) {
+        if (!$user || $user->trashed() || $user->isVirtual()) {
             return;
         }
 

@@ -25,15 +25,7 @@ class UpdateJob extends UserJob implements ShouldBeUniqueUntilProcessing
 
         $user = $this->getUser();
 
-        if (!$user) {
-            return;
-        }
-
-        if ($user->role == User::ROLE_SERVICE || $user->role == User::ROLE_DEVICE) {
-            return;
-        }
-
-        if ($user->trashed()) {
+        if (!$user || $user->trashed() || $user->isVirtual()) {
             return;
         }
 

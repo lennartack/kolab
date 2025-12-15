@@ -9,6 +9,31 @@ use Tests\Utils;
 class UserTest extends TestCase
 {
     /**
+     * Test User::isVirtual()
+     */
+    public function testIsVirtual(): void
+    {
+        $user = new User();
+
+        $this->assertFalse($user->isVirtual());
+
+        $user->role = User::ROLE_SERVICE;
+        $this->assertTrue($user->isVirtual());
+
+        $user->role = User::ROLE_DEVICE;
+        $this->assertTrue($user->isVirtual());
+
+        $user->role = User::ROLE_ADMIN;
+        $this->assertFalse($user->isVirtual());
+
+        $user->role = User::ROLE_RESELLER;
+        $this->assertFalse($user->isVirtual());
+
+        $user->email = \config('services.imap.admin_login');
+        $this->assertTrue($user->isVirtual());
+    }
+
+    /**
      * Test User password mutator
      */
     public function testSetPasswordAttribute(): void

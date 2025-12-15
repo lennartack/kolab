@@ -526,6 +526,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user has a special role, and it should not have a mailbox
+     */
+    public function isVirtual(): bool
+    {
+        if ($this->role == self::ROLE_SERVICE || $this->role == self::ROLE_DEVICE) {
+            return true;
+        }
+
+        // TODO: this can be removed in favor of the above once we are sure the role is set everywhere.
+        if ($this->email && $this->email == \config('services.imap.admin_login')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Licenses whis user has.
      *
      * @return HasMany<License, $this>
