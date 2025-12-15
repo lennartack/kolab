@@ -56,10 +56,11 @@ class Item extends Model
      *
      * @param ?self   $target Target folder
      * @param ?string $name   Optional name (for rename)
+     * @param int     $depth  Depth (-1 - infinity, 0 - only the collection)
      *
      * @return self Created copy item
      */
-    public function copy(?self $target, ?string $name = null): self
+    public function copy(?self $target, ?string $name = null, $depth = -1): self
     {
         // Create the new item and copy its properties
         $copy = new self();
@@ -88,9 +89,12 @@ class Item extends Model
         // Copy the file/folder contents
         if ($this->isFile()) {
             Storage::fileCopy($this, $copy);
-        } else {
-            $this->children()->get()->each(function ($item) use ($copy) {
-                $item->copy($copy);
+        } elseif ($depth == -1 || $depth > 0) {
+            if ($depth > 0) {
+                $depth--;
+            }
+            $this->children()->get()->each(function ($item) use ($copy, $depth) {
+                $item->copy($copy, null, $depth);
             });
         }
 

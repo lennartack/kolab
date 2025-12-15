@@ -55,20 +55,22 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
      * @param string $targetName New local file/collection name
      * @param string $sourcePath Full path to source node
      * @param INode  $sourceNode Source node itself
+     * @param int    $depth      How many level of children to copy.
+     *                           The value can be -1 (Sabre\DAV\Server::DEPTH_INFINITY) or a positive number including zero.
+     *                           Zero means to only copy a shallow collection with props, but without children.
+     *
      *
      * @return bool
      */
-    public function copyInto($targetName, $sourcePath, INode $sourceNode)
+    public function copyInto($targetName, $sourcePath, INode $sourceNode, int $depth)
     {
         $path = $this->nodePath($targetName);
 
-        \Log::debug("[DAV] COPY-INTO: {$sourcePath} > {$path}");
+        \Log::debug("[DAV] COPY-INTO: {$sourcePath} > {$path}, Depth:{$depth}");
 
         $item = $sourceNode->fsItem(); // @phpstan-ignore-line
 
-        // TODO: Missing Depth:X handling. See also https://github.com/sabre-io/dav/pull/1495
-
-        $item->copy($this->data, $targetName);
+        $item->copy($this->data, $targetName, $depth);
 
         $this->deleteCachedItem($path);
 
