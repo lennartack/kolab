@@ -59,7 +59,6 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
      *                           The value can be -1 (Sabre\DAV\Server::DEPTH_INFINITY) or a positive number including zero.
      *                           Zero means to only copy a shallow collection with props, but without children.
      *
-     *
      * @return bool
      */
     public function copyInto($targetName, $sourcePath, INode $sourceNode, int $depth)

@@ -549,8 +549,13 @@ class DAVTest extends TestCaseFs
         $this->assertSame('folder20', $folders[1]->getProperty('name'));
 
         // Test moving a file into the root (with no rename)
-        $response = $this->davRequest('MOVE', "{$root}/folder10/test3.txt", '', $john,
-            ['Destination' => "{$host}/{$root}/test3.txt", 'Overwrite' => 'F', 'Depth' => 'infinity']);
+        $response = $this->davRequest(
+            'MOVE',
+            "{$root}/folder10/test3.txt",
+            '',
+            $john,
+            ['Destination' => "{$host}/{$root}/test3.txt", 'Overwrite' => 'F', 'Depth' => 'infinity']
+        );
         $response->assertNoContent(201);
 
         $this->assertCount(0, $files[2]->parents()->get());
@@ -558,16 +563,26 @@ class DAVTest extends TestCaseFs
         $this->assertSame('text/plain', $files[2]->getProperty('mimetype'));
 
         // Test moving a folder from root into another folder (no rename)
-        $response = $this->davRequest('MOVE', "{$root}/folder20", '', $john,
-            ['Destination' => "{$host}/{$root}/folder10/folder20", 'Depth' => 'infinity']);
+        $response = $this->davRequest(
+            'MOVE',
+            "{$root}/folder20",
+            '',
+            $john,
+            ['Destination' => "{$host}/{$root}/folder10/folder20", 'Depth' => 'infinity']
+        );
         $response->assertNoContent(201);
 
         $this->assertSame([$folders[0]->id], $folders[1]->parents()->get()->pluck('id')->all());
         $this->assertSame('folder20', $folders[1]->getProperty('name'));
 
         // Test moving a file from the root into another folder
-        $response = $this->davRequest('MOVE', "{$root}/test2.txt", '', $john,
-            ['Destination' => "{$host}/{$root}/folder10/test20.txt", 'Depth' => 'infinity']);
+        $response = $this->davRequest(
+            'MOVE',
+            "{$root}/test2.txt",
+            '',
+            $john,
+            ['Destination' => "{$host}/{$root}/folder10/test20.txt", 'Depth' => 'infinity']
+        );
         $response->assertNoContent(201);
 
         $this->assertSame([$folders[0]->id], $files[1]->parents()->get()->pluck('id')->all());
@@ -575,8 +590,13 @@ class DAVTest extends TestCaseFs
         $this->assertSame('text/html', $files[1]->getProperty('mimetype'));
 
         // Test moving into an existing location with Overwrite:F header
-        $response = $this->davRequest('MOVE', "{$root}/moved1.txt", '', $john,
-            ['Destination' => "{$host}/{$root}/test3.txt", 'Overwrite' => 'F', 'Depth' => 'infinity']);
+        $response = $this->davRequest(
+            'MOVE',
+            "{$root}/moved1.txt",
+            '',
+            $john,
+            ['Destination' => "{$host}/{$root}/test3.txt", 'Overwrite' => 'F', 'Depth' => 'infinity']
+        );
         $response->assertStatus(412);
 
         $doc = $this->responseXML($response);
