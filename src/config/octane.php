@@ -224,6 +224,8 @@ return [
             'log_file' => storage_path('logs/swoole_http.log'),
 
             // Max input size, this does not apply to file uploads
+            // Note: It looks like on the PHP side you need about 2 times as much of extra memory
+            // as the request size when using Swoole (only 1 time without Swoole).
             'package_max_length' => env('SWOOLE_PACKAGE_MAX_LENGTH', 10 * 1024 * 1024),
 
             // This defines max. size of a file uploaded using multipart/form-data method

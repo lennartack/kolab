@@ -468,7 +468,7 @@ class Utils
 
         $env['paymentProvider'] = \config('services.payment_provider');
         $env['stripePK'] = \config('services.stripe.public_key');
-
+        $env['maxChunkSize'] = \App\Backends\Storage::maxChunkSize();
         $env['languages'] = ContentController::locales();
         $env['menu'] = ContentController::menu();
 

@@ -172,14 +172,34 @@ class Storage
         }
 
         $disk = LaravelStorage::disk(\config('filesystems.default'));
+        $fileSize = 0;
+        $maxChunkSize = self::maxChunkSize();
+        $chunk_count = 0;
 
-        $chunkId = Utils::uuidStr();
+        // "unlink" any old chunks of this file
+        $file->chunks()->delete();
 
-        $path = self::chunkLocation($chunkId, $file);
+        while (!feof($stream)) {
+            $chunkId = Utils::uuidStr();
+            $path = self::chunkLocation($chunkId, $file);
 
-        $disk->writeStream($path, $stream);
+            $start = $fileSize;
+            $end = $fileSize + $maxChunkSize;
+            $chunk_stream = Storage\FileInputStream::registerChunkStream($stream, $file->id, $chunkId, $start, $end);
 
-        $fileSize = $disk->size($path);
+            $disk->writeStream($path, $chunk_stream);
+
+            fclose($chunk_stream);
+
+            $fileSize += ($size = $disk->size($path));
+
+            // Assign the node to the file
+            $file->chunks()->create([
+                'chunk_id' => $chunkId,
+                'sequence' => $chunk_count++,
+                'size' => $size,
+            ]);
+        }
 
         // Pick the client-supplied mimetype if available, otherwise detect.
         if (!empty($params['mimetype'])) {
@@ -199,14 +219,6 @@ class Storage
         $file->setProperties([
             'size' => $fileSize,
             'mimetype' => $mimetype,
-        ]);
-
-        // Assign the node to the file, "unlink" any old nodes of this file
-        $file->chunks()->delete();
-        $file->chunks()->create([
-            'chunk_id' => $chunkId,
-            'sequence' => 0,
-            'size' => $fileSize,
         ]);
 
         return ['id' => $file->id];
@@ -246,7 +258,7 @@ class Storage
             return [
                 'uploadId' => $params['uploadId'],
                 'uploaded' => 0,
-                'maxChunkSize' => (\config('octane.swoole.options.package_max_length') ?: 10 * 1024 * 1024) - 8192,
+                'maxChunkSize' => self::maxChunkSize(),
             ];
         }
 
@@ -357,5 +369,21 @@ class Storage
     public static function chunkLocation(string $chunkId, Item $file): string
     {
         return $file->path . '/' . $file->id . '/' . $chunkId;
+    }
+
+    /**
+     * Returns maximum supported chunk size in bytes
+     */
+    public static function maxChunkSize(): int
+    {
+        $max = \config('octane.swoole.options.package_max_length') ?: 10 * 1024 * 1024;
+
+        // Subtract 8KB (for request headers)
+        // Note: We might use very small values for testing purposes
+        if ($max > 1024 * 1024) {
+            $max -= 8192;
+        }
+
+        return $max;
     }
 }

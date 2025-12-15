@@ -5,11 +5,7 @@ function FileAPI(params = {})
     // Note: The value may change to the value provided by the server on the first upload.
     // Note: That chunk size here is only body, Swoole's package_max_length is body + headers,
     // so don't forget to subtract some margin (e.g. 8KB)
-    // FIXME: From my preliminary tests it looks like on the PHP side you need
-    // about 3-4 times as much memory as the request size when using Swoole
-    // (only 1 time without Swoole). And I didn't find a way to lower the memory usage,
-    // it looks like it happens before we even start to process the request in FilesController.
-    let maxChunkSize = 5 * 1024 * 1024 - 1024 * 8
+    let maxChunkSize = window.config['maxChunkSize'] || (5 * 1024 * 1024 - 1024 * 8)
 
     const area = $(params.dropArea)
 
