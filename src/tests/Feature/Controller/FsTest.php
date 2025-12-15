@@ -313,6 +313,7 @@ class FsTest extends TestCaseFs
         // Create some files and test again
         $file1 = $this->getTestFile($user, 'test1.txt', [], ['mimetype' => 'text/plain', 'size' => 12345]);
         $file2 = $this->getTestFile($user, 'test2.gif', [], ['mimetype' => 'image/gif', 'size' => 10000]);
+        $folder = $this->getTestCollection($user, 'VVV');
 
         $response = $this->actingAs($user)->get("api/v4/fs");
         $response->assertStatus(200);
@@ -320,13 +321,21 @@ class FsTest extends TestCaseFs
         $json = $response->json();
 
         $this->assertCount(3, $json);
-        $this->assertSame(2, $json['count']);
+        $this->assertSame(3, $json['count']);
         $this->assertFalse($json['hasMore']);
-        $this->assertCount(2, $json['list']);
-        $this->assertSame('test1.txt', $json['list'][0]['name']);
-        $this->assertSame($file1->id, $json['list'][0]['id']);
-        $this->assertSame('test2.gif', $json['list'][1]['name']);
-        $this->assertSame($file2->id, $json['list'][1]['id']);
+        $this->assertCount(3, $json['list']);
+        $this->assertSame('VVV', $json['list'][0]['name']);
+        $this->assertSame($folder->id, $json['list'][0]['id']);
+        $this->assertFalse(in_array('size', $json['list'][0]));
+        $this->assertFalse(in_array('mimetype', $json['list'][0]));
+        $this->assertSame('test1.txt', $json['list'][1]['name']);
+        $this->assertSame(12345, $json['list'][1]['size']);
+        $this->assertSame($file1->id, $json['list'][1]['id']);
+        $this->assertSame('text/plain', $json['list'][1]['mimetype']);
+        $this->assertSame('test2.gif', $json['list'][2]['name']);
+        $this->assertSame($file2->id, $json['list'][2]['id']);
+        $this->assertSame(10000, $json['list'][2]['size']);
+        $this->assertSame('image/gif', $json['list'][2]['mimetype']);
 
         // Searching
         $response = $this->actingAs($user)->get("api/v4/fs?search=t2");
@@ -353,7 +362,7 @@ class FsTest extends TestCaseFs
         $json = $response->json();
 
         $this->assertCount(3, $json);
-        $this->assertSame(1, $json['count']);
+        $this->assertSame(2, $json['count']);
     }
 
     /**
@@ -427,9 +436,22 @@ class FsTest extends TestCaseFs
         $this->assertSame($file->getProperty('mimetype'), $json['mimetype']);
         $this->assertSame((int) $file->getProperty('size'), $json['size']);
         $this->assertSame($file->getProperty('name'), $json['name']);
+        $this->assertSame('file', $json['type']);
         $this->assertTrue($json['isOwner']);
         $this->assertTrue($json['canUpdate']);
         $this->assertTrue($json['canDelete']);
+        $this->assertNull($json['parentId']);
+
+        $folder = $this->getTestCollection($john, 'VVV');
+        $folder->children()->attach($file);
+
+        // Get file metadata (file in a folder)
+        $response = $this->actingAs($john)->get("api/v4/fs/{$file->id}");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame($folder->id, $json['parentId']);
 
         // Get file content
         $response = $this->actingAs($john)->get("api/v4/fs/{$file->id}?download=1");

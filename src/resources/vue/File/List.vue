@@ -20,16 +20,27 @@
                         <thead>
                             <tr>
                                 <th scope="col" class="name">{{ $t('form.name') }}</th>
+                                <th scope="col" class="size">{{ $t('form.size') }}</th>
                                 <th scope="col" class="buttons"></th>
                             </tr>
                         </thead>
                         <tbody>
+                            <tr>
+                                <td v-if="collectionId" colspan="3" class="name">
+                                    <router-link :to="'/files' + (collection.parentId ? `/{$collection.parentId}` : '')">
+                                        <svg-icon icon="folder" class="me-1"></svg-icon> ..
+                                    </router-link>
+                                </td>
+                            </tr>
                             <tr v-for="file in files" :key="file.id" @click="$root.clickRecord">
                                 <td class="name">
                                     <router-link :to="(file.type === 'collection' ? '/files/' : '/file/') + `${file.id}`">
-                                        <svg-icon :icon="file.type === 'collection' ? 'folder' : 'file'" class="me-1"></svg-icon>
+                                        <svg-icon :icon="file.type === 'collection' ? 'folder' : ['far','file']" class="me-1" style="width:1em"></svg-icon>
                                         {{ file.name }}
                                     </router-link>
+                                </td>
+                                <td class="size">
+                                    <span>{{ fileSize(file) }}</span>
                                 </td>
                                 <td class="buttons">
                                     <btn v-if="file.type !== 'collection'" class="button-download p-0 ms-1" @click="fileDownload(file)" icon="download" :title="$t('btn.download')"></btn>
@@ -37,7 +48,7 @@
                                 </td>
                             </tr>
                         </tbody>
-                        <list-foot :colspan="2" :text="$t('file.list-empty')"></list-foot>
+                        <list-foot :colspan="3" :text="$t('file.list-empty')"></list-foot>
                     </table>
                     <list-more v-if="hasMore" :on-click="loadFiles"></list-more>
                 </div>
@@ -64,7 +75,7 @@
     import { library } from '@fortawesome/fontawesome-svg-core'
 
     library.add(
-        require('@fortawesome/free-solid-svg-icons/faFile').definition,
+        require('@fortawesome/free-regular-svg-icons/faFile').definition,
         require('@fortawesome/free-solid-svg-icons/faFolder').definition,
         require('@fortawesome/free-solid-svg-icons/faDownload').definition,
         require('@fortawesome/free-solid-svg-icons/faUpload').definition,
@@ -155,6 +166,13 @@
                 // This method first makes a request to the API to get the download URL (which does not
                 // require authentication) and then use it to download the file.
                 this.api.fileDownload(file.id)
+            },
+            fileSize(file) {
+                if (file.type != 'file') {
+                    return '';
+                }
+
+                return this.api.sizeText(file.size)
             },
             loadFiles(params) {
                 if (this.collectionId) {

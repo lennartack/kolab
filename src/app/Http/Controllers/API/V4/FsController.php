@@ -5,9 +5,12 @@ namespace App\Http\Controllers\API\V4;
 use App\Fs\Item;
 use App\Fs\Property;
 use App\Http\Controllers\RelationController;
+use App\Http\Resources\FsItemInfoResource;
+use App\Http\Resources\FsItemResource;
 use App\Rules\FileName;
 use App\Support\Facades\Storage;
 use App\Utils;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,10 +23,6 @@ class FsController extends RelationController
 {
     protected const READ = 'r';
     protected const WRITE = 'w';
-
-    protected const TYPE_COLLECTION = 'collection';
-    protected const TYPE_FILE = 'file';
-    protected const TYPE_UNKNOWN = 'unknown';
 
     /** @var string Resource localization label */
     protected $label = 'file';
@@ -264,8 +263,12 @@ class FsController extends RelationController
     }
 
     /**
-     * Listing of files (and folders).
+     * Listing of files and folders.
      */
+    #[QueryParameter('search', description: 'Search string', type: 'string')]
+    #[QueryParameter('page', description: 'Page number', type: 'int')]
+    #[QueryParameter('parent', description: 'Parent identifier', type: 'string')]
+    #[QueryParameter('type', description: 'Item type to return (collection or file)', type: 'string')]
     public function index(): JsonResponse
     {
         $search = trim(request()->input('search'));
@@ -275,9 +278,11 @@ class FsController extends RelationController
         $pageSize = 100;
         $hasMore = false;
 
-        $user = $this->guard()->user();
-
-        $result = $user->fsItems()->select('fs_items.*', 'fs_properties.value as name');
+        $result = $this->guard()->user()->fsItems()
+            ->select('fs_items.*', 'fs_properties.value as name')
+            ->join('fs_properties', 'fs_items.id', '=', 'fs_properties.item_id')
+            ->where('key', 'name')
+            ->whereNot('type', '&', Item::TYPE_INCOMPLETE);
 
         if ($parent) {
             $result->join('fs_relations', 'fs_items.id', '=', 'fs_relations.related_id')
@@ -287,13 +292,14 @@ class FsController extends RelationController
                 ->whereNull('fs_relations.related_id');
         }
 
-        // Add properties
-        $result->join('fs_properties', 'fs_items.id', '=', 'fs_properties.item_id')
-            ->whereNot('type', '&', Item::TYPE_INCOMPLETE)
-            ->where('key', 'name');
+        // Additional properties
+        foreach (['size', 'mimetype'] as $key) {
+            $result->selectRaw('(select value from fs_properties where fs_items.id = fs_properties.item_id'
+                . " and fs_properties.key = '{$key}') as {$key}");
+        }
 
         if ($type) {
-            if ($type == self::TYPE_COLLECTION) {
+            if ($type == FsItemResource::TYPE_COLLECTION) {
                 $result->where('type', '&', Item::TYPE_COLLECTION);
             } else {
                 $result->where('type', '&', Item::TYPE_FILE);
@@ -304,7 +310,8 @@ class FsController extends RelationController
             $result->whereLike('fs_properties.value', "%{$search}%");
         }
 
-        $result = $result->orderBy('name')
+        // Sort by name, but collections first
+        $result = $result->orderByRaw('case when fs_items.type & ' . Item::TYPE_COLLECTION . ' then 0 else 1 end, name')
             ->limit($pageSize + 1)
             ->offset($pageSize * ($page - 1))
             ->get();
@@ -314,32 +321,24 @@ class FsController extends RelationController
             $hasMore = true;
         }
 
-        // Process the result
-        // @phpstan-ignore argument.unresolvableType
-        $result = $result->map(function ($file) {
-            // TODO: This is going to be 100 SELECT queries (with pageSize=100), we should get
-            // file properties using the main query
-            $result = $this->objectToClient($file);
-            $result['name'] = $file->name; // @phpstan-ignore-line
-
-            return $result;
-        });
-
-        $result = [
-            'list' => $result,
+        return response()->json([
+            // List of filesystem items
+            'list' => FsItemResource::collection($result),
+            // @var int Number of entries in the list
             'count' => count($result),
+            // @var bool Indicates that there are more entries available
             'hasMore' => $hasMore,
-        ];
-
-        return response()->json($result);
+        ]);
     }
 
     /**
-     * Fetch the specific file metadata or content.
+     * Fetch file/folder metadata or content.
      *
-     * @param string $id the file identifier
+     * @param string $id The file/folder identifier
      */
-    public function show($id): JsonResponse|StreamedResponse
+    #[QueryParameter('download', description: 'Request the file content', type: 'bool')]
+    #[QueryParameter('downloadUrl', description: 'Request a unique download URL for the file content', type: 'bool')]
+    public function show($id): FsItemInfoResource|JsonResponse|StreamedResponse
     {
         $file = $this->inputItem($id, self::READ);
 
@@ -347,27 +346,21 @@ class FsController extends RelationController
             return $this->errorResponse($file);
         }
 
-        $response = $this->objectToClient($file, true);
+        if (request()->input('download')) {
+            // Return the file content
+            return Storage::fileDownload($file);
+        }
+
+        $response = new FsItemInfoResource($file);
 
         if (request()->input('downloadUrl')) {
             // Generate a download URL (that does not require authentication)
             $downloadId = Utils::uuidStr();
             Cache::add('download:' . $downloadId, $file->id, 60);
-            $response['downloadUrl'] = Utils::serviceUrl('api/v4/fs/downloads/' . $downloadId);
-        } elseif (request()->input('download')) {
-            // Return the file content
-            return Storage::fileDownload($file);
+            $response->downloadUrl = Utils::serviceUrl('api/v4/fs/downloads/' . $downloadId);
         }
 
-        $response['mtime'] = $file->updated_at->format('Y-m-d H:i');
-
-        // TODO: Handle read-write/full access rights
-        $isOwner = $this->guard()->user()->id == $file->user_id;
-        $response['canUpdate'] = $isOwner;
-        $response['canDelete'] = $isOwner;
-        $response['isOwner'] = $isOwner;
-
-        return response()->json($response);
+        return $response;
     }
 
     /**
@@ -380,7 +373,7 @@ class FsController extends RelationController
     public function store(Request $request)
     {
         $type = $request->input('type');
-        if ($type == self::TYPE_COLLECTION) {
+        if ($type == FsItemResource::TYPE_COLLECTION) {
             return $this->createCollection($request);
         }
 
@@ -771,11 +764,11 @@ class FsController extends RelationController
     {
         $result = ['id' => $object->id];
         if ($object->isCollection()) {
-            $result['type'] = self::TYPE_COLLECTION;
+            $result['type'] = FsItemResource::TYPE_COLLECTION;
         } elseif ($object->isFile()) {
-            $result['type'] = self::TYPE_FILE;
+            $result['type'] = FsItemResource::TYPE_FILE;
         } else {
-            $result['type'] = self::TYPE_UNKNOWN;
+            $result['type'] = FsItemResource::TYPE_UNKNOWN;
         }
 
         if ($full) {

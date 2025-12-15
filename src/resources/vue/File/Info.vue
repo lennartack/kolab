@@ -25,7 +25,7 @@
                             <div class="row plaintext mb-3">
                                 <label for="mtime" class="col-sm-4 col-form-label">{{ $t('file.mtime') }}</label>
                                 <div class="col-sm-8">
-                                    <span class="form-control-plaintext" id="mtime">{{ file.mtime }}</span>
+                                    <span class="form-control-plaintext" id="mtime">{{ file.created_at }}</span>
                                 </div>
                             </div>
                             <btn class="btn-primary" icon="download" @click="fileDownload">{{ $t('btn.download') }}</btn>
