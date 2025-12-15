@@ -52,9 +52,9 @@ class FreebusyTest extends TestCase
             ->withBasicAuth($user->email, 'simple123')
             ->get('/user/' . $user->email);
 
-        $body = (string) $response->getBody();
+        $body = $response->body();
 
-        $this->assertSame($response->getStatusCode(), 200);
+        $this->assertSame(200, $response->status());
         $this->assertStringContainsString('BEGIN:VFREEBUSY', $body);
         $this->assertStringContainsString('END:VFREEBUSY', $body);
         $this->assertStringContainsString("FREEBUSY:{$target_date}T170000Z/{$target_date}T180000Z", $body);
@@ -65,9 +65,9 @@ class FreebusyTest extends TestCase
         $response = Http::withOptions(['verify' => false])->baseUrl($baseUri)
             ->get('/user/' . $user->email, ['period' => 'P10D', 'start' => $start_date]);
 
-        $body = (string) $response->getBody();
+        $body = $response->body();
 
-        $this->assertSame($response->getStatusCode(), 200);
+        $this->assertSame(200, $response->status());
         $this->assertStringContainsString('BEGIN:VFREEBUSY', $body);
         $this->assertStringContainsString('END:VFREEBUSY', $body);
         $this->assertStringContainsString("FREEBUSY:{$target_date}T170000Z/{$target_date}T180000Z", $body);
