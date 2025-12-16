@@ -53,7 +53,7 @@ class WellKnownTest extends TestCase
 
         $response = $this->get('.well-known/mta-sts.txt');
         $response->assertStatus(200)
-            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+            ->assertHeader('Content-Type', 'text/plain; charset=utf-8')
             ->assertContent("version: STSv1\nmode: enforce\nmx: {$domain}\nmax_age: 604800");
     }
 }
