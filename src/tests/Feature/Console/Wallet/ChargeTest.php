@@ -3,6 +3,7 @@
 namespace Tests\Feature\Console\Wallet;
 
 use App\Jobs\Wallet\CheckJob;
+use App\User;
 use App\Wallet;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -68,7 +69,7 @@ class ChargeTest extends TestCase
 
         $this->artisan('wallet:charge')->assertExitCode(0);
 
-        Queue::assertPushed(CheckJob::class, 4);
+        Queue::assertPushed(CheckJob::class, User::withEnvTenantContext()->whereNull('role')->count());
         Queue::assertPushed(CheckJob::class, static function ($job) use ($wallet1) {
             $job_wallet_id = TestCase::getObjectProperty($job, 'walletId');
             return $job_wallet_id === $wallet1->id;
