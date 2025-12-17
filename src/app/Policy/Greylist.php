@@ -25,10 +25,10 @@ class Greylist
     protected $whitelist;
     protected $request = [];
 
-    public const CONNECTION_MIN_AGE_MINUTES = 5;
-    public const CONNECTION_MAX_AGE_DAYS = 7;
+    public const CONNECTION_MIN_AGE_MINUTES = 1;
+    public const CONNECTION_MAX_AGE_DAYS = 30;
     public const CONNECTION_WHITELIST_THRESHOLD = 5;
-    public const CONNECTION_WHITELIST_MAX_AGE_MONTHS = 1;
+    public const CONNECTION_WHITELIST_MAX_AGE_MONTHS = 2;
 
     /**
      * Class constructor
