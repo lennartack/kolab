@@ -86,7 +86,7 @@ class GreylistTest extends TestCase
 
         $this->assertNull($whitelist);
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < Greylist::CONNECTION_WHITELIST_THRESHOLD; $i++) {
             $request = new Greylist([
                 'sender' => "someone{$i}@sender.domain",
                 'recipient' => $this->domainOwner->email,
@@ -102,8 +102,9 @@ class GreylistTest extends TestCase
 
         $this->assertNotNull($whitelist);
 
+        $i = Greylist::CONNECTION_WHITELIST_THRESHOLD;
         $request = new Greylist([
-            'sender' => "someone5@sender.domain",
+            'sender' => "someone{$i}@sender.domain",
             'recipient' => $this->domainOwner->email,
             'client_address' => $this->clientAddress,
             'client_name' => 'some.mx',
@@ -116,7 +117,7 @@ class GreylistTest extends TestCase
         Greylist\Whitelist::where('sender_domain', 'sender.domain')->delete();
 
         // Test a stale whitelist
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < Greylist::CONNECTION_WHITELIST_THRESHOLD; $i++) {
             $request = new Greylist([
                 'sender' => "someone{$i}@sender.domain",
                 'recipient' => $this->domainOwner->email,
@@ -132,8 +133,9 @@ class GreylistTest extends TestCase
 
         $this->assertNotNull($whitelist);
 
+        $i = Greylist::CONNECTION_WHITELIST_THRESHOLD;
         $request = new Greylist([
-            'sender' => "someone5@sender.domain",
+            'sender' => "someone{$i}@sender.domain",
             'recipient' => $this->domainOwner->email,
             'client_address' => $this->clientAddress,
             'client_name' => 'some.mx',
@@ -142,7 +144,7 @@ class GreylistTest extends TestCase
 
         $this->assertFalse($request->shouldDefer());
 
-        $whitelist->updated_at = Carbon::now()->subMonthsWithoutOverflow(2);
+        $whitelist->updated_at = Carbon::now()->subMonthsWithoutOverflow(Greylist::CONNECTION_WHITELIST_MAX_AGE_MONTHS + 1);
         $whitelist->save(['timestamps' => false]);
 
         $this->assertTrue($request->shouldDefer());
@@ -162,7 +164,7 @@ class GreylistTest extends TestCase
             'net_type' => IP4Net::class,
         ]);
 
-        $connect->created_at = Carbon::now()->subMinutes(6);
+        $connect->created_at = Carbon::now()->subMinutes(Greylist::CONNECTION_MIN_AGE_MINUTES + 1);
         $connect->save();
 
         $request = new Greylist([
@@ -254,7 +256,7 @@ class GreylistTest extends TestCase
 
         $this->assertTrue($request->shouldDefer());
 
-        $connect->created_at = Carbon::now()->subMinutes(6);
+        $connect->created_at = Carbon::now()->subMinutes(Greylist::CONNECTION_MIN_AGE_MINUTES + 1);
         $connect->save();
 
         $this->assertFalse($request->shouldDefer());
@@ -399,7 +401,7 @@ class GreylistTest extends TestCase
         $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
         $this->assertNull($whitelist);
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < Greylist::CONNECTION_WHITELIST_THRESHOLD; $i++) {
             $request = new Greylist([
                 'sender' => "someone{$i}@sender.domain",
                 'recipient' => $this->testSharedFolder->email,
@@ -414,8 +416,9 @@ class GreylistTest extends TestCase
         $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
         $this->assertNotNull($whitelist);
 
+        $i = Greylist::CONNECTION_WHITELIST_THRESHOLD;
         $request = new Greylist([
-            'sender' => "someone5@sender.domain",
+            'sender' => "someone{$i}@sender.domain",
             'recipient' => $this->testSharedFolder->email,
             'client_address' => $this->clientAddress,
             'client_name' => 'some.mx',
@@ -431,7 +434,7 @@ class GreylistTest extends TestCase
         $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
         $this->assertNull($whitelist);
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < Greylist::CONNECTION_WHITELIST_THRESHOLD; $i++) {
             $request = new Greylist([
                 'sender' => "someone{$i}@sender.domain",
                 'recipient' => $this->testResource->email,
@@ -446,8 +449,9 @@ class GreylistTest extends TestCase
         $whitelist = Greylist\Whitelist::where('sender_domain', 'sender.domain')->first();
         $this->assertNotNull($whitelist);
 
+        $i = Greylist::CONNECTION_WHITELIST_THRESHOLD;
         $request = new Greylist([
-            'sender' => "someone5@sender.domain",
+            'sender' => "someone{$i}@sender.domain",
             'recipient' => $this->testResource->email,
             'client_address' => $this->clientAddress,
             'client_name' => 'some.mx',

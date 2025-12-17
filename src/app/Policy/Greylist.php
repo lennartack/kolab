@@ -25,6 +25,11 @@ class Greylist
     protected $whitelist;
     protected $request = [];
 
+    public const CONNECTION_MIN_AGE_MINUTES = 5;
+    public const CONNECTION_MAX_AGE_DAYS = 7;
+    public const CONNECTION_WHITELIST_THRESHOLD = 5;
+    public const CONNECTION_WHITELIST_MAX_AGE_MONTHS = 1;
+
     /**
      * Class constructor
      *
@@ -122,7 +127,7 @@ class Greylist
         $connect = $this->findConnectsCollection()->first();
 
         // Purge all old information if we have no recent entry
-        if ($connect && $connect->updated_at < $this->timestamp->copy()->subDays(7)) {
+        if ($connect && $connect->updated_at < $this->timestamp->copy()->subDays(self::CONNECTION_MAX_AGE_DAYS)) {
             $this->findConnectsCollection()->delete();
             $connect = null;
         }
@@ -143,12 +148,12 @@ class Greylist
             ->where('net_type', $this->netType)
             ->first();
 
-        $cutoffDate = $this->timestamp->copy()->subDays(7)->startOfDay();
+        $cutoffDate = $this->timestamp->copy()->subDays(self::CONNECTION_MAX_AGE_DAYS)->startOfDay();
 
         DB::beginTransaction();
 
         // Whitelist older than a month, delete it
-        if ($this->whitelist && $this->whitelist->updated_at < $this->timestamp->copy()->subMonthsWithoutOverflow(1)) {
+        if ($this->whitelist && $this->whitelist->updated_at < $this->timestamp->copy()->subMonthsWithoutOverflow(self::CONNECTION_WHITELIST_MAX_AGE_MONTHS)) {
             $this->whitelist->delete();
             $this->whitelist = null;
         }
@@ -172,7 +177,7 @@ class Greylist
                 ->update(['greylisting' => false, 'updated_at' => $this->timestamp]);
 
             $enabled = false;
-        } elseif ($all->count() >= 4) {
+        } elseif ($all->count() >= (self::CONNECTION_WHITELIST_THRESHOLD - 1)) {
             // Automatically create a whitelist if we have at least 5 (4 existing plus this) messages from the sender
             $this->whitelist = Whitelist::create([
                 'sender_domain' => $this->senderDomain,
@@ -202,7 +207,7 @@ class Greylist
             $connect->connect_count++;
 
             // TODO: The period of time for which the greylisting persists is configurable.
-            if ($connect->created_at < $this->timestamp->copy()->subMinutes(5)) {
+            if ($connect->created_at < $this->timestamp->copy()->subMinutes(self::CONNECTION_MIN_AGE_MINUTES)) {
                 $defer = false;
 
                 $connect->greylisting = false;
