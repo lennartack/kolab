@@ -7,6 +7,7 @@ use App\Payment;
 use App\Transaction;
 use App\User;
 use App\Wallet;
+use App\Policy\Greylist;
 use Carbon\Carbon;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\Response;
@@ -215,6 +216,11 @@ class MetricsController extends Controller
 
         $numberOfPaidPayments = Payment::where('status', Payment::STATUS_PAID)->count();
         $numberOfFailedPayments = Payment::where('status', Payment::STATUS_FAILED)->count();
+
+        $numberOfGreylistedConnections = Greylist\Connect::where('greylisting', true)->count();
+        $numberOfNotGreylistedConnections = Greylist\Connect::where('greylisting', false)->count();
+        $numberOfWhitelistEntries = Greylist\Whitelist::count();
+
         $text = <<<EOF
             # HELP kolab_users_count Number of users with a certain state
             # TYPE kolab_users_count gauge
@@ -251,6 +257,13 @@ class MetricsController extends Controller
             # HELP kolab_payers_active_count Number of distinct wallets with payments in past month
             # TYPE kolab_payers_active_count gauge
             kolab_payers_active_count{instance="{$appDomain}", tenant="{$tenantId}"} {$numberOfActivePayers}
+            # HELP kolab_greylist_connections_count Number of greylisted connections
+            # TYPE kolab_greylist_connections_count gauge
+            kolab_greylist_connections_count{instance="{$appDomain}", status="greylisted"} {$numberOfGreylistedConnections}
+            kolab_greylist_connections_count{instance="{$appDomain}", status="notgreylisted"} {$numberOfNotGreylistedConnections}
+            # HELP kolab_greylist_whitelist_count Number of whitelist entries
+            # TYPE kolab_greylist_whitelist_count gauge
+            kolab_greylist_whitelist_count{instance="{$appDomain}"} {$numberOfWhitelistEntries}
             {$horizon}
             \n
             EOF;
