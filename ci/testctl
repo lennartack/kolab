@@ -1,8 +1,8 @@
 #!/bin/bash
 
 base_dir="$(dirname $(realpath "$0"))"
-pushd "${base_dir}"
-pushd ..
+pushd "${base_dir}" > /dev/null
+pushd .. > /dev/null
 
 set -e
 
@@ -635,6 +635,22 @@ kolab__db() {
 kolab__rcdb() {
     POD=${POD:-dev}
     $PODMAN exec -ti $POD-mariadb /bin/bash -c "mysql -h 127.0.0.1 -u roundcube --password=simple123 --auto-rehash roundcube"
+}
+
+kolab__completion() {
+# Hardcoded fish completions
+cat <<EOF
+    set -l commands (grep ^kolab__ $0 | sed 's/kolab__//' | sed 's/() {//' | tr '\n' ' ')
+
+    # Disable file completions
+    complete -c testctl -f
+
+    complete -c testctl -n "__fish_seen_subcommand_from test" \
+        -a "(find src/tests/ -name '*.php' | sed 's|src/||')"
+
+    complete -c testctl -n "not __fish_seen_subcommand_from \$commands" \
+        -a "\$commands"
+EOF
 }
 
 kolab__help() {
