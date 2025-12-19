@@ -200,6 +200,7 @@ class Device extends Model
         $user->email = $user_id . '@' . \config('app.domain');
         $user->password = $password;
         $user->role = User::ROLE_DEVICE;
+        $user->status |= User::STATUS_ACTIVE;
         $user->save();
 
         $user->settings()->insert([

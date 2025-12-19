@@ -259,6 +259,7 @@ class DeviceTest extends TestCase
         $this->assertSame(User::ROLE_DEVICE, $account->role);
         $this->assertSame($plan->id, $account->getSetting('plan_id'));
         $this->assertSame($this->hash, $account->getSetting('signup_token'));
+        $this->assertTrue($account->isActive());
 
         $entitlements = $device->wallet()->entitlements()->get();
         $this->assertCount(1, $entitlements);
@@ -290,6 +291,7 @@ class DeviceTest extends TestCase
         $this->assertSame(User::ROLE_DEVICE, $device->account->role);
         $this->assertSame($plan->id, $device->account->getSetting('plan_id'));
         $this->assertSame($this->hash, $device->account->getSetting('signup_token'));
+        $this->assertTrue($device->account->isActive());
 
         $entitlements = $device->wallet()->entitlements()->get();
         $this->assertCount(1, $entitlements);
