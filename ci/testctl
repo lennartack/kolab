@@ -471,14 +471,15 @@ kolab__policytest() {
 kolab__mailtransporttest() {
     POD=${POD:-dev}
 
+    MAILTRANSPORTTEST="$PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py"
     # Send email
-    $PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate || exit 1
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate || exit 1
     # Send email to two recipients
-    $PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --target-address admin@kolab.local --target-address test1@kolab.local || exit 1
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --target-address admin@kolab.local --target-address test1@kolab.local || exit 1
 
     # Expected failures
-    # Can't send with empty sender
-    $PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address "" && exit 1
+    # Can't send with empty sender on external submission
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address "" && exit 1
 
     echo "Success"
 }
