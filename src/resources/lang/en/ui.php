@@ -396,6 +396,8 @@ return [
         'password-policy' => "Password Policy",
         'password-retention' => "Password Retention",
         'password-max-age' => "Require a password change every",
+        'status-enabled' => "policy enabled",
+        'status-disabled' => "policy disabled",
     ],
 
     'resource' => [

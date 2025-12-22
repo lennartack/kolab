@@ -214,8 +214,11 @@
                                 <label for="greylist_enabled" class="col-sm-4 col-form-label">{{ $t('policies.greylist') }}</label>
                                 <div class="col-sm-8">
                                     <span class="form-control-plaintext" id="greylist_enabled">
-                                        <span v-if="user.config.greylist_enabled" class="text-success">{{ $t('form.enabled') }}</span>
+                                        <span v-if="isSettingEnabled('greylist')" class="text-success">{{ $t('form.enabled') }}</span>
                                         <span v-else class="text-danger">{{ $t('form.disabled') }}</span>
+                                        <span v-if="user.wallet.user_id == user.id">
+                                            ({{ $t('policies.status-' + (isPolicyEnabled('greylist') ? 'enabled' : 'disabled')) }})
+                                        </span>
                                     </span>
                                 </div>
                             </div>
@@ -687,6 +690,18 @@
             setSuspendState() {
                 this.$root.clearFormValidation($('#suspend-dialog'))
                 this.$refs.suspendDialog.show()
+            },
+            isSettingEnabled(name) {
+                const setting_name = name + '_enabled'
+
+                if (this.user.config[setting_name]) {
+                    return true
+                }
+
+                return this.user.config[setting_name] === null && this.isPolicyEnabled(name)
+            },
+            isPolicyEnabled(name) {
+                return this.user.config[name + '_policy']
             },
             submitSuspend() {
                 const post = { comment: this.comment }
