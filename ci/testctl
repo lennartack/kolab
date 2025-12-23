@@ -535,8 +535,8 @@ kolab__mailtransporttest() {
     _green "Don't accept email to non-local users"
     $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.org --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
 
-    _green "Empty sender is accepted"
-    $MAILTRANSPORTTEST --timeout 1 --sender-username "" --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
+    _green "Accept empty sender on port 25"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username "" --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp || exit 1
     # FIXME doesn't currently work for unknown reason (maybe because there's no DNS record?)
     # _green "Receive on secondary domain"
     # $MAILTRANSPORTTEST --timeout 1 --sender-username foobar@kolab.org --sender-host localhost --sender-port 10025 --recipient-username admin@kolab-secondary.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp || exit 1
