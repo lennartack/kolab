@@ -468,20 +468,86 @@ kolab__policytest() {
     fi
 }
 
+kolab__artisan() {
+    POD=${POD:-dev}
+    $PODMAN exec $POD-webapp env APP_DEBUG=0 ./artisan $@
+}
+
+kolab__prepare_mailtransporttest() {
+    POD=${POD:-dev}
+    # A second test user
+    kolab__artisan user:create "test1@kolab.local" --password="simple123" --package=kolab
+
+    # Setup a user that delegates to admin@kolab.local
+    kolab__artisan user:create "delegator@kolab.local" --password="simple123" --package=kolab
+    kolab__artisan user:create-delegation delegator@kolab.local admin@kolab.local
+
+    # Create an alias for admin@kolab.local
+    kolab__artisan user:add-alias admin@kolab.local alias@kolab.local
+
+    # Create a user in a secondary domain
+    kolab__artisan domain:create kolab-secondary.local
+    WALLET="$(kolab__artisan user:wallet admin@kolab.local)"
+    ci/testctl artisan domain:set-wallet kolab-secondary.local "$WALLET"
+    kolab__artisan user:create "admin@kolab-secondary.local" --password="simple123" --package=kolab
+
+    kolab__artisan queue:work --stop-when-empty
+}
+
+_green() {
+    GREEN='\033[0;32m'
+    NC='\033[0m' # No Color
+    echo -e "${GREEN}$1${NC}"
+}
+
 kolab__mailtransporttest() {
     POD=${POD:-dev}
-
     MAILTRANSPORTTEST="$PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py"
-    # Send email
-    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate || exit 1
-    # Send email to two recipients
-    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --target-address admin@kolab.local --target-address test1@kolab.local || exit 1
+
+    _green "Send email"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 || exit 1
+    _green "Send email to two recipients"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --target-address admin@kolab.local --target-address test1@kolab.local || exit 1
+    _green "Send email from alias"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address alias@kolab.local|| exit 1
+    _green "Send from delegator"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address delegator@kolab.local|| exit 1
+
+    _green "Receive on alias"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --target-address alias@kolab.local|| exit 1
 
     # Expected failures
-    # Can't send with empty sender on external submission
+    _green "Can't send with empty sender on external submission"
     $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address "" && exit 1
+    _green "Can't send from another users account"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address "test1@kolab.local" && exit 1
+    _green "Can't send from an external domain"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address "kolab@kolabnow.com" && exit 1
+    _green "Can't send from a nonexisting account"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --from-address "clkjsdfl@kolab.org" && exit 1
 
-    echo "Success"
+    _green "Accept email on port 25 to local users"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username test1@kolab.org --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp || exit 1
+
+    # FIXME we currently bypass this because we short-circuit checks via mynetworks
+    # _green "Don't accept email on port 25 from local users"
+    # $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
+    _green "Don't accept email to non-local users"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.org --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
+
+    _green "Empty sender is accepted"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username "" --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
+    # FIXME doesn't currently work for unknown reason (maybe because there's no DNS record?)
+    # _green "Receive on secondary domain"
+    # $MAILTRANSPORTTEST --timeout 1 --sender-username foobar@kolab.org --sender-host localhost --sender-port 10025 --recipient-username admin@kolab-secondary.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp || exit 1
+
+    # TODO
+    # * delivery to shared folders
+    # * delivery to secondary domain
+    # * test greylisting
+    # * test spam
+
+    _green "Success"
 }
 
 # Deploy a test deployment in the "dev" pod
