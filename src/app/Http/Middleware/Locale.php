@@ -14,8 +14,6 @@ class Locale
      */
     public function handle(Request $request, \Closure $next)
     {
-        $langDir = resource_path('lang');
-        $enabledLanguages = ContentController::locales();
         $lang = null;
 
         // setLocale() will modify the app.locale config entry, so any subsequent
@@ -24,30 +22,16 @@ class Locale
         $default = \env('APP_LOCALE', 'en');
 
         // Try to get the language from the cookie
-        if (
-            ($cookie = $request->cookie('language'))
-            && in_array($cookie, $enabledLanguages)
-            && ($cookie == $default || file_exists("{$langDir}/{$cookie}"))
-        ) {
-            $lang = $cookie;
+        $_lang = self::getLanguageCookie($request);
+        if (self::isLocaleAvailable($request, $_lang, $default)) {
+            $lang = $_lang;
         }
 
-        // If there's no cookie select try the browser languages
+        // If there's no cookie try the client languages
         if (!$lang) {
-            $preferences = array_map(
-                static function ($lang) {
-                    return preg_replace('/[^a-z].*$/', '', strtolower($lang));
-                },
-                $request->getLanguages()
-            );
-
-            foreach ($preferences as $pref) {
-                if (
-                    !empty($pref)
-                    && in_array($pref, $enabledLanguages)
-                    && ($pref == $default || file_exists("{$langDir}/{$pref}"))
-                ) {
-                    $lang = $pref;
+            foreach ($request->getLanguages() as $_lang) {
+                if (self::isLocaleAvailable($request, $_lang, $default)) {
+                    $lang = $_lang;
                     break;
                 }
             }
@@ -66,5 +50,44 @@ class Locale
         \app('translator')->addNamespace('theme', \resource_path("themes/{$theme}/lang"));
 
         return $next($request);
+    }
+
+    protected static function getLanguageCookie(Request $request): ?string
+    {
+        // Note: $request->cookie() works only with Laravel cookies that are encrypted,
+        // that's why we check the header manually
+        if (preg_match('/(^|; )language=([a-zA-Z-_]+)/', (string) $request->header('cookie'), $matches)) {
+            return $matches[2];
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if the specified language is available
+     */
+    protected static function isLocaleAvailable(Request $request, &$lang, $default): bool
+    {
+        if (!is_string($lang) || $lang === '') {
+            return false;
+        }
+
+        $lang = preg_replace('/[^a-z].*$/', '', strtolower($lang));
+
+        // Always accept the default language without any additional checks
+        if ($lang == $default) {
+            return true;
+        }
+
+        $langDir = resource_path('lang');
+
+        // Allow any existing language for API requests
+        if (str_starts_with($request->path(), 'api/')) {
+            return file_exists("{$langDir}/{$lang}");
+        }
+
+        // Allow languages enabled for UI
+        $enabledLanguages = ContentController::locales();
+        return in_array($lang, $enabledLanguages) && file_exists("{$langDir}/{$lang}");
     }
 }
