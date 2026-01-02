@@ -6,6 +6,7 @@ use App\Discount;
 use App\Http\Controllers\API\V4\Admin\StatsController;
 use App\Payment;
 use App\Utils;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -15,6 +16,8 @@ class StatsTest extends TestCase
     {
         parent::setUp();
         self::useAdminUrl();
+
+        Carbon::setTestNow(Carbon::createFromDate(2025, 12, 31));
 
         Payment::query()->delete();
         DB::table('wallets')->update(['discount_id' => null]);
@@ -68,7 +71,7 @@ class StatsTest extends TestCase
         $this->assertSame('Income in CHF - last 8 weeks', $json['title']);
         $this->assertSame('bar', $json['type']);
         $this->assertCount(8, $json['data']['labels']);
-        $this->assertSame(date('Y-W'), $json['data']['labels'][7]);
+        $this->assertSame('2026-01', $json['data']['labels'][7]);
         $this->assertSame([['values' => [0, 0, 0, 0, 0, 0, 0, 0]]], $json['data']['datasets']);
 
         // 'users' chart
@@ -79,7 +82,7 @@ class StatsTest extends TestCase
 
         $this->assertSame('Users - last 8 weeks', $json['title']);
         $this->assertCount(8, $json['data']['labels']);
-        $this->assertSame(date('Y-W'), $json['data']['labels'][7]);
+        $this->assertSame('2026-01', $json['data']['labels'][7]);
         $this->assertCount(2, $json['data']['datasets']);
         $this->assertSame('Created', $json['data']['datasets'][0]['name']);
         $this->assertSame('Deleted', $json['data']['datasets'][1]['name']);
@@ -222,7 +225,7 @@ class StatsTest extends TestCase
         $this->assertSame('Income in CHF - last 8 weeks', $json['title']);
         $this->assertSame('bar', $json['type']);
         $this->assertCount(8, $json['data']['labels']);
-        $this->assertSame(date('Y-W'), $json['data']['labels'][7]);
+        $this->assertSame('2026-01', $json['data']['labels'][7]);
 
         // 7000 CHF + 3000 EUR =
         $expected = 7000 + (int) round(3000 * Utils::exchangeRate('EUR', 'CHF'));
@@ -245,10 +248,12 @@ class StatsTest extends TestCase
 
         $json = $response->json();
 
+        $weeks = now()->isoWeeksInYear();
+
         $this->assertSame('Payers - last year', $json['title']);
         $this->assertSame('line', $json['type']);
         $this->assertCount(54, $json['data']['labels']);
-        $this->assertSame(date('Y-W'), $json['data']['labels'][53]);
+        $this->assertSame('2026-01', $json['data']['labels'][53]);
         $this->assertCount(1, $json['data']['datasets']);
         $this->assertCount(54, $json['data']['datasets'][0]['values']);
 
@@ -269,5 +274,58 @@ class StatsTest extends TestCase
         $json = $response->json();
 
         $this->assertSame(6, $json['data']['datasets'][0]['values'][53]);
+    }
+
+    /**
+     * Test StatsController::getWeeks()
+     */
+    public function testGetWeeks(): void
+    {
+        $controller = new StatsController();
+
+        Carbon::setTestNow(Carbon::createFromDate(2025, 12, 28));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-15 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-51', '2025-52'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2025, 12, 29));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2025, 12, 30));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2025, 12, 31));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2026, 1, 1));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2026, 1, 2));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2026, 1, 3));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2026, 1, 4));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-22 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2025-52', '2026-01'], $labels);
+
+        Carbon::setTestNow(Carbon::createFromDate(2026, 1, 5));
+        [$start, $labels] = self::invokeMethod($controller, 'getWeeks', [2]);
+        $this->assertSame('2025-12-29 00:00:00', $start->format('Y-m-d H:i:s'));
+        $this->assertSame(['2026-01', '2026-02'], $labels);
     }
 }

@@ -95,20 +95,7 @@ class StatsController extends Controller
      */
     protected function chartIncome(): array
     {
-        $weeks = 8;
-        $start = Carbon::now();
-        $labels = [];
-
-        while ($weeks > 0) {
-            $labels[] = $start->format('Y-W');
-            $weeks--;
-            if ($weeks) {
-                $start->subWeeks(1);
-            }
-        }
-
-        $labels = array_reverse($labels);
-        $start->startOfWeek(Carbon::MONDAY);
+        [$start, $labels] = $this->getWeeks(8);
 
         // FIXME: We're using wallets.currency instead of payments.currency and payments.currency_amount
         //       as I believe this way we have more precise amounts for this use-case (and default currency)
@@ -223,20 +210,7 @@ class StatsController extends Controller
      */
     protected function chartUsers(): array
     {
-        $weeks = 8;
-        $start = Carbon::now();
-        $labels = [];
-
-        while ($weeks > 0) {
-            $labels[] = $start->format('Y-W');
-            $weeks--;
-            if ($weeks) {
-                $start->subWeeks(1);
-            }
-        }
-
-        $labels = array_reverse($labels);
-        $start->startOfWeek(Carbon::MONDAY);
+        [$start, $labels] = $this->getWeeks(8);
 
         $created = DB::table('users')
             ->selectRaw("date_format(created_at, '%x-%v') as period, count(*) as cnt")
@@ -299,19 +273,7 @@ class StatsController extends Controller
      */
     protected function chartUsersAll(): array
     {
-        $weeks = 54;
-        $start = Carbon::now();
-        $labels = [];
-
-        while ($weeks > 0) {
-            $labels[] = $start->format('Y-W');
-            $weeks--;
-            if ($weeks) {
-                $start->subWeeks(1);
-            }
-        }
-
-        $start->startOfWeek(Carbon::MONDAY);
+        [$start, $labels] = $this->getWeeks(54);
 
         $created = DB::table('users')
             ->selectRaw("date_format(created_at, '%x-%v') as period, count(*) as cnt")
@@ -343,7 +305,7 @@ class StatsController extends Controller
         $sus_count = $this->applyTenantScope(DB::table('users')->whereNull('deleted_at')
             ->where('status', '&', User::STATUS_SUSPENDED))->count();
 
-        $empty = array_fill_keys(array_reverse($labels), 0);
+        $empty = array_fill_keys($labels, 0);
         $created = array_merge($empty, $created->pluck('cnt', 'period')->all());
         $deleted = array_merge($empty, $deleted->pluck('cnt', 'period')->all());
         $sus_created = array_merge($empty, $sus_created->pluck('cnt', 'period')->all());
@@ -351,7 +313,7 @@ class StatsController extends Controller
         $all = [];
         $suspended = [];
 
-        foreach ($labels as $label) {
+        foreach (array_reverse($labels) as $label) {
             $all[] = $count;
             $suspended[] = $sus_count;
             $count -= $created[$label] - $deleted[$label];
@@ -360,7 +322,6 @@ class StatsController extends Controller
 
         $all = array_reverse($all);
         $suspended = array_reverse($suspended);
-        $labels = array_reverse($labels);
 
         // $start = 3000;
         // for ($i = 0; $i < count($labels); $i++) {
@@ -566,19 +527,7 @@ class StatsController extends Controller
      */
     protected function getCollectedStats(int $type, int $weeks, $itemCallback = null): array
     {
-        $start = Carbon::now();
-        $labels = [];
-
-        while ($weeks > 0) {
-            $labels[] = $start->format('Y-W');
-            $weeks--;
-            if ($weeks) {
-                $start->subWeeks(1);
-            }
-        }
-
-        $labels = array_reverse($labels);
-        $start->startOfWeek(Carbon::MONDAY);
+        [$start, $labels] = $this->getWeeks($weeks);
 
         // Get the stats grouped by tenant and week
         $stats = DB::table('stats')
@@ -603,5 +552,29 @@ class StatsController extends Controller
         $result = array_values(array_merge(array_fill_keys($labels, 0), $result));
 
         return [$labels, $result];
+    }
+
+    /**
+     * Get labels for number of weeks in a period, initialize the start date
+     */
+    protected static function getWeeks($count): array
+    {
+        $start = Carbon::now();
+        $start->startOfWeek(Carbon::MONDAY);
+
+        $labels = [];
+
+        while ($count > 0) {
+            // Use next Thursday to get proper ISO week label
+            $labels[] = (clone $start)->next('Thursday')->format('Y-W');
+            $count--;
+            if ($count) {
+                $start->subWeeks(1);
+            }
+        }
+
+        $labels = array_reverse($labels);
+
+        return [$start, $labels];
     }
 }
