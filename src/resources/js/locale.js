@@ -82,4 +82,5 @@ export function loadLangAsync() {
             loadedLanguages.push(lang)
             return Promise.resolve(setI18nLanguage(lang))
         })
+        .catch(error => { /* ignore errors */ })
 }
