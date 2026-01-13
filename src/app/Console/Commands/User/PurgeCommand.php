@@ -22,7 +22,6 @@ class PurgeCommand extends Command
      */
     protected $description = 'Delete users that are degraded';
 
-
     private function parseAge($age)
     {
         if (preg_match('/^([0-9]+)([my])$/i', $age, $matches)) {
@@ -49,7 +48,7 @@ class PurgeCommand extends Command
     {
         $dry_run = $this->option('dry-run');
         $min_age = $this->option('min-age');
-        $limit = $this->option('limit');
+        $limit = (int) $this->option('limit');
         $suspended = $this->option('suspended');
 
         if (!$dry_run) {
@@ -63,9 +62,8 @@ class PurgeCommand extends Command
         if (!$date) {
             $this->error("Invalid --min-age.");
             return 1;
-        } else {
-            $this->info("The cutoff date is " . $date->format('Y-m-d H:i:s'));
         }
+        $this->info("The cutoff date is " . $date->format('Y-m-d H:i:s'));
 
         $statusFilter = User::STATUS_DEGRADED;
         if ($suspended) {
@@ -140,6 +138,6 @@ class PurgeCommand extends Command
                 $user->delete();
             }
         }
-        $this->info("A total of $count users will be deleted");
+        $this->info("A total of {$count} users will be deleted");
     }
 }
