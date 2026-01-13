@@ -15,6 +15,7 @@ use App\Entitlement;
 use App\EventLog;
 use App\Group;
 use App\GroupSetting;
+use App\Http\Theme;
 use App\Meet\Room;
 use App\Observers\DelegationObserver;
 use App\Observers\DomainObserver;
@@ -105,6 +106,9 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->bind('openexchangerates', static function () {
             return new OpenExchangeRates();
+        });
+        $this->app->bind('theme', static function () {
+            return new Theme();
         });
     }
 

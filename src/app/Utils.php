@@ -2,7 +2,7 @@
 
 namespace App;
 
-use App\Http\Controllers\ContentController;
+use App\Support\Facades\Theme;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -102,7 +102,10 @@ class Utils
         }
 
         $env = self::uiEnv();
-        return view($env['view'])->with('env', $env);
+
+        return view($env['view'])
+            ->with('env', $env)
+            ->with('meta', Theme::meta());
     }
 
     /**
@@ -469,8 +472,8 @@ class Utils
         $env['paymentProvider'] = \config('services.payment_provider');
         $env['stripePK'] = \config('services.stripe.public_key');
         $env['maxChunkSize'] = \App\Backends\Storage::maxChunkSize();
-        $env['languages'] = ContentController::locales();
-        $env['menu'] = ContentController::menu();
+        $env['languages'] = Theme::locales();
+        $env['menu'] = Theme::menu();
 
         return $env;
     }

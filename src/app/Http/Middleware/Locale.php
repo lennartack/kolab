@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Controllers\ContentController;
+use App\Support\Facades\Theme;
 use Illuminate\Http\Request;
 
 class Locale
@@ -87,7 +87,7 @@ class Locale
         }
 
         // Allow languages enabled for UI
-        $enabledLanguages = ContentController::locales();
+        $enabledLanguages = Theme::locales();
         return in_array($lang, $enabledLanguages) && file_exists("{$langDir}/{$lang}");
     }
 }
