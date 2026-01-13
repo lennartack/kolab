@@ -38,11 +38,23 @@ class ExpungeCommand extends Command
             ->orderBy('deleted_at')
             ->cursor();
 
-        // FIXME: Should we use an async job for each file?
+        foreach ($files as $file) {
+            Storage::fileDelete($file);
+        }
+
+        // Remove orphaned files
+        $files = Item::withTrashed()
+            ->where('type', '&', Item::TYPE_FILE)
+            ->whereNull('user_id')
+            ->orderBy('deleted_at')
+            ->cursor();
 
         foreach ($files as $file) {
             Storage::fileDelete($file);
         }
+
+        // Remove orphaned items (of any type)
+        Item::withTrashed()->whereNull('user_id')->forceDelete();
 
         // We remove orphaned chunks after upload ttl (while marked as deleted some chunks may still be
         // in the process of uploading a file).
@@ -51,10 +63,10 @@ class ExpungeCommand extends Command
             ->orderBy('deleted_at')
             ->cursor();
 
-        // FIXME: Should we use an async job for each chunk?
-
         foreach ($chunks as $chunk) {
             Storage::fileChunkDelete($chunk);
         }
+
+        // FIXME: What about soft-deleted collection items, should we remove them (after some time)?
     }
 }

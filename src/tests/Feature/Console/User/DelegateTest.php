@@ -4,7 +4,6 @@ namespace Tests\Feature\Console\User;
 
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
-use App\Delegation;
 
 class DelegateTest extends TestCase
 {

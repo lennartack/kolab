@@ -4,7 +4,6 @@ namespace App\Console\Commands\User;
 
 use App\Console\Command;
 use App\Delegation;
-use Carbon\Carbon;
 
 class DelegateCommand extends Command
 {

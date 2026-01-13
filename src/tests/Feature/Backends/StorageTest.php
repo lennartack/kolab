@@ -3,12 +3,51 @@
 namespace Tests\Feature\Backends;
 
 use App\Backends\Storage;
+use App\Fs\Chunk;
 use App\Fs\Item;
 use Illuminate\Support\Facades\Storage as LaravelStorage;
 use Tests\TestCaseFs;
 
 class StorageTest extends TestCaseFs
 {
+    /**
+     * Test Storage::fileChunkDelete()
+     */
+    public function testFileChunkDelete(): void
+    {
+        $disk = LaravelStorage::disk(\config('filesystems.default'));
+        $user = $this->getTestUser('john@kolab.org');
+        $file = $this->getTestFile($user, 'test.txt', 'Test content1', ['mimetype' => 'text/plain']);
+
+        $chunk = $file->chunks()->first();
+        $path = Storage::chunkLocation($chunk->chunk_id, $file);
+
+        $this->assertTrue(LaravelStorage::fileExists($path));
+
+        Storage::fileChunkDelete($chunk);
+
+        $this->assertFalse(LaravelStorage::fileExists($path));
+        $this->assertNull(Chunk::find($chunk->id));
+    }
+
+    /**
+     * Test Storage::fileDelete()
+     */
+    public function testFileDelete(): void
+    {
+        $disk = LaravelStorage::disk(\config('filesystems.default'));
+        $user = $this->getTestUser('john@kolab.org');
+        $file = $this->getTestFile($user, 'test.txt', 'Test content1', ['mimetype' => 'text/plain']);
+
+        $path = $file->path . '/' . $file->id;
+        $this->assertTrue(LaravelStorage::directoryExists($path));
+
+        Storage::fileDelete($file);
+
+        $this->assertFalse(LaravelStorage::directoryExists($path));
+        $this->assertNull(Item::find($file->id));
+    }
+
     /**
      * Test Storage::fileInput() splitting the input into chunks
      */
