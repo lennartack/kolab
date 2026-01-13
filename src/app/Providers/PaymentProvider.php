@@ -327,7 +327,7 @@ abstract class PaymentProvider
     public static function redirectUrl(): string
     {
         $url = Utils::serviceUrl('/wallet');
-        $domain = preg_replace('/:[0-9]+$/', '', request()->getHttpHost());
+        $domain = \request()->host();
 
         if (str_starts_with($domain, 'reseller.')) {
             $url = preg_replace('|^(https?://)([^/]+)|', '\1' . $domain, $url);

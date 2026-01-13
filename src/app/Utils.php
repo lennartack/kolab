@@ -440,7 +440,7 @@ class Utils
     public static function uiEnv(): array
     {
         $countries = include resource_path('countries.php');
-        $req_domain = preg_replace('/:[0-9]+$/', '', request()->getHttpHost());
+        $req_domain = \request()->host();
         $sys_domain = \config('app.domain');
         $opts = [
             'app.name',

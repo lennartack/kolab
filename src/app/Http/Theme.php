@@ -54,8 +54,7 @@ class Theme
      */
     public function menu(): array
     {
-        // TODO: These 2-3 lines could become a utility function somewhere
-        $req_domain = preg_replace('/:[0-9]+$/', '', \request()->getHttpHost());
+        $req_domain = \request()->host();
         $sys_domain = \config('app.domain');
         $isAdmin = $req_domain == "admin.{$sys_domain}";
 
