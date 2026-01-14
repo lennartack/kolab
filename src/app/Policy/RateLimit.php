@@ -43,7 +43,7 @@ class RateLimit extends Model
         $sender = $local . '@' . $domain;
 
         if (in_array($sender, \config('app.ratelimit_whitelist', []), true)) {
-            return new Response(); // DUNNO
+            return new Response(Response::ACTION_DUNNO);
         }
 
         // Find the Kolab user
@@ -56,7 +56,7 @@ class RateLimit extends Model
                 // TODO: How about sender is a distlist address?
 
                 // external sender through where this policy is applied
-                return new Response(); // DUNNO
+                return new Response(Response::ACTION_DUNNO);
             }
 
             $user = $alias->user()->withTrashed()->first();
@@ -85,7 +85,7 @@ class RateLimit extends Model
 
         if (!$domain) {
             // external sender through where this policy is applied
-            return new Response(); // DUNNO
+            return new Response(Response::ACTION_DUNNO);
         }
 
         if ($domain->trashed() || $domain->isSuspended()) {
@@ -96,7 +96,7 @@ class RateLimit extends Model
         // see if the user or domain is whitelisted
         // use ./artisan policy:ratelimit:whitelist:create <email|namespace>
         if (RateLimit\Whitelist::isListed($user) || RateLimit\Whitelist::isListed($domain)) {
-            return new Response(); // DUNNO
+            return new Response(Response::ACTION_DUNNO);
         }
 
         // user nor domain whitelisted, continue scrutinizing the request
@@ -135,7 +135,7 @@ class RateLimit extends Model
 
         // exempt owners that have 100% discount.
         if ($wallet->discount && $wallet->discount->discount == 100) {
-            return new Response(); // DUNNO
+            return new Response(Response::ACTION_DUNNO);
         }
 
         // exempt owners that currently maintain a positive balance and made any payments.
@@ -223,6 +223,6 @@ class RateLimit extends Model
             }
         }
 
-        return new Response(); // DUNNO
+        return new Response(Response::ACTION_DUNNO);
     }
 }
