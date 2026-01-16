@@ -1000,6 +1000,7 @@ class UsersTest extends TestCase
         $this->assertSame('Doe2', $user->getSetting('last_name'));
         $this->assertSame('TestOrg', $user->getSetting('organization'));
         $this->assertFalse($user->isRestricted());
+        $this->assertFalse($user->isSuspended());
         /** @var UserAlias[] $aliases */
         $aliases = $user->aliases()->orderBy('alias')->get();
         $this->assertCount(2, $aliases);
@@ -1103,6 +1104,19 @@ class UsersTest extends TestCase
 
         $user = User::where('email', 'UsersControllerTest1@userscontroller.com')->first();
         $this->assertTrue($user->isRestricted());
+        $this->assertFalse($user->isSuspended());
+
+        // Test creating a user when the account owner is suspended
+        $owner->status |= User::STATUS_SUSPENDED;
+        $owner->save();
+        $post['email'] = 'UsersControllerTest3@userscontroller.com';
+
+        $response = $this->actingAs($owner)->post('/api/v4/users', $post);
+        $response->assertStatus(200);
+
+        $user = User::where('email', 'UsersControllerTest3@userscontroller.com')->first();
+        $this->assertTrue($user->isRestricted());
+        $this->assertTrue($user->isSuspended());
     }
 
     /**

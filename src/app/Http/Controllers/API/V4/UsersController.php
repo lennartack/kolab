@@ -333,7 +333,8 @@ class UsersController extends RelationController
         $user = User::create([
             'email' => $request->email,
             'password' => $request->password,
-            'status' => $wallet->owner->isRestricted() ? User::STATUS_RESTRICTED : 0,
+            'status' => ($wallet->owner->isRestricted() ? User::STATUS_RESTRICTED : 0)
+                + ($wallet->owner->isSuspended() ? User::STATUS_SUSPENDED : 0),
         ]);
 
         $this->activatePassCode($user);
