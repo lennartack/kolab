@@ -7,6 +7,7 @@ use App\Plan;
 use App\Utils;
 use Illuminate\Support\Facades\Queue;
 use Tests\Browser;
+use Tests\Browser\Components\Dialog;
 use Tests\Browser\Components\Toast;
 use Tests\Browser\Pages\Dashboard;
 use Tests\Browser\Pages\Home;
@@ -138,8 +139,8 @@ class DashboardTest extends TestCaseDusk
                     $browser->assertElementsCount('tbody tr', 1)
                         ->assertVisible('tbody tr:first-child.text-secondary')
                         ->with('tbody tr:first-child', static function (Browser $browser) use ($user) {
-                            $browser->assertSeeIn('td:nth-child(1) span', $user->email)
-                                ->assertSeeIn('td:nth-child(2) span', $user->id);
+                            $browser->assertSeeIn('td:nth-child(1) a', $user->email)
+                                ->assertSeeIn('td:nth-child(2) a', $user->id);
 
                             if ($browser->isPhone()) {
                                 $browser->assertMissing('td:nth-child(3)');
@@ -150,7 +151,17 @@ class DashboardTest extends TestCaseDusk
                                     ->assertTextRegExp('td:nth-child(4)', '/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/');
                             }
                         });
-                });
+                })
+                ->click('@search table td a')
+                // Test the dialog content, and closing it with Cancel button
+                ->with(new Dialog('#summary-dialog'), static function (Browser $browser) use ($user) {
+                    $browser->waitUntilMissing('form .loader')
+                        ->assertSeeIn('@title', 'User summary')
+                        ->assertSeeIn('@body', $user->email)
+                        ->assertSeeIn('@button-cancel', 'Close')
+                        ->click('@button-cancel');
+                })
+                ->waitUntilMissing('#summary-dialog');
         });
     }
 }

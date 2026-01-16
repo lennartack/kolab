@@ -583,6 +583,7 @@ return [
         'search' => "User email address or name",
         'search-pl' => "User ID, email or domain",
         'skureq' => "{sku} requires {list}.",
+        'summary' => "User summary",
         'subscription' => "Subscription",
         'subscriptions-none' => "This user has no subscriptions.",
         'users' => "Users",
@@ -602,6 +603,7 @@ return [
         'auto-payment-next' => "Next, you will be redirected to the checkout page, where you can provide your credit card details.",
         'auto-payment-disabled-next' => "The auto-payment is disabled. Immediately after you submit new settings we'll enable it and attempt to top up your wallet.",
         'auto-payment-update' => "Update auto-payment",
+        'balance' => "Wallet balance",
         'banktransfer-hint' => "Please note that a bank transfer can take several days to complete.",
         'coinbase-hint' => "Here is how it works: You specify the amount by which you want to top up your wallet in {wc}."
             . " We will then create a charge on Coinbase for the specified amount that you can pay using Bitcoin.",

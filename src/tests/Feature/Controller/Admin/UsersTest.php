@@ -497,6 +497,40 @@ class UsersTest extends TestCase
     }
 
     /**
+     * Test user summary (GET /api/v4/users/<user-id>/summary)
+     */
+    public function testSummary(): void
+    {
+        Queue::fake();
+
+        $admin = $this->getTestUser('jeroen@jeroen.jeroen');
+        $user = $this->getTestUser('UsersControllerTest1@userscontroller.com');
+        $user->setSetting('first_name', 'Test');
+        $user->wallets->first()->setSetting('mollie_id', '123');
+        $user->delete();
+
+        // Test unauthorized access to admin API
+        $response = $this->actingAs($user)->get("/api/v4/users/{$user->id}/summary");
+        $response->assertStatus(403);
+
+        // Test unknown user
+        $response = $this->actingAs($admin)->get("/api/v4/users/unknown/summary");
+        $response->assertStatus(404);
+
+        // Test valid request
+        $response = $this->actingAs($admin)->get("/api/v4/users/{$user->id}/summary");
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
+        $this->assertSame('mollie', $json['provider']);
+        $this->assertStringContainsString('/customers/123', $json['providerLink']);
+        $this->assertSame($user->email, $json['email']);
+        $this->assertSame('Test', $json['settings']['first_name']);
+        $this->assertSame($user->wallets->first()->id, $json['wallet']['id']);
+    }
+
+    /**
      * Test user suspending (POST /api/v4/users/<user-id>/suspend)
      */
     public function testSuspend(): void

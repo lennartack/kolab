@@ -134,8 +134,8 @@ class DashboardTest extends TestCaseDusk
                     $browser->assertElementsCount('tbody tr', 1)
                         ->assertVisible('tbody tr:first-child.text-secondary')
                         ->with('tbody tr:first-child', static function (Browser $browser) use ($user) {
-                            $browser->assertSeeIn('td:nth-child(1) span', $user->email)
-                                ->assertSeeIn('td:nth-child(2) span', $user->id);
+                            $browser->assertSeeIn('td:nth-child(1) a', $user->email)
+                                ->assertSeeIn('td:nth-child(2) a', $user->id);
 
                             if ($browser->isPhone()) {
                                 $browser->assertMissing('td:nth-child(3)');

@@ -111,6 +111,7 @@ if (\config('app.with_admin')) {
             Route::post('users/{id}/resync', [API\V4\Admin\UsersController::class, 'resync']);
             Route::get('users/{id}/skus', [API\V4\Admin\UsersController::class, 'skus']);
             Route::post('users/{id}/skus/{sku}', [API\V4\Admin\UsersController::class, 'setSku']);
+            Route::get('users/{id}/summary', [API\V4\Admin\UsersController::class, 'summary']);
             Route::post('users/{id}/suspend', [API\V4\Admin\UsersController::class, 'suspend']);
             Route::post('users/{id}/unsuspend', [API\V4\Admin\UsersController::class, 'unsuspend']);
 
@@ -170,6 +171,7 @@ if (\config('app.with_reseller')) {
             Route::post('users/{id}/resync', [API\V4\Reseller\UsersController::class, 'resync']);
             Route::get('users/{id}/skus', [API\V4\Reseller\UsersController::class, 'skus']);
             Route::post('users/{id}/skus/{sku}', [API\V4\Reseller\UsersController::class, 'setSku']);
+            Route::get('users/{id}/summary', [API\V4\Reseller\UsersController::class, 'summary']);
             Route::post('users/{id}/suspend', [API\V4\Reseller\UsersController::class, 'suspend']);
             Route::post('users/{id}/unsuspend', [API\V4\Reseller\UsersController::class, 'unsuspend']);
 

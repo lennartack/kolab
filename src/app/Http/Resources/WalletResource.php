@@ -39,7 +39,7 @@ class WalletResource extends ApiResource
             // Wallet owner (user identifier)
             'user_id' => $this->resource->user_id,
             // Wallet owner (email address)
-            'user_email' => $this->when(self::isAdmin(), $this->resource?->owner->email),
+            'user_email' => $this->when(self::isAdmin(), $this->resource->owner()->withTrashed()->first()?->email),
             // Payment provider name
             'provider' => $provider->name(),
             // Wallet discount identifier (if any)

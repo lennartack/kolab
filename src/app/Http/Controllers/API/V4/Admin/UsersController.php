@@ -7,6 +7,7 @@ use App\Entitlement;
 use App\EventLog;
 use App\Group;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserSummaryResource;
 use App\Payment;
 use App\Resource;
 use App\SharedFolder;
@@ -298,6 +299,27 @@ class UsersController extends \App\Http\Controllers\API\V4\UsersController
     public function store(Request $request): JsonResponse
     {
         return $this->errorResponse(404);
+    }
+
+    /**
+     * Get summary of a user (could be a soft-deleted one).
+     *
+     * @param Request $request the API request
+     * @param string  $id      User identifier
+     */
+    public function summary(Request $request, $id): JsonResponse
+    {
+        $user = User::withTrashed()->find($id);
+
+        if (!$this->checkTenant($user)) {
+            return $this->errorResponse(404);
+        }
+
+        if (!$this->guard()->user()->canUpdate($user)) {
+            return $this->errorResponse(403);
+        }
+
+        return (new UserSummaryResource($user))->response();
     }
 
     /**
