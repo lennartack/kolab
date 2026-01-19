@@ -4,10 +4,14 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, maximum-scale=1.0">
         {{-- <meta name="csrf-token" content="{{ csrf_token() }}"> --}}
-@foreach ($meta ?? [] as $key => $val)
-        <meta name="{{ $key }}" content="{{ $val }}">
+@foreach ($meta ?? [] as $prop)
+    @if (isset($prop['property']))
+        <meta property="{{ $prop['property'] }}" content="{{ $prop['content'] }}">
+    @else
+        <meta name="{{ $prop['name'] }}" content="{{ $prop['content'] }}">
+    @endif
 @endforeach
-        <title>{{ config('app.name') }}</title>
+        <title>{{ $title }}</title>
 
         <link rel="icon" type="image/x-icon" href="@theme_asset(images/favicon.ico)">
         <link href="@theme_asset(app.css)" rel="stylesheet">

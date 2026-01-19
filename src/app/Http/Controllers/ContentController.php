@@ -30,6 +30,7 @@ class ContentController extends Controller
 
         return view($view)
             ->with('env', Utils::uiEnv())
+            ->with('title', Theme::title())
             ->with('meta', Theme::meta());
     }
 

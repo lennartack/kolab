@@ -107,7 +107,23 @@ class Theme
      */
     public function meta(): array
     {
-        return $this->meta['meta'] ?? [];
+        $meta = [];
+
+        foreach ($this->meta['meta'] ?? [] as $key => $content) {
+            $meta[] = [
+                'name' => $key,
+                'content' => $content,
+            ];
+        }
+
+        foreach ($this->meta['meta-properties'] ?? [] as $key => $content) {
+            $meta[] = [
+                'property' => $key,
+                'content' => $content,
+            ];
+        }
+
+        return $meta;
     }
 
     /**
@@ -125,5 +141,13 @@ class Theme
         }
 
         return "{$this->theme}.pages.{$page}";
+    }
+
+    /**
+     * Get page title from the theme
+     */
+    public function title(): string
+    {
+        return $this->meta['title'] ?? \config('app.name');
     }
 }

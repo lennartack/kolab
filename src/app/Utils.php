@@ -105,6 +105,7 @@ class Utils
 
         return view($env['view'])
             ->with('env', $env)
+            ->with('title', Theme::title())
             ->with('meta', Theme::meta());
     }
 
