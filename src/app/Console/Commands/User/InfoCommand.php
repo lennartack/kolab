@@ -44,6 +44,10 @@ class InfoCommand extends Command
 
         $this->info("status: {$user->status} (" . $user->statusText() . ")");
 
+        if ($user->role) {
+            $this->info("role: {$user->role}");
+        }
+
         $user->settings()->orderBy('key')->each(
             function ($setting) {
                 if ($setting->value !== null) {
