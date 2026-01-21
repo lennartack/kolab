@@ -95,6 +95,12 @@ class Health extends Command
     {
         try {
             IMAP::healthcheck();
+
+            $user = User::where(['email' => \config('services.imap.admin_login')])->first();
+            if (!$user->validatePassword(\config('services.imap.admin_password'))) {
+                throw new \Exception("Failed to validate admin login.");
+            }
+
             return true;
         } catch (\Exception $exception) {
             $this->line($exception);
@@ -110,6 +116,12 @@ class Health extends Command
                 null,
                 ["to" => [$this->option('user')]]
             );
+
+            $user = User::where(['email' => \config('mail.mailers.smtp.username')])->first();
+            if (!$user->validatePassword(\config('mail.mailers.smtp.password'))) {
+                throw new \Exception("Failed to validate admin login.");
+            }
+
             return true;
         } catch (\Exception $exception) {
             $this->line($exception);
