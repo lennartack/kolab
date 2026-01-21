@@ -45,10 +45,29 @@ def create_collection(base_url, user, password):
     session = requests.Session()
     session.auth = (user, password)
 
-    resp = session.request("MKCOL", base_url)
+    # XML body to define the resource as a calendar collection
+    mkcol_body = '''
+<D:mkcol xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:set>
+    <D:prop>
+      <D:resourcetype>
+        <D:collection/>
+        <C:calendar/>
+      </D:resourcetype>
+      <D:displayname>StressTest</D:displayname>
+    </D:prop>
+  </D:set>
+</D:mkcol>
+    '''.strip()
+
+    headers = {'Content-Type': 'application/xml; charset="utf-8"'}
+    
+    resp = session.request("MKCOL", base_url, headers=headers, data=mkcol_body.encode('utf-8'))
+
     if resp.status_code == 201:
         print(f"[MKCOL] Calendar collection created: {base_url}")
-    elif resp.status_code == 405:
+    # 405 Method Not Allowed is a common response for "already exists"
+    elif resp.status_code == 405 or resp.status_code == 403:
         print(f"[MKCOL] Calendar collection already exists: {base_url}")
     else:
         raise RuntimeError(f"[MKCOL] Failed to create collection ({resp.status_code}): {resp.text}")
@@ -128,7 +147,11 @@ def main():
 
     # -------------------- Create Test Collection --------------------
     print(f"[START] Creating calendar collection if needed: {args.base_url}")
-    create_collection(args.base_url, args.user, args.password)
+    try:
+        create_collection(args.base_url, args.user, args.password)
+    except RuntimeError as e:
+        print(f"[FATAL] Setup failed: {e}")
+        return  # Exit the script
 
     # -------------------- Start PUT Stress --------------------
     start_time = time.time()

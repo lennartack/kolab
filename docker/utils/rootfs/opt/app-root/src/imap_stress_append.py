@@ -34,14 +34,18 @@ def generate_email(from_addr, to_addr, subject, body_size):
     return msg.as_bytes()
 
 def imap_connect(host, port, user, password, ssl, starttls):
-    if ssl:
-        imap = imaplib.IMAP4_SSL(host, port)
-    else:
-        imap = imaplib.IMAP4(host, port)
-        if starttls:
-            imap.starttls()
-    imap.login(user, password)
-    return imap
+    try:
+        if ssl:
+            imap = imaplib.IMAP4_SSL(host, port)
+        else:
+            imap = imaplib.IMAP4(host, port)
+            if starttls:
+                imap.starttls()
+        imap.login(user, password)
+        return imap
+    except Exception as e:
+        print(f"[ERROR] Failed to connect or login to IMAP server {host}:{port} with user {user}: {e}")
+        return None
 
 # -------------------- Progress Tracking --------------------
 
@@ -90,7 +94,16 @@ def append_messages(worker_id, args, start_index, count):
         args.starttls,
     )
 
-    imap.create(args.mailbox)
+    if imap is None:
+        print(f"[Worker {worker_id}] Skipping append operations due to connection/login failure.")
+        return
+
+    try:
+        imap.create(args.mailbox)
+    except Exception as e:
+        print(f"[Worker {worker_id}] Failed to create mailbox '{args.mailbox}': {e}")
+        imap.logout()
+        return
 
     for i in range(count):
         msg_num = start_index + i
