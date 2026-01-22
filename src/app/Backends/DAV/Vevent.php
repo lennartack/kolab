@@ -68,7 +68,13 @@ class Vevent extends CommonObject implements \Stringable
      */
     protected function fromIcal(string $ical): void
     {
-        $this->vobject = Reader::read($ical, Reader::OPTION_FORGIVING | Reader::OPTION_IGNORE_INVALID_LINES);
+        try {
+            $this->vobject = Reader::read($ical, Reader::OPTION_FORGIVING | Reader::OPTION_IGNORE_INVALID_LINES);
+        } catch (\Exception $e) {
+            \Log::error("Failed to read the ical (code {$e->getCode()}):\n  {$e->getMessage()}");
+            \Log::info($ical);
+            throw $e;
+        }
 
         if ($this->vobject->name != 'VCALENDAR') {
             return;
