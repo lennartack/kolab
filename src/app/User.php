@@ -849,7 +849,7 @@ class User extends Authenticatable
         }
 
         // Note: We intentionally check if password is expired when we know it's valid
-        if ($authenticated === true && !$allow_expired && $this->getSetting('password_expired')) {
+        if ($authenticated === true && !$allow_expired && $this->role != self::ROLE_SERVICE && $this->getSetting('password_expired')) {
             $authenticated = AuthAttempt::REASON_PASSWORD_EXPIRED;
         }
 
@@ -915,6 +915,10 @@ class User extends Authenticatable
                     $error = AuthAttempt::REASON_PASSWORD;
                 }
             } else {
+                if ($user->role == self::ROLE_SERVICE) {
+                    $withChecks = false;
+                }
+
                 if (!$withChecks) {
                     $cacheId = hash('sha256', "{$user->id}-{$password}");
                     // Skip the slow password verification for cases where we also don't verify mfa.
