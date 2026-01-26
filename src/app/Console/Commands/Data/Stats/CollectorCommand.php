@@ -53,6 +53,10 @@ class CollectorCommand extends Command
             ->where('entitleable_type', User::class)
             ->groupBy('entitleable_id');
 
+        $discounts = DB::table('wallets')
+            ->select('wallets.id as wallet_id', 'discounts.discount')
+            ->leftJoin('discounts', 'discounts.id', '=', 'wallets.discount_id');
+
         // Count all non-degraded and non-deleted users that are payers
         $counts = DB::table('users')
             ->selectRaw('count(*) as total, users.tenant_id')
@@ -62,6 +66,10 @@ class CollectorCommand extends Command
             ->joinSub($transactions, 'transactions', static function ($join) {
                 $join->on('wallets.id', '=', 'transactions.wallet_id');
             })
+            ->leftJoinSub($discounts, 'discounts', static function ($join) {
+                $join->on('discounts.wallet_id', '=', 'wallets.id');
+            })
+            ->whereRaw('(discounts.discount is null or discounts.discount < 100)')
             ->whereNull('users.deleted_at')
             ->whereNot('users.status', '&', User::STATUS_DEGRADED)
             ->whereNot('users.status', '&', User::STATUS_SUSPENDED)
