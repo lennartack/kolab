@@ -25,9 +25,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td v-if="collectionId" colspan="3" class="name">
-                                    <router-link :to="'/files' + (collection.parentId ? `/{$collection.parentId}` : '')">
+                            <tr v-if="collection.id">
+                                <td colspan="3" class="name">
+                                    <router-link :to="'/files' + (collection.parentId ? '/' + collection.parentId : '')">
                                         <svg-icon icon="folder" class="me-1"></svg-icon> ..
                                     </router-link>
                                 </td>
