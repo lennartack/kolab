@@ -35,7 +35,7 @@
                             <tr v-for="file in files" :key="file.id" @click="$root.clickRecord">
                                 <td class="name">
                                     <router-link :to="(file.type === 'collection' ? '/files/' : '/file/') + `${file.id}`">
-                                        <svg-icon :icon="file.type === 'collection' ? 'folder' : ['far','file']" class="me-1" style="width:1em"></svg-icon>
+                                        <svg-icon :icon="fileIcon(file)" class="me-1" style="width:1em"></svg-icon>
                                         {{ file.name }}
                                     </router-link>
                                 </td>
@@ -76,10 +76,23 @@
 
     library.add(
         require('@fortawesome/free-regular-svg-icons/faFile').definition,
+        require('@fortawesome/free-regular-svg-icons/faFileAudio').definition,
+        require('@fortawesome/free-regular-svg-icons/faFileCode').definition,
+        require('@fortawesome/free-regular-svg-icons/faFileImage').definition,
+        require('@fortawesome/free-regular-svg-icons/faFileLines').definition,
+        require('@fortawesome/free-regular-svg-icons/faFileVideo').definition,
         require('@fortawesome/free-solid-svg-icons/faFolder').definition,
         require('@fortawesome/free-solid-svg-icons/faDownload').definition,
         require('@fortawesome/free-solid-svg-icons/faUpload').definition,
     )
+
+    const TYPE_MAP = {
+        audio: 'audio',
+        video: 'video',
+        image: 'image',
+        html: 'code',
+        text: 'lines',
+    }
 
     export default {
         components: {
@@ -166,6 +179,23 @@
                 // This method first makes a request to the API to get the download URL (which does not
                 // require authentication) and then use it to download the file.
                 this.api.fileDownload(file.id)
+            },
+            fileIcon(file) {
+                if (file.type === 'collection') {
+                    return 'folder';
+                }
+
+                let icon = 'file'
+                if (file.mimetype) {
+                    for (const key in TYPE_MAP) {
+                        if (file.mimetype.includes(key)) {
+                            icon = 'file-' + TYPE_MAP[key]
+                            break
+                        }
+                    }
+                }
+
+                return ['far', icon]
             },
             fileSize(file) {
                 if (file.type != 'file') {
