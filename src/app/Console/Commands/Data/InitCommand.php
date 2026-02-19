@@ -76,11 +76,9 @@ class InitCommand extends Command
         $domain = \config('app.website_domain');
 
         // Create a password grant client for the webapp
-        if (
-            !empty(\config('auth.proxy.client_secret'))
-            && !Passport::client()->where('id', \config('auth.proxy.client_id'))->exists()
-        ) {
-            $client = Passport::client()->forceFill([
+        if (!empty(\config('auth.proxy.client_secret'))) {
+            array_push($clients, [
+                'id' => \config('auth.proxy.client_id'),
                 'user_id' => null,
                 'name' => "Kolab Password Grant Client",
                 'secret' => \config('auth.proxy.client_secret'),
@@ -90,16 +88,12 @@ class InitCommand extends Command
                 'password_client' => 1,
                 'revoked' => false,
             ]);
-            $client->id = \config('auth.proxy.client_id');
-            $client->save();
         }
 
         // Create a client for Webmail SSO
-        if (
-            !empty(\config('auth.sso.client_secret'))
-            && !Passport::client()->where('id', \config('auth.sso.client_id'))->exists()
-        ) {
-            $client = Passport::client()->forceFill([
+        if (!empty(\config('auth.sso.client_secret'))) {
+            array_push($clients, [
+                'id' => \config('auth.sso.client_id'),
                 'user_id' => null,
                 'name' => 'Webmail SSO client',
                 'secret' => \config('auth.sso.client_secret'),
@@ -111,16 +105,12 @@ class InitCommand extends Command
                 'revoked' => false,
                 'allowed_scopes' => ['email', 'auth.token'],
             ]);
-            $client->id = \config('auth.sso.client_id');
-            $client->save();
         }
 
         // Create a client for synapse oauth
-        if (
-            !empty(\config('auth.synapse.client_secret'))
-            && !Passport::client()->where('id', \config('auth.synapse.client_id'))->exists()
-        ) {
-            $client = Passport::client()->forceFill([
+        if (!empty(\config('auth.synapse.client_secret'))) {
+            array_push($clients, [
+                'id' => \config('auth.sso.client_id'),
                 'user_id' => null,
                 'name' => "Synapse oauth client",
                 'secret' => \config('auth.synapse.client_secret'),
@@ -131,38 +121,32 @@ class InitCommand extends Command
                 'revoked' => false,
                 'allowed_scopes' => ['email'],
             ]);
-            $client->id = \config('auth.synapse.client_id');
-            $client->save();
         }
 
         // Inject extra passport clients
-        if (!empty(\config('auth.extra_passport_clients'))) {
-            foreach (\config('auth.extra_passport_clients') as $clientConfig) {
-                $client = Passport::client()->where('id', $clientConfig['id'])->first();
-                if (!$client) {
-                    \Log::info("Creating client " . $clientConfig['id']);
-                    $client = Passport::client()->forceFill([
-                        'user_id' => null,
-                        'name' => $clientConfig['name'],
-                        'secret' => $clientConfig['secret'],
-                        'provider' => $clientConfig['provider'],
-                        'redirect' => $clientConfig['redirect'],
-                        'personal_access_client' => $clientConfig['personal_access_client'],
-                        'password_client' => $clientConfig['password_client'],
-                        'revoked' => $clientConfig['revoked'],
-                        'allowed_scopes' => $clientConfig['allowed_scopes'],
-                    ]);
-                    $client->id = $clientConfig['id'];
-                } else {
-                    $client->revoked = $clientConfig['revoked'];
-                    $client->allowed_scopes = $clientConfig['allowed_scopes'];
-                    $client->redirect = $clientConfig['redirect'];
-                    $client->secret = $clientConfig['secret'];
-                    $client->name = $clientConfig['name'];
-                    $client->provider = $clientConfig['provider'];
-                }
-                $client->save();
+        $clients = array_merge($clients, \config('auth.extra_passport_clients'));
+
+        foreach ($clients as $clientConfig) {
+            $client = Passport::client()->where('id', $clientConfig['id'])->first();
+
+            if (!$client) {
+                \Log::info("Creating client " . $clientConfig['id']);
+                $client = Passport::client()->forceFill([
+                    'user_id' => null,
+                    'redirect' => $clientConfig['redirect'],
+                    'personal_access_client' => $clientConfig['personal_access_client'],
+                    'password_client' => $clientConfig['password_client'],
+                ]);
+                $client->id = $clientConfig['id'];
             }
+
+            $client->revoked = $clientConfig['revoked'];
+            $client->allowed_scopes = $clientConfig['allowed_scopes'];
+            $client->redirect = $clientConfig['redirect'];
+            $client->secret = $clientConfig['secret'];
+            $client->name = $clientConfig['name'];
+            $client->provider = $clientConfig['provider'];
+            $client->save();
         }
     }
 }
