@@ -25,6 +25,10 @@ fi
 cp /opt/app-root/src/roundcubemail-config-templates/* roundcubemail/config/
 
 sed -i "s/?>//" roundcubemail/config/config.inc.php
+if [[ "$WEBMAIL_URL" != "" ]]; then
+    sed -i "s/webmail/$(echo $WEBMAIL_URL | sed 's|/||g')/" /etc/httpd/conf.d/roundcubemail.conf
+fi
+
 echo "$EXTRA_CONFIG" >> roundcubemail/config/config.inc.php
 printf "\n?>" >> roundcubemail/config/config.inc.php
 
