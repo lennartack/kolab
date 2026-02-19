@@ -36,7 +36,7 @@ class LdifCommand extends Command
     protected $description = 'Migrate data from an LDIF file';
 
     /** @var array Aliases email addresses of the owner */
-    protected $aliases = [];
+    protected $emailAliases = [];
 
     /** @var array Delegation information */
     protected $delegations = [];
@@ -532,8 +532,8 @@ class LdifCommand extends Command
         }
 
         // Import aliases of the owner, we got from importOwner() call
-        if (!empty($this->aliases) && $this->wallet) {
-            $this->setObjectAliases($this->wallet->owner, $this->aliases);
+        if (!empty($this->emailAliases) && $this->wallet) {
+            $this->setObjectAliases($this->wallet->owner, $this->emailAliases);
         }
 
         $bar = $this->createProgressBar($users->count(), "Importing users");
@@ -650,7 +650,7 @@ class LdifCommand extends Command
             if (!$this->wallet) {
                 // This is the account owner creation, at this point we likely do not have
                 // domain records yet, save the aliases to be inserted later (in importUsers())
-                $this->aliases = $data->aliases;
+                $this->emailAliases = $data->aliases;
             } else {
                 $this->setObjectAliases($user, $data->aliases);
             }
