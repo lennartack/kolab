@@ -49,6 +49,15 @@ class CommonObject implements \Stringable
     }
 
     /**
+     * Return object as XML for PROPPATCH request
+     */
+    public function toXML(): string
+    {
+        // do nothing by default
+        return '';
+    }
+
+    /**
      * Make the item compatible with standards (and Cyrus DAV) by fixing
      * obvious issues, if possible
      */

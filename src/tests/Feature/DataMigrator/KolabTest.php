@@ -164,8 +164,9 @@ class KolabTest extends TestCase
             ->get()
             ->keyBy('name')
             ->all();
-        $this->assertSame(2, count($folders));
-        $this->assertSame(3, count($files));
+
+        $this->assertSame(4, count($folders));
+        $this->assertSame(6, count($files));
         $this->assertArrayHasKey('A€B', $folders);
         $this->assertArrayHasKey('Files', $folders);
         $this->assertTrue($folders['Files']->children->contains($folders['A€B']));
@@ -183,6 +184,28 @@ class KolabTest extends TestCase
         $this->assertSame($file_content, Storage::fileFetch($files['&kość.odt']));
         $this->assertSame($file_content, Storage::fileFetch($files['test2.odt']));
         $this->assertSame('', Storage::fileFetch($files['empty.txt']));
+
+        // Assert migrated notes
+        $this->assertArrayHasKey('Notes', $folders);
+        $this->assertArrayHasKey('Notes » Sub Notes', $folders);
+        $this->assertSame(0, $folders['Notes']->parents()->count());
+        $this->assertSame(0, $folders['Notes » Sub Notes']->parents()->count());
+        $this->assertTrue($folders['Notes']->isNotebook());
+        $this->assertTrue($folders['Notes » Sub Notes']->isNotebook());
+        $this->assertTrue($folders['Notes']->children->contains($files['111-111.html']));
+        $this->assertTrue($folders['Notes']->children->contains($files['222-222.html']));
+        $this->assertTrue($folders['Notes » Sub Notes']->children->contains($files['333-333.html']));
+        $this->assertSame('Note summary 1', $files['111-111.html']->getProperty('dav:displayname'));
+        $this->assertSame('Note summary 2', $files['222-222.html']->getProperty('dav:displayname'));
+        $this->assertSame('Note summary 3', $files['333-333.html']->getProperty('dav:displayname'));
+        $this->assertSame('text/html', $files['111-111.html']->getProperty('mimetype'));
+        $this->assertSame('<html><pre>plain text description</pre></html>', Storage::fileFetch($files['111-111.html']));
+        $this->assertSame('<html><body>html description X</body></html>', Storage::fileFetch($files['333-333.html']));
+        $this->assertSame('["tag"]', $files['111-111.html']->getProperty('dav:categories'));
+        $this->assertNull($files['222-222.html']->getProperty('dav:categories'));
+        $links = json_decode($files['111-111.html']->getProperty('dav:links'), true);
+        $this->assertCount(1, $links);
+        $this->assertStringStartsWith('imap:///user/ned%40kolab.org/INBOX', $links[0]);
 
         self::$skipTearDown = true;
         self::$skipSetUp = true;
@@ -214,6 +237,13 @@ class KolabTest extends TestCase
         $file_content = rtrim(chunk_split(base64_encode('123'), 76, "\r\n"));
         $replaces = ['/%FILE%/' => $file_content];
         $this->imapAppend($src_imap, 'Files', 'kolab3/file1.eml', [], '12-Jan-2024 09:09:09 +0000', $replaces);
+        $this->imapEmptyFolder($src_imap, 'Notes');
+        $replaces = [
+            '/<summary>.*<\/summary>/' => '<summary>mod</summary>',
+            '/<description>.*<\/description>/' => '<description>mod text</description>',
+        ];
+        $this->imapAppend($src_imap, 'Notes', 'kolab3/note1.eml', [], '12-Jan-2024 09:09:20 +0000', $replaces);
+        $this->imapAppend($src_imap, 'Notes', 'kolab3/note2.eml');
 
         // Run the migration
         $migrator = new Engine();
@@ -263,11 +293,17 @@ class KolabTest extends TestCase
             ->get()
             ->keyBy('name')
             ->all();
-        $this->assertSame(3, count($files));
+        $this->assertSame(6, count($files));
         $this->assertSame(3, (int) $files['&kość.odt']->getProperty('size'));
         $this->assertSame('application/vnd.oasis.opendocument.odt', $files['&kość.odt']->getProperty('mimetype'));
         $this->assertSame('2024-01-12 09:09:09', $files['&kość.odt']->updated_at->toDateTimeString());
         $this->assertSame('123', Storage::fileFetch($files['&kość.odt']));
+
+        // Assert notes
+        $this->assertSame('mod', $files['111-111.html']->getProperty('dav:displayname'));
+        $this->assertSame('<html><pre>mod text</pre></html>', Storage::fileFetch($files['111-111.html']));
+        $this->assertSame('["tag","test"]', $files['111-111.html']->getProperty('dav:categories'));
+        $this->assertSame('["test"]', $files['222-222.html']->getProperty('dav:categories'));
     }
 
     /**
@@ -355,6 +391,7 @@ class KolabTest extends TestCase
         }
         $this->imapAppend($imap_account, 'Configuration', 'kolab3/tag1.eml');
         $this->imapAppend($imap_account, 'Configuration', 'kolab3/tag2.eml', ['DELETED']);
+        $this->imapAppend($imap_account, 'Configuration', 'kolab3/relation1.eml');
 
         // Create a non-mail folder, we'll assert that it was skipped in migration
         $this->imapCreateFolder($imap_account, 'Test');
@@ -380,6 +417,8 @@ class KolabTest extends TestCase
             'Tasks' => 'task',
             'Contacts' => 'contact.default',
             'Files' => 'file.default',
+            'Notes' => 'note.default',
+            'Notes/Sub Notes' => 'note',
         ];
         $folders[$utf7_folder] = 'file';
         foreach ($folders as $name => $type) {
@@ -403,6 +442,13 @@ class KolabTest extends TestCase
         $replaces['/&amp;kość.odt/'] = 'test2.odt';
         $replaces['/&ko%C5%9B%C4%87.odt/'] = 'test2.odt';
         $this->imapAppend($imap_account, $utf7_folder, 'kolab3/file1.eml', [], '12-Jan-2024 09:09:09 +0000', $replaces);
+
+        // Insert some notes
+        $this->imapEmptyFolder($imap_account, 'Notes');
+        $this->imapEmptyFolder($imap_account, 'Notes/Sub Notes');
+        $this->imapAppend($imap_account, 'Notes', 'kolab3/note1.eml', [], '12-Jan-2024 09:09:09 +0000');
+        $this->imapAppend($imap_account, 'Notes', 'kolab3/note2.eml', [], '12-Jan-2024 09:09:10 +0000');
+        $this->imapAppend($imap_account, 'Notes/Sub Notes', 'kolab3/note3.eml', [], '12-Jan-2024 09:09:11 +0000');
 
         // Insert some mail to migrate
         $this->imapEmptyFolder($imap_account, 'INBOX');

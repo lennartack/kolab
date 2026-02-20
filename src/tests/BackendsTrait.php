@@ -16,6 +16,7 @@ trait BackendsTrait
         Engine::TYPE_TASK => DAV::TYPE_VTODO,
         Engine::TYPE_CONTACT => DAV::TYPE_VCARD,
         Engine::TYPE_GROUP => DAV::TYPE_VCARD,
+        Engine::TYPE_NOTE => DAV::TYPE_NOTE,
     ];
 
     /**
@@ -79,7 +80,7 @@ trait BackendsTrait
         $dav_type = $this->davTypes[$type];
         $home = $dav->getHome($dav_type);
         $folder_id = Utils::uuidStr();
-        $collection_type = $dav_type == DAV::TYPE_VCARD ? 'addressbook' : 'calendar';
+        $collection_type = DAV::collectionType($dav_type);
 
         // We create all folders on the top-level
         $folder = new DAV\Folder();
@@ -87,6 +88,12 @@ trait BackendsTrait
         $folder->href = rtrim($home, '/') . '/' . $folder_id;
         $folder->components = [$dav_type];
         $folder->types = ['collection', $collection_type];
+
+        if ($type == Engine::TYPE_NOTE) {
+            $folder->components = [];
+            $folder->name = null;
+            $folder->href = rtrim($home, '/') . '/' . $foldername;
+        }
 
         if ($dav->folderCreate($folder) === false) {
             throw new \Exception("Failed to create folder {$account}/{$folder->href}");
@@ -160,17 +167,15 @@ trait BackendsTrait
 
         $dav = $this->getDavClient($account);
 
-        $search = new DAV\Search($this->davTypes[$type], true);
-
-        $searchResult = $dav->search($folder->href, $search);
-
-        if ($searchResult === false) {
-            throw new \Exception("Failed to get items from a DAV folder {$account}/{$folder->href}");
+        if ($type == Engine::TYPE_NOTE) {
+            $result = $dav->listNotes($folder->href);
+        } else {
+            $search = new DAV\Search($this->davTypes[$type], true);
+            $result = $dav->search($folder->href, $search);
         }
 
-        $result = [];
-        foreach ($searchResult as $item) {
-            $result[] = $item;
+        if ($result === false) {
+            throw new \Exception("Failed to get items from a DAV folder {$account}/{$folder->href}");
         }
 
         return $result;

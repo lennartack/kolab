@@ -8,15 +8,18 @@ use Illuminate\Support\Facades\DB;
 use Sabre\DAV\Exception;
 use Sabre\DAV\ICollection;
 use Sabre\DAV\ICopyTarget;
+use Sabre\DAV\IExtendedCollection;
 use Sabre\DAV\IMoveTarget;
 use Sabre\DAV\INode;
 use Sabre\DAV\INodeByPath;
 use Sabre\DAV\IProperties;
+use Sabre\DAV\MkCol;
+use Sabre\DAV\Xml\Property\ResourceType;
 
 /**
  * Sabre DAV Collection interface implemetation
  */
-class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, INodeByPath, IProperties
+class Collection extends Node implements ICollection, ICopyTarget, IExtendedCollection, IMoveTarget, INodeByPath, IProperties
 {
     /**
      * Checks if a child-node exists.
@@ -74,6 +77,50 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
         $this->deleteCachedItem($path);
 
         return true;
+    }
+
+    /**
+     * Creates a new collection.
+     *
+     * This method will receive a MkCol object with all the information about
+     * the new collection that's being created.
+     *
+     * The MkCol object contains information about the resourceType of the new
+     * collection. If you don't support the specified resourceType, you should
+     * throw Exception\InvalidResourceType.
+     *
+     * The object also contains a list of WebDAV properties for the new
+     * collection.
+     *
+     * You should call the handle() method on this object to specify exactly
+     * which properties you are storing. This allows the system to figure out
+     * exactly which properties you didn't store, which in turn allows other
+     * plugins (such as the propertystorage plugin) to handle storing the
+     * property for you.
+     *
+     * @param string $name
+     *
+     * @throws Exception\InvalidResourceType
+     */
+    public function createExtendedCollection($name, MkCol $mkCol)
+    {
+        $types = $mkCol->getResourceType();
+
+        if (count($types) > 1) {
+            // For now we only support use of 'notebook' in the resourcetype (Kolab Notes)
+            if (in_array('{Kolab:}notebook', $types)) {
+                $type = Item::TYPE_NOTEBOOK;
+            } else {
+                throw new Exception\InvalidResourceType('The {DAV:}resourcetype you specified is not supported here.');
+            }
+        }
+
+        $collection = $this->createDirectory($name);
+
+        if (!empty($type)) {
+            $collection->type |= $type;
+            $collection->save();
+        }
     }
 
     /**
@@ -160,6 +207,8 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
         }
 
         DB::commit();
+
+        return $collection;
     }
 
     /**
@@ -176,7 +225,7 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
         // Delete the files/folders inside
         // TODO: This may not be optimal for a case with a lot of files/folders
         // TODO: Maybe deleting a folder contents should be moved to a delete event observer
-        $this->data->children()->where('type', Item::TYPE_COLLECTION)
+        $this->data->children()->where('type', '&', Item::TYPE_COLLECTION)
             ->select('fs_items.*')
             ->selectRaw('(select value from fs_properties where fs_items.id = fs_properties.item_id'
                 . ' and fs_properties.key = \'name\') as name')
@@ -207,9 +256,10 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
             ->select('fs_items.*')
             ->whereNot('type', '&', Item::TYPE_INCOMPLETE);
 
-        foreach (['name', 'size', 'mimetype'] as $key) {
+        foreach (['name', 'size', 'mimetype', 'dav:displayname', 'dav:links', 'dav:categories'] as $key) {
+            $alias = str_replace('dav:', '', $key);
             $query->selectRaw('(select value from fs_properties where fs_items.id = fs_properties.item_id'
-                . " and fs_properties.key = '{$key}') as {$key}");
+                . " and fs_properties.key = '{$key}') as {$alias}");
         }
 
         if ($parent = $this->data) {
@@ -223,7 +273,7 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
         return $query->orderBy('name')
             ->get()
             ->map(function ($item) {
-                $class = $item->type == Item::TYPE_COLLECTION ? Collection::class : File::class;
+                $class = $item->isCollection() ? Collection::class : File::class;
                 return new $class($this->nodePath($item), $this, $item);
             })
             ->all();
@@ -274,7 +324,7 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
 
         $item = $this->fsItemForPath($path);
 
-        $class = $item->type == Item::TYPE_COLLECTION ? self::class : File::class;
+        $class = $item->isCollection() ? self::class : File::class;
         $parent = $this;
         $parent_path = preg_replace('|/[^/]+$|', '', $path);
 
@@ -307,6 +357,10 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
 
         if (!empty($this->data->created_at)) {
             $result['{DAV:}creationdate'] = \Sabre\HTTP\toDate($this->data->created_at);
+        }
+
+        if ($this->data?->isNotebook()) {
+            $result['{DAV:}resourcetype'] = new ResourceType(['{DAV:}collection', '{Kolab:}notebook']);
         }
 
         return $result;
@@ -361,7 +415,6 @@ class Collection extends Node implements ICollection, ICopyTarget, IMoveTarget, 
     {
         \Log::debug('[DAV] PROP-PATCH: ' . $this->path);
 
-        // not supported
-        // FIXME: Should we throw an exception?
+        // Not implemented
     }
 }

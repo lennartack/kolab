@@ -90,16 +90,4 @@ if [[ "$(./getconfig.php tasklist_driver)" == "caldav" ]]; then
 fi
 
 
-if [[ "$(./getconfig.php calendar_driver)" == "caldav" ]]; then
-    #$config['calendar_caldav_server'] = "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav";
-    URL=$(./getconfig.php calendar_caldav_server)
-    echo "Caldav $URL"
-    curl -sD /dev/stderr -H "Content-Type: application/xml" -X PROPFIND -H "Depth: infinity" --data '<d:propfind xmlns:d="DAV:" xmlns:cs="https://calendarserver.org/ns/"><d:prop><d:resourcetype /><d:displayname /></d:prop></d:propfind>' $URL -k | grep "405 Method Not Allowed"
-    echo "Caldav is OK"
-
-    #FIXME this is for external access, so we can't test this here
-    #$config['calendar_caldav_url'] = 'http://%h/dav/calendars/%u/%i';
-fi
-
-
 echo "All checks complete"

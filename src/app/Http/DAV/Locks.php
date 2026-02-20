@@ -33,6 +33,9 @@ class Locks extends AbstractBackend
     {
         \Log::debug('[DAV] GET-LOCKS: ' . $uri);
 
+        // TODO: On a node delete Sabre invokes this method twice (once before and once after)
+        // so there's a place for some optimization.
+
         // Note: We're disabling exceptions here, otherwise it has unwanted effects
         // in places where Sabre checks locks on non-existing paths
         $ids = Node::resolvePath($uri, true);

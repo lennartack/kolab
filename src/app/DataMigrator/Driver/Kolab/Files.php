@@ -13,20 +13,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Utilities to handle/migrate Kolab (v3 and v4) files
  */
-class Files
+class Files extends Fs
 {
-    /**
-     * Create a Kolab4 files collection (folder)
-     *
-     * @param Account $account Destination account
-     * @param Folder  $folder  Folder object
-     */
-    public static function createFolder(Account $account, Folder $folder): void
-    {
-        // We assume destination is the local server. Maybe we should be using Cockpit API?
-        self::getFsCollection($account, $folder, true);
-    }
-
     /**
      * Get file properties/content
      *
@@ -172,15 +160,10 @@ class Files
         if ($item->existing) {
             /** @var FsItem $file */
             $file = $item->existing;
-            $file->updated_at = $item->data['mtime'];
-            $file->timestamps = false;
-            $file->save();
         } else {
             $file = new FsItem();
             $file->user_id = $account->getUser()->id;
             $file->type = FsItem::TYPE_FILE;
-            $file->updated_at = $item->data['mtime'];
-            $file->timestamps = false;
             $file->save();
 
             $file->properties()->create(['key' => 'name', 'value' => $item->data['name']]);
@@ -199,72 +182,16 @@ class Files
 
         Storage::fileInput($fp, $params, $file);
 
+        // Update the mtime, must be after fileInput() call
+        if (!empty($item->data['mtime'])) {
+            $file->updated_at = $item->data['mtime'];
+            $file->timestamps = false;
+            $file->save();
+        }
+
         DB::commit();
 
         fclose($fp);
-    }
-
-    /**
-     * Find (and optionally create) a Kolab4 files collection
-     *
-     * @param Account $account Destination account
-     * @param Folder  $folder  Folder object
-     * @param bool    $create  Create collection(s) if it does not exist
-     *
-     * @return ?FsItem Collection object if found
-     */
-    protected static function getFsCollection(Account $account, Folder $folder, bool $create = false)
-    {
-        if (!empty($folder->data['collection'])) {
-            return $folder->data['collection'];
-        }
-
-        // We assume destination is the local server. Maybe we should be using Cockpit API?
-        $user = $account->getUser();
-
-        // TODO: For now we assume '/' is the IMAP hierarchy separator. This may not work with dovecot.
-        $path = explode('/', $folder->fullname);
-        $collection = null;
-
-        // Create folder (and the whole tree) if it does not exist yet
-        foreach ($path as $name) {
-            $result = $user->fsItems()->select('fs_items.*');
-
-            if ($collection) {
-                $result->join('fs_relations', 'fs_items.id', '=', 'fs_relations.related_id')
-                    ->where('fs_relations.item_id', $collection->id);
-            } else {
-                $result->leftJoin('fs_relations', 'fs_items.id', '=', 'fs_relations.related_id')
-                    ->whereNull('fs_relations.related_id');
-            }
-
-            $found = $result->join('fs_properties', 'fs_items.id', '=', 'fs_properties.item_id')
-                ->where('type', '&', FsItem::TYPE_COLLECTION)
-                ->where('key', 'name')
-                ->where('value', $name)
-                ->first();
-
-            if (!$found) {
-                if ($create) {
-                    DB::beginTransaction();
-                    $col = $user->fsItems()->create(['type' => FsItem::TYPE_COLLECTION]);
-                    $col->properties()->create(['key' => 'name', 'value' => $name]);
-                    if ($collection) {
-                        $collection->relations()->create(['related_id' => $col->id]);
-                    }
-                    $collection = $col;
-                    DB::commit();
-                } else {
-                    return null;
-                }
-            } else {
-                $collection = $found;
-            }
-        }
-
-        $folder->data['collection'] = $collection;
-
-        return $collection;
     }
 
     /**

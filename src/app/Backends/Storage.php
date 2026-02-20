@@ -213,6 +213,10 @@ class Storage
         if ($file->type & Item::TYPE_INCOMPLETE) {
             $file->type -= Item::TYPE_INCOMPLETE;
             $file->save();
+        } else {
+            // Bump last modification time (needed e.g. for proper WebDAV syncronization/ETag)
+            // Note: We don't use touch() directly on $file because it fails when the object has custom properties
+            Item::where('id', $file->id)->touch();
         }
 
         // Update the file type and size information

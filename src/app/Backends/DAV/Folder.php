@@ -164,15 +164,18 @@ class Folder
 
         if (in_array('addressbook', $this->types)) {
             $ns .= ' xmlns:c="urn:ietf:params:xml:ns:carddav"';
-            $type = 'addressbook';
+            $type = 'c:addressbook';
         } elseif (in_array('calendar', $this->types)) {
             $ns .= ' xmlns:c="urn:ietf:params:xml:ns:caldav"';
-            $type = 'calendar';
+            $type = 'c:calendar';
+        } elseif (in_array('notebook', $this->types)) {
+            $ns .= ' xmlns:k="Kolab:"';
+            $type = 'k:notebook';
         }
 
         // Cyrus DAV does not allow resourcetype property change
         if ($tag != 'propertyupdate') {
-            $props .= '<d:resourcetype><d:collection/>' . ($type ? "<c:{$type}/>" : '') . '</d:resourcetype>';
+            $props .= '<d:resourcetype><d:collection/>' . ($type ? "<{$type}/>" : '') . '</d:resourcetype>';
         }
 
         if (!empty($this->components)) {

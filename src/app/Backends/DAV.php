@@ -13,11 +13,13 @@ class DAV
     public const TYPE_VTODO = 'VTODO';
     public const TYPE_VCARD = 'VCARD';
     public const TYPE_NOTIFICATION = 'NOTIFICATION';
+    public const TYPE_NOTE = 'NOTE';
 
     public const NAMESPACES = [
         self::TYPE_VEVENT => 'urn:ietf:params:xml:ns:caldav',
         self::TYPE_VTODO => 'urn:ietf:params:xml:ns:caldav',
         self::TYPE_VCARD => 'urn:ietf:params:xml:ns:carddav',
+        self::TYPE_NOTE => 'Kolab:',
     ];
 
     protected $url;
@@ -64,6 +66,20 @@ class DAV
     {
         $this->user = $user;
         $this->password = $password;
+    }
+
+    /**
+     * Return collection resource type for specified object type
+     */
+    public static function collectionType($type): ?string
+    {
+        return match ($type) {
+            self::TYPE_VCARD => 'addressbook',
+            self::TYPE_NOTE => 'notebook',
+            self::TYPE_VEVENT => 'calendar',
+            self::TYPE_VTODO => 'calendar',
+            default => null,
+        };
     }
 
     /**
@@ -161,6 +177,10 @@ class DAV
      */
     public function getHome($type)
     {
+        if ($type == self::TYPE_NOTE) {
+            return 'dav/files/user/' . $this->user;
+        }
+
         $options = [
             self::TYPE_VEVENT => 'calendar-home-set',
             self::TYPE_VTODO => 'calendar-home-set',
@@ -184,6 +204,8 @@ class DAV
      */
     public static function healthcheck($username, $password): bool
     {
+        // TODO: healthcheck for the built-in WebDAV server?
+
         $homes = self::getInstance($username, $password)->discover();
         return !empty($homes);
     }
@@ -218,9 +240,10 @@ class DAV
         foreach ($response->getElementsByTagName('response') as $element) {
             $folder = DAV\Folder::fromDomElement($element);
 
-            // Note: Addressbooks don't have 'type' specified
+            // Note: Addressbooks and Notebooks don't have components specified
             if (
                 ($component == self::TYPE_VCARD && in_array('addressbook', $folder->types))
+                || ($component == self::TYPE_NOTE && in_array('notebook', $folder->types))
                 || in_array($component, $folder->components)
             ) {
                 $folders[] = $folder;
@@ -440,6 +463,40 @@ class DAV
     }
 
     /**
+     * Fetch DAV notes
+     *
+     * @param string $location Folder location
+     *
+     * @return array<DAV\Note> Notes objects
+     */
+    public function listNotes($location): array
+    {
+        // FIXME: As far as I can see there's no other way to get only the notes we're interested in
+
+        $body = DAV\Note::propfindXML();
+
+        $response = $this->request($location, 'PROPFIND', $body, ['Depth' => 1, 'Prefer' => 'return-minimal']);
+
+        if (empty($response)) {
+            return [];
+        }
+
+        $notes = [];
+
+        foreach ($response->getElementsByTagName('response') as $element) {
+            $note = $this->objectFromElement($element, self::TYPE_NOTE);
+            if ($note->mimetype == 'text/html') {
+                // skip non-note elements (e.g. the parent folder)
+                continue;
+            }
+
+            $notes[] = $note;
+        }
+
+        return $notes;
+    }
+
+    /**
      * Fetch DAV notifications
      *
      * @param array $types Notification types to return
@@ -501,6 +558,25 @@ class DAV
         }
 
         return false;
+    }
+
+    /**
+     * Patch a DAV object in a folder
+     *
+     * @param DAV\CommonObject $object Object
+     */
+    public function propPatch(DAV\CommonObject $object): bool
+    {
+        $xml = $object->toXML();
+
+        if (!strlen($xml)) {
+            // This type of object is not updateable via PROPPATCH
+            return true;
+        }
+
+        $response = $this->request($object->href, 'PROPPATCH', $xml);
+
+        return $response !== false;
     }
 
     /**
@@ -820,6 +896,9 @@ class DAV
                 break;
             case self::TYPE_VCARD:
                 $object = DAV\Vcard::fromDomElement($element);
+                break;
+            case self::TYPE_NOTE:
+                $object = DAV\Note::fromDomElement($element);
                 break;
             default:
                 throw new \Exception("Unknown component: {$component}");

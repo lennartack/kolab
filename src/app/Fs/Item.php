@@ -28,6 +28,7 @@ class Item extends Model
     public const TYPE_FILE = 1;
     public const TYPE_COLLECTION = 2;
     public const TYPE_INCOMPLETE = 4;
+    public const TYPE_NOTEBOOK = 8;
 
     /** @var list<string> The attributes that are mass assignable */
     protected $fillable = ['user_id', 'type'];
@@ -188,6 +189,14 @@ class Item extends Model
     }
 
     /**
+     * Check if the item is a notebook collection
+     */
+    public function isNotebook(): bool
+    {
+        return (bool) ($this->type & self::TYPE_NOTEBOOK);
+    }
+
+    /**
      * Move the item to another location
      *
      * @param ?self   $target Target folder
@@ -304,5 +313,31 @@ class Item extends Model
     public function parents()
     {
         return $this->belongsToMany(self::class, 'fs_relations', 'related_id', 'item_id');
+    }
+
+    /**
+     * Item type mutator
+     *
+     * @throws \Exception
+     */
+    public function setTypeAttribute($type)
+    {
+        if (!is_numeric($type)) {
+            throw new \Exception("Expecting an item type to be numeric");
+        }
+
+        $type = (int) $type;
+
+        if ($type < 0 || $type > 255) {
+            throw new \Exception("Expecting an item type between 0 and 255");
+        }
+
+        if ($type & self::TYPE_FILE) {
+            if ($type & self::TYPE_COLLECTION || $type & self::TYPE_NOTEBOOK) {
+                throw new \Exception("An item type cannot be file and collection at the same time");
+            }
+        }
+
+        $this->attributes['type'] = $type;
     }
 }

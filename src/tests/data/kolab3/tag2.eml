@@ -38,6 +38,8 @@ Content-Disposition: attachment;
   <color>#FFFFFF</color>
   <priority>1</priority>
   <member>urn:uuid:ccc-ccc</member>
+  <member>urn:uuid:111-111</member>
+  <member>urn:uuid:222-222</member>
   <member>imap:///user/ned%40kolab.org/INBOX/11?message-id=%3Csync2%40kolab.org%3E&amp;date=Thu%2C+09+Aug+2012+13%3A18%3A31+%2B0000&amp;subject=test+sync+with+attachment</member>
   <member>imap:///user/ned%40kolab.org/Drafts/120?message-id=%3Csync3%40kolab.org%3E&amp;date=Thu%2C+09+Aug+2012+13%3A18%3A31+%2B0000&amp;subject=test+migrator</member>
   <member>imap:///user/ned%40kolab.org/Drafts/121?message-id=%3Csync4%40kolab.org%3E&amp;date=Thu%2C+09+Aug+2012+13%3A18%3A31+%2B0000&amp;subject=test+sync+4th</member>

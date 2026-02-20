@@ -212,11 +212,14 @@ class Node implements INode
 
                 $item = $query->first();
 
-                // Get file properties
+                // Get file/folder properties
                 // TODO: In some requests context (e.g. LOCK/UNLOCK) we don't need these extra properties
-                if ($item && $item->type == Item::TYPE_FILE) {
-                    $item->properties()->whereIn('key', ['size', 'mimetype'])->each(function ($prop) use ($item) {
-                        $item->{$prop->key} = $prop->value;
+                if ($item && $item->isFile()) {
+                    $keys = ['size', 'mimetype', 'dav:displayname', 'dav:links', 'dav:categories'];
+
+                    $item->properties()->whereIn('key', $keys)->each(function ($prop) use ($item) {
+                        $key = str_replace('dav:', '', $prop->key);
+                        $item->{$key} = $prop->value;
                     });
                 }
             }
@@ -267,5 +270,21 @@ class Node implements INode
         // Note: It will often call getChild() even if childExists() returned false,
         // that's why we store all lookup results including `false`.
         Context::addHidden('fs:' . $path, $item);
+    }
+
+    /**
+     * Convert an array into XML property understood by the Sabre XML writer
+     */
+    protected static function propListOutput(array $list, string $item_name): array
+    {
+        foreach ($list as $idx => $item) {
+            $list[$idx] = [
+                'name' => "{Kolab:}{$item_name}",
+                'value' => $item,
+                'properties' => [],
+            ];
+        }
+
+        return $list;
     }
 }

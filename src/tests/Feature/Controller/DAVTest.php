@@ -503,6 +503,23 @@ class DAVTest extends TestCaseFs
         $this->assertCount(1, $children = $items[0]->children()->get());
         $this->assertSame($john->id, $children[0]->user_id);
         $this->assertSame('folder2', $children[0]->getProperty('name'));
+
+        // Kolab Notes folder
+        $xml = <<<'EOF'
+            <d:mkcol xmlns:d='DAV:' xmlns:k='Kolab:'>
+                <d:set>
+                    <d:prop><d:resourcetype><d:collection/><k:notebook/></d:resourcetype></d:prop>
+                </d:set>
+            </d:mkcol>
+            EOF;
+
+        $response = $this->davRequest('MKCOL', "{$root}/folder1/notes", $xml, $john);
+        $response->assertNoContent(201);
+
+        $this->assertCount(1, $children = $items[0]->children()->whereNot('fs_items.id', $children[0]->id)->get());
+        $this->assertSame($john->id, $children[0]->user_id);
+        $this->assertSame('notes', $children[0]->getProperty('name'));
+        $this->assertTrue($children[0]->isNotebook());
     }
 
     /**
@@ -745,9 +762,26 @@ class DAVTest extends TestCaseFs
         $this->assertCount(4, $responses = $doc->documentElement->getElementsByTagName('response'));
 
         $this->assertSame("/{$root}/folder1/", $responses[0]->getElementsByTagName('href')->item(0)->textContent);
+        $this->assertSame(1, $responses[0]->getElementsByTagName('resourcetype')->item(0)->childNodes->count());
+        $this->assertSame('collection', $responses[0]->getElementsByTagName('resourcetype')->item(0)->childNodes->item(0)->localName);
         $this->assertSame("/{$root}/folder1/folder2/", $responses[1]->getElementsByTagName('href')->item(0)->textContent);
         $this->assertSame("/{$root}/folder1/test3.txt", $responses[2]->getElementsByTagName('href')->item(0)->textContent);
         $this->assertSame("/{$root}/folder1/test4.txt", $responses[3]->getElementsByTagName('href')->item(0)->textContent);
+
+        // Test Kolab Notes folder property
+        $folders[0]->type |= Item::TYPE_NOTEBOOK;
+        $folders[0]->save();
+        $response = $this->davRequest('PROPFIND', "{$root}/folder1", '<d:propfind xmlns:d="DAV:"><d:allprop/></d:propfind>', $john, ['Depth' => 0]);
+        $response->assertStatus(207);
+
+        $doc = $this->responseXML($response);
+        $this->assertSame('multistatus', $doc->documentElement->localName);
+        $this->assertCount(1, $responses = $doc->documentElement->getElementsByTagName('response'));
+
+        $this->assertSame("/{$root}/folder1/", $responses[0]->getElementsByTagName('href')->item(0)->textContent);
+        $this->assertSame(2, $responses[0]->getElementsByTagName('resourcetype')->item(0)->childNodes->count());
+        $this->assertSame('collection', $responses[0]->getElementsByTagName('resourcetype')->item(0)->childNodes->item(0)->localName);
+        $this->assertSame('notebook', $responses[0]->getElementsByTagName('resourcetype')->item(0)->childNodes->item(1)->localName);
     }
 
     /**
@@ -855,7 +889,59 @@ class DAVTest extends TestCaseFs
         $this->assertCount(1, $doc->getElementsByTagName('response'));
         $this->assertSame('HTTP/1.1 403 Forbidden', $doc->getElementsByTagName('status')->item(0)->textContent);
 
-        // Note: We don't support any properties in PROPPATCH yet
+        // Test Kolab Notes properties
+        $folder = $this->getTestCollection($john, 'notes');
+        $file = $this->getTestFile($john, 'test.html', '<html>Test con2</html>', ['mimetype' => 'text/html']);
+        $folder->children()->attach($file);
+
+        $xml = <<<'EOF'
+            <d:propertyupdate xmlns:d="DAV:" xmlns:k="Kolab:">
+                <d:set>
+                    <d:prop>
+                        <d:displayname>test note</d:displayname>
+                        <k:categories>
+                            <k:category>cat1</k:category>
+                            <k:category>cat2</k:category>
+                        </k:categories>
+                        <k:links>
+                            <k:link>imap:///test</k:link>
+                        </k:links>
+                    </d:prop>
+                </d:set>
+            </d:propertyupdate>
+            EOF;
+
+        $response = $this->davRequest('PROPPATCH', "{$root}/notes/test.html", $xml, $john);
+        $response->assertStatus(207);
+
+        $doc = $this->responseXML($response);
+        $this->assertSame('multistatus', $doc->documentElement->localName);
+
+        // Use PROPFIND to check the properties' values
+        $xml = <<<'EOF'
+            <d:propfind xmlns:d="DAV:" xmlns:k="Kolab:">
+                <d:prop>
+                    <d:displayname/>
+                    <k:categories/>
+                    <k:links/>
+                </d:prop>
+            </d:propfind>
+            EOF;
+
+        $response = $this->davRequest('PROPFIND', "{$root}/notes/test.html", $xml, $john, ['Depth' => '0']);
+        $response->assertStatus(207);
+
+        $doc = $this->responseXML($response);
+        $this->assertSame('multistatus', $doc->documentElement->localName);
+        $this->assertSame("/{$root}/notes/test.html", $doc->getElementsByTagName('href')->item(0)->textContent);
+        $this->assertSame(1, ($links = $doc->getElementsByTagName('links')->item(0))->childNodes->count());
+        $this->assertSame('imap:///test', $links->getElementsByTagName('link')->item(0)->textContent);
+        $this->assertSame(2, ($categories = $doc->getElementsByTagName('categories')->item(0))->childNodes->count());
+        $this->assertSame('cat1', $categories->getElementsByTagName('category')->item(0)->textContent);
+        $this->assertSame('cat2', $categories->getElementsByTagName('category')->item(1)->textContent);
+        $this->assertSame('test note', $doc->getElementsByTagName('displayname')->item(0)->textContent);
+
+        // TODO: Test changing/unsetting above properties
     }
 
     /**

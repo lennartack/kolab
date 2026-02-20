@@ -69,6 +69,7 @@ class DAVController extends Controller
 
         // Register some plugins
         $server->addPlugin(new \Sabre\DAV\Auth\Plugin($auth_backend));
+        $server->addPlugin(new DAV\ServerPlugin());
 
         // Unauthenticated access doesn't work for us since we require credentials to get access to the data in the first place.
         // $acl_plugin = new \Sabre\DAVACL\Plugin();

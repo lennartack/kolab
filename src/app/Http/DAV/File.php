@@ -3,7 +3,7 @@
 namespace App\Http\DAV;
 
 use App\Backends\Storage;
-use Sabre\DAV\Exception;
+use App\Fs\Item;
 use Sabre\DAV\IFile;
 use Sabre\DAV\IProperties;
 
@@ -86,6 +86,18 @@ class File extends Node implements IFile, IProperties
             $result['{DAV:}creationdate'] = \Sabre\HTTP\toDate($this->data->created_at);
         }
 
+        if (!empty($this->data->displayname)) {
+            $result['{DAV:}displayname'] = $this->data->displayname;
+        }
+
+        if (isset($this->data->links)) {
+            $result['{Kolab:}links'] = self::propListOutput(\json_decode($this->data->links), 'link');
+        }
+
+        if (isset($this->data->categories)) {
+            $result['{Kolab:}categories'] = self::propListOutput(\json_decode($this->data->categories), 'category');
+        }
+
         return $result;
     }
 
@@ -112,8 +124,62 @@ class File extends Node implements IFile, IProperties
     {
         \Log::debug('[DAV] PROP-PATCH: ' . $this->path);
 
-        // not supported
-        // FIXME: Should we throw an exception?
+        // Note: Here we register handlers that are executed later by Sabre/DAV
+        $propPatch->handle(
+            // Properties used by Kolab Notes
+            ['{DAV:}displayname', '{Kolab:}links', '{Kolab:}categories'],
+            function ($properties) {
+                return $this->propPatchValidateAndSave($properties);
+            }
+        );
+    }
+
+    /**
+     * Validate PROPPATCH properties
+     */
+    protected function propPatchValidateAndSave($properties): array
+    {
+        $result = [];
+        $updated = false;
+
+        foreach ($properties as $key => $value) {
+            $status = true;
+            $prop_name = null;
+
+            switch ($key) {
+                case '{DAV:}displayname':
+                    $prop_name = 'dav:displayname';
+                    $status = is_string($value);
+                    break;
+                case '{Kolab:}categories':
+                case '{Kolab:}links':
+                    $prop_name = 'dav:' . str_replace('{Kolab:}', '', $key);
+                    $status = is_array($value);
+                    break;
+            }
+
+            if ($status && $prop_name) {
+                if ($value === '' || (is_array($value) && empty($value))) {
+                    $value = null;
+                }
+                if (is_array($value)) {
+                    $value = json_encode($value);
+                }
+
+                $updated = $updated || $value !== ($this->data->{$prop_name} ?? null);
+                $this->data->setProperty($prop_name, $value);
+            }
+
+            $result[$key] = $status ? 200 : 403; // result to SabreDAV
+        }
+
+        // Bump last modification time (needed e.g. for proper WebDAV syncronization/ETag)
+        // Note: We don't use touch() directly on $file because it fails when the object has custom properties
+        if ($updated) {
+            Item::where('id', $this->data->id)->touch();
+        }
+
+        return $result;
     }
 
     /**

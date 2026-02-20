@@ -1,0 +1,38 @@
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="=_d9d93114ba9e03cf3e7ae9d4e99ed6fc"
+From: alec@alec.pl
+To: alec@alec.pl
+Date: Tue, 09 Oct 2018 09:43:47 +0200
+X-Kolab-Type: application/x-vnd.kolab.note
+X-Kolab-Mime-Version: 3.0
+Subject: 333-333
+User-Agent: Kolab 16/Roundcube 1.6-git
+
+--=_d9d93114ba9e03cf3e7ae9d4e99ed6fc
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=ISO-8859-1
+
+This is a Kolab Groupware object. To view this object you will need an emai=
+l client that understands the Kolab Groupware format. For a list of such em=
+ail clients please visit http://www.kolab.org/
+
+
+--=_d9d93114ba9e03cf3e7ae9d4e99ed6fc
+Content-Transfer-Encoding: 8bit
+Content-Type: application/vnd.kolab+xml; charset=UTF-8; name=kolab.xml
+Content-Disposition: attachment; filename=kolab.xml
+
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<note xmlns="http://kolab.org" version="3.0">
+  <uid>333-333</uid>
+  <prodid>Roundcube-libkolab-1.1 Libkolabxml-1.2</prodid>
+  <creation-date>2020-10-09T07:43:47Z</creation-date>
+  <last-modification-date>2022-10-09T07:43:47Z</last-modification-date>
+  <classification>PUBLIC</classification>
+  <summary>Note summary 3</summary>
+  <description>&lt;html&gt;&lt;body&gt;html description X&lt;/body&gt;&lt;/html&gt;</description>
+  <color/>
+</note>
+
+--=_d9d93114ba9e03cf3e7ae9d4e99ed6fc--

@@ -149,7 +149,7 @@ class DAV implements ExporterInterface, ImporterInterface
         if (!$href) {
             $home = $this->client->getHome($dav_type);
             $folder_id = Utils::uuidStr();
-            $collection_type = $dav_type == DAVClient::TYPE_VCARD ? 'addressbook' : 'calendar';
+            $collection_type = DAVClient::collectionType($dav_type);
 
             // We create all folders on the top-level
             $dav_folder = new DAVFolder();

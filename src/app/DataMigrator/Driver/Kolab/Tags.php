@@ -2,6 +2,7 @@
 
 namespace App\DataMigrator\Driver\Kolab;
 
+use App\DataMigrator\Driver\Kolab as Driver;
 use App\DataMigrator\Interface\Item;
 
 /**
@@ -77,13 +78,69 @@ class Tags
     }
 
     /**
+     * Find the configuration folder in IMAP
+     *
+     * @param \rcube_imap_generic $imap IMAP client (account)
+     */
+    protected static function findConfigurationFolder($imap): ?string
+    {
+        $meta_keys = [
+            Driver::CTYPE_KEY,
+            Driver::CTYPE_KEY_PRIVATE,
+        ];
+
+        $metadata = $imap->getMetadata('*', $meta_keys);
+
+        if ($metadata === null) {
+            throw new \Exception("Failed to get METADATA for IMAP folders. Not a Kolab server?");
+        }
+
+        foreach ($metadata as $folder => $meta) {
+            $type = 'mail';
+            if (!empty($meta[Driver::CTYPE_KEY_PRIVATE])) {
+                $type = $meta[Driver::CTYPE_KEY_PRIVATE];
+            } elseif (!empty($meta[Driver::CTYPE_KEY])) {
+                $type = $meta[Driver::CTYPE_KEY];
+            }
+
+            if (str_starts_with($type, 'configuration') && !preg_match('~(Shared Folders|Other Users)/.*~', $folder)) {
+                return $folder;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get Kolab3 relations (generic and tags)
+     *
+     * @param \rcube_imap_generic $imap IMAP client (account)
+     */
+    public static function getKolab3Relations($imap): array
+    {
+        // Cache this information as it can be invoked multiple times
+        if (isset($imap->data['RELATIONS'])) {
+            return $imap->data['RELATIONS'];
+        }
+
+        $folder = self::findConfigurationFolder($imap);
+
+        if ($folder === null) {
+            return $imap->data['RELATIONS'] = [];
+        }
+
+        return $imap->data['RELATIONS'] = self::getKolab3Tags($imap, $folder, [], null);
+    }
+
+    /**
      * Get tags from Kolab3 folder
      *
      * @param \rcube_imap_generic $imap     IMAP client (account)
      * @param string              $mailbox  Configuration folder name
      * @param array               $existing Tags existing at the destination account
+     * @param ?string             $type     Relation type filter
      */
-    public static function getKolab3Tags($imap, $mailbox, $existing = []): array
+    public static function getKolab3Tags($imap, $mailbox, $existing = [], $type = 'tag'): array
     {
         // Find relation objects
         $search = 'NOT DELETED HEADER X-Kolab-Type "application/x-vnd.kolab.configuration.relation"';
@@ -129,7 +186,7 @@ class Tags
                 }
             }
 
-            if ($tag['relationType'] === 'tag') {
+            if (empty($type) || $tag['relationType'] === $type) {
                 if (empty($tag['last-modification-date'])) {
                     $tag['last-modification-date'] = $message->internaldate;
                 }

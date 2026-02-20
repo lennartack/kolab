@@ -20,24 +20,27 @@ $config['configuration-overlays']['kolabobjects'] = [
     'plugins' => ['kolab_config', 'kolab_folders'],
     'calendar_driver' => 'kolab',
     'fileapi_backend' => 'kolab',
+    'kolab_addressbook_driver' => 'kolab',
     'kolab_tags_driver' => 'kolab',
+    'kolab_notes_driver' => 'kolab',
     'tasklist_driver' => 'kolab',
-    'kolab_addressbook_driver' => 'kolab'
 ];
 
 $config['configuration-overlays']['kolab4'] = [
+    'activesync_storage' => 'kolab4',
+    'activesync_dav_server' => getenv('CALENDAR_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
     'calendar_driver' => 'caldav',
     'calendar_caldav_server' => getenv('CALENDAR_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
     'fileapi_backend' => 'kolabfiles',
     'fileapi_kolabfiles_baseuri' => getenv('FILEAPI_KOLABFILES_BASEURI'),
-    'activesync_storage' => 'kolab4',
-    'activesync_dav_server' => getenv('CALENDAR_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
-    'kolab_tags_driver' => 'annotate',
-    'kolab_dav_sharing' => 'sharing',
-    'tasklist_driver' => 'caldav',
-    'tasklist_caldav_server' => getenv('TASKLIST_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
     'kolab_addressbook_driver' => 'carddav',
     'kolab_addressbook_carddav_server' => getenv('KOLAB_ADDRESSBOOK_CARDDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
+    'kolab_dav_sharing' => 'sharing',
+    'kolab_notes_driver' => 'webdav',
+    'kolab_notes_webdav_server' => getenv('KOLAB_NOTES_WEBDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
+    'kolab_tags_driver' => 'annotate',
+    'tasklist_driver' => 'caldav',
+    'tasklist_caldav_server' => getenv('TASKLIST_CALDAV_SERVER') ?: "https://" . ($_SERVER["HTTP_HOST"] ?? null) . "/dav",
 ];
 
 $config['configuration-overlays']['activesync'] = [
@@ -49,7 +52,7 @@ $config['configuration-overlays']['2fa'] = [
 ];
 
 $config['configuration-overlays']['groupware'] = [
-    'plugins' => ['calendar', 'kolab_files', 'kolab_addressbook', 'kolab_tags', 'tasklist']
+    'plugins' => ['calendar', 'kolab_files', 'kolab_addressbook', 'kolab_tags', 'kolab_notes', 'tasklist']
 ];
 
 $config['configuration-overlays']['groupware-kolabobjects'] = [

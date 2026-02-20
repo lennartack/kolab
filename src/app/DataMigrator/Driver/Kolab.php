@@ -15,12 +15,12 @@ use App\User;
  */
 class Kolab extends IMAP
 {
-    protected const CTYPE_KEY = '/shared/vendor/kolab/folder-type';
-    protected const CTYPE_KEY_PRIVATE = '/private/vendor/kolab/folder-type';
-    protected const UID_KEY = '/shared/vendor/kolab/uniqueid';
-    protected const UID_KEY_CYRUS = '/shared/vendor/cmu/cyrus-imapd/uniqueid';
-    protected const COLOR_KEY = '/shared/vendor/kolab/color';
-    protected const COLOR_KEY_PRIVATE = '/private/vendor/kolab/color';
+    public const CTYPE_KEY = '/shared/vendor/kolab/folder-type';
+    public const CTYPE_KEY_PRIVATE = '/private/vendor/kolab/folder-type';
+    public const UID_KEY = '/shared/vendor/kolab/uniqueid';
+    public const UID_KEY_CYRUS = '/shared/vendor/cmu/cyrus-imapd/uniqueid';
+    public const COLOR_KEY = '/shared/vendor/kolab/color';
+    public const COLOR_KEY_PRIVATE = '/private/vendor/kolab/color';
 
     protected const DAV_TYPES = [
         Engine::TYPE_CONTACT,
@@ -31,6 +31,7 @@ class Kolab extends IMAP
         Engine::TYPE_MAIL,
         Engine::TYPE_CONFIGURATION,
         Engine::TYPE_FILE,
+        Engine::TYPE_NOTE,
     ];
 
     /** @var DAV DAV importer/exporter engine */
@@ -118,6 +119,12 @@ class Kolab extends IMAP
             Kolab\Files::createFolder($this->account, $folder);
             return;
         }
+
+        // Notes
+        if ($folder->type == Engine::TYPE_NOTE) {
+            Kolab\Notes::createFolder($this->account, $folder);
+            return;
+        }
     }
 
     /**
@@ -152,6 +159,12 @@ class Kolab extends IMAP
             return;
         }
 
+        // Notes
+        if ($item->folder->type == Engine::TYPE_NOTE) {
+            Kolab\Notes::saveKolab4Note($this->account, $item);
+            return;
+        }
+
         // Configuration (v3 tags)
         if ($item->folder->type == Engine::TYPE_CONFIGURATION) {
             $this->initIMAP();
@@ -172,7 +185,7 @@ class Kolab extends IMAP
 
         // IMAP (and DAV)
         // TODO: We can treat 'file' folders the same, but we have no sharing in Kolab4 yet for them
-        if ($folder->type == Engine::TYPE_MAIL || in_array($folder->type, self::DAV_TYPES)) {
+        if (in_array($folder->type, array_merge(self::DAV_TYPES, [Engine::TYPE_MAIL, Engine::TYPE_NOTE]))) {
             parent::fetchFolder($folder);
             return;
         }
@@ -197,6 +210,13 @@ class Kolab extends IMAP
         // DAV
         if (in_array($item->folder->type, self::DAV_TYPES)) {
             $this->davDriver->fetchItem($item);
+            return;
+        }
+
+        // Notes (IMAP)
+        if ($item->folder->type == Engine::TYPE_NOTE) {
+            $this->initIMAP();
+            Kolab\Notes::fetchKolab3Note($this->imap, $item);
             return;
         }
 
@@ -235,6 +255,21 @@ class Kolab extends IMAP
         if (in_array($folder->type, self::DAV_TYPES)) {
             $this->davDriver->fetchItemList($folder, $callback, $importer);
             return;
+        }
+
+        // Notes
+        if ($folder->type == Engine::TYPE_NOTE) {
+            $this->initIMAP();
+
+            // Get existing notes from the destination account
+            $existing = $importer->getItems($folder);
+
+            $mailbox = self::toUTF7($folder->fullname);
+            foreach (Kolab\Notes::getKolab3Notes($this->imap, $mailbox, $existing) as $note) {
+                $note['folder'] = $folder;
+                $item = Item::fromArray($note);
+                $callback($item);
+            }
         }
 
         // Files
@@ -402,6 +437,11 @@ class Kolab extends IMAP
         // DAV
         if (in_array($folder->type, self::DAV_TYPES)) {
             return $this->davDriver->getItems($folder);
+        }
+
+        // Notes
+        if ($folder->type == Engine::TYPE_NOTE) {
+            return Kolab\Notes::getKolab4Notes($this->account, $folder);
         }
 
         // Files
