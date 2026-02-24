@@ -31,7 +31,7 @@ class ConfigController extends Controller
 
         $skus = $user->skuTitles();
 
-        if ((bool) $user->getSetting('kolabobjects_storage')) {
+        if ((bool) $user->getSetting('kolabobjects_storage') || \config('app.kolabobjects_storage')) {
             $config['kolab-configuration-overlays'][] = 'kolabobjects';
         } else {
             $config['kolab-configuration-overlays'][] = 'kolab4';
@@ -46,7 +46,7 @@ class ConfigController extends Controller
         }
 
         if (in_array('groupware', $skus)) {
-            if ((bool) $user->getSetting('kolabobjects_storage')) {
+            if ((bool) $user->getSetting('kolabobjects_storage') || \config('app.kolabobjects_storage')) {
                 $config['kolab-configuration-overlays'][] = 'groupware-kolabobjects';
             } else {
                 $config['kolab-configuration-overlays'][] = 'groupware';

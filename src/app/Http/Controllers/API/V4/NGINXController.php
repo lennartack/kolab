@@ -101,7 +101,7 @@ class NGINXController extends Controller
     private function authenticateHTTP($user = null)
     {
         $backend = "default";
-        if ($user && (bool) $user->getSetting('kolabobjects_storage')) {
+        if ($user && (bool) $user->getSetting('kolabobjects_storage') || \config('app.kolabobjects_storage')) {
             $backend = "alternative";
         }
         $response = response('')->withHeaders(

@@ -294,4 +294,6 @@ return [
     // Defines a short code that is used for every verification code
     // Warning: Don't use it in production!
     'test_verification_code' => (string) env('TEST_VERIFICATION_CODE', ''),
+
+    'kolabobjects_storage' => (string) env('KOLABOBJECTS_STORAGE', false),
 ];
