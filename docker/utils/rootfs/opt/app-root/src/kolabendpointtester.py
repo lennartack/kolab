@@ -597,13 +597,15 @@ def test_imap(host, user, password, verbose):
             imap.login(user, password)
 
             status, list_response = imap.list()
-            assert status == 'OK'
+            assert status == 'OK', "LIST failed"
 
+            inbox_found = False
             for folder in list_response:
-                if 'INBOX' in folder.decode('utf-8'):
+                # Folder can be None if there is no folder
+                if folder and 'INBOX' in folder.decode('utf-8'):
                     inbox_found = True
 
-            assert inbox_found
+            assert inbox_found, "Failed to find INBOX"
 
         except AssertionError as err:
             print("  ERROR on peer", hosttuple, err)
