@@ -13,20 +13,13 @@
 // Note: Currently only 'kolab' is supported
 if (getenv('KOLABOBJECTS_COMPAT_MODE') == "true") {
     $config['fileapi_backend'] = 'kolab';
+    $config['fileapi_plugins'] = ['kolab_folders'];
 } else {
     $config['fileapi_backend'] = 'kolabfiles';
     // This is how chwala connects to the kolabfiles backend
     $config['fileapi_kolabfiles_baseuri'] = getenv('FILEAPI_KOLABFILES_BASEURI');
+    $config['fileapi_plugins'] = [];
 }
-
-
-// Enabled external storage drivers
-// Note: Currenty only 'seafile' and webdav is available
-// $config['fileapi_drivers'] = array('seafile', 'webdav');
-// $config['fileapi_drivers'] = array('webdav');
-
-// Roundcube plugins that have to be enabled for Chwala
-$config['fileapi_plugins'] = [];
 
 // Pre-defined list of external storage sources.
 // Here admins can define sources which will be "mounted" into users folder tree
