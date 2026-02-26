@@ -165,22 +165,31 @@ class ImapCli < Thor
   def fetch(folder, entry)
     imap.select(folder)
     # The eval is to translate a string to a range; e.g. 1..2
+    # fields = "BODY[HEADER.FIELDS (SUBJECT FLAGS FROM TO CC REPLYTO MESSAGEID DATE SIZE REFERENCES)]"
+    fields = "BODY[HEADER.FIELDS (SUBJECT DATE)]"
     if options[:tags]
       # ANNOTATION currently leads to a parsing crash because of incomplete support in
       # /usr/local/share/gems/gems/net-imap-0.5.4/lib/net/imap/response_parser/parser_utils.rb:239,
       # still useful with --debug though.
-      imap.uid_fetch(eval(entry), ["UID", "BODY[HEADER.FIELDS (SUBJECT FROM TO CC REPLYTO MESSAGEID DATE SIZE REFERENCES)]", "ANNOTATION (/vendor/kolab/tag/v1/% value.priv)"]).each do |mail|
+      imap.uid_fetch(eval(entry), ["UID", fields, "ANNOTATION (/vendor/kolab/tag/v1/% value.priv)"]).each do |mail|
         uid = mail.attr["UID"]
-        p uid
-        p mail.attr["UID"]
+        headers = mail.attr[fields]
+        p "#{uid} #{headers}"
       end
     else
-      imap.uid_fetch(eval(entry), ["UID", "BODY[HEADER.FIELDS (SUBJECT FROM TO CC REPLYTO MESSAGEID DATE SIZE REFERENCES)]"]).each do |mail|
+      imap.uid_fetch(eval(entry), ["UID", "FLAGS", fields]).each do |mail|
         uid = mail.attr["UID"]
-        p uid
-        p mail.attr["UID"]
+        headers = mail.attr[fields]
+        flags = mail.attr["FLAGS"]
+        p "#{uid} #{flags} #{headers}"
       end
     end
+  end
+
+  desc "undelete", "Undelete."
+  def undelete(folder, entry)
+    imap.select(folder)
+    imap.uid_store(entry, "-FLAGS", [:Deleted])
   end
 
   desc "append", "APPEND."
