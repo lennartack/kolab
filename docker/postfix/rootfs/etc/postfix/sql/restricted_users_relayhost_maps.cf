@@ -1,0 +1,7 @@
+hosts = DB_HOST
+user = DB_USERNAME
+password = DB_PASSWORD
+dbname = DB_DATABASE
+query = SELECT email FROM users WHERE (status & 128) AND deleted_at IS NULL AND email = '%s';
+expansion_limit = 1
+result_format = RESTRICTED_USER_RELAYHOST

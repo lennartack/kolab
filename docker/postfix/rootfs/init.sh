@@ -36,7 +36,7 @@ sed -i -r \
 
 /usr/sbin/saslauthd -m /run/saslauthd -a httpform -d &
 
-# If host mounting /var/spool/postfix, we need to delete old pid file before
+# When host mounting /var/spool/postfix, we need to delete old pid file before
 # starting services
 rm -f /var/spool/postfix/pid/master.pid
 
@@ -75,6 +75,12 @@ fi
 if [ "$RELAY_HOST" != "" ]; then
     sed -i -r \
         -e "s|#relayhost=|relayhost=$RELAY_HOST|g" \
+        /etc/postfix/main.cf
+fi
+
+if [ "$RESTRICTED_USER_RELAY_HOST" != "" ]; then
+    sed -i -r \
+        -e "s|#sender_dependent_relayhost_maps=|sender_dependent_relayhost_maps=|g" \
         /etc/postfix/main.cf
 fi
 

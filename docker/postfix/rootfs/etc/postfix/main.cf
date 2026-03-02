@@ -189,7 +189,9 @@ mynetworks = MYNETWORKS
 #relayhost = uucphost
 #relayhost = [an.ip.add.ress]
 
+# Set via RELAY_HOST, to relay all email through the relayhost
 #relayhost=
+#sender_dependent_relayhost_maps=mysql:/etc/postfix/sql/restricted_users_relayhost_maps.cf
 
 # REJECTING UNKNOWN RELAY USERS
 #
