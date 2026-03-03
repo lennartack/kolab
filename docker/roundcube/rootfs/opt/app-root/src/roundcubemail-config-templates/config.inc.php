@@ -185,6 +185,9 @@ if (!function_exists("getenvlist")) {
     //$config['dav_debug'] = getenv('DAV_DEBUG');
 
     $config['skin'] = getenv('SKIN');
+    if (!empty(getenvlist('SKINS_ALLOWED'))) {
+        $config['skins_allowed'] = getenvlist('SKINS_ALLOWED');
+    }
     $config['skin_include_php'] = false;
     if (getenv('FORCE_SKIN') == "true") {
         $config['dont_override'][] = 'skin';
