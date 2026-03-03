@@ -1,6 +1,6 @@
 <?php
     # This is for external access
-    $config['calendar_caldav_url'] = 'https://%h/dav/calendars/%u/%i';
+    $config['calendar_caldav_url'] = getenv('DAV_URL_BASE') ? getenv('DAV_URL_BASE') . '/calendar/%u/%i' : 'https://%h/dav/calendars/%u/%i';
 
     $config['calendar_default_view'] = "agendaWeek";
     $config['calendar_timeslots'] = 2;

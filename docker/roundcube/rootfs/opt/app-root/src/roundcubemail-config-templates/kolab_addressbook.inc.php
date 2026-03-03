@@ -16,6 +16,6 @@ $config['kolab_addressbook_prio'] = 0;
 // %n - Folder name
 // %i - Folder UUID
 # This is for external access
-$config['kolab_addressbook_carddav_url'] = 'http://%h/dav/addressbooks/%u/%i';
+$config['kolab_addressbook_carddav_url'] = getenv('DAV_URL_BASE') ? getenv('DAV_URL_BASE') . '/addressbooks/%u/%i' : 'https://%h/dav/addressbooks/%u/%i';
 
 ?>
