@@ -20,6 +20,7 @@ if (!function_exists("getenvlist")) {
     $config['des_key'] = getenv('DES_KEY');
     $config['username_domain'] = getenv('APP_DOMAIN');
     $config['use_secure_urls'] = true;
+    $config['use_https'] = true;
 
     $config['mail_domain'] = '';
 
