@@ -76,6 +76,12 @@ ARG GIT_REF_FREEBUSY=master
 ARG GIT_REMOTE_FREEBUSY=https://git.kolab.org/diffusion/F/freebusy.git
 ARG GIT_REMOTE_SKIN_ELASTIC=""
 ARG GIT_REF_SKIN_ELASTIC=master
+ARG GIT_REMOTE_SKIN_CHAMELEON=""
+ARG GIT_REF_SKIN_CHAMELEON=master
+ARG GIT_REMOTE_SKIN_CHAMELEON_ASSETS=""
+ARG GIT_REF_SKIN_CHAMELEON_ASSETS=master
+ARG GIT_REMOTE_SKIN_LARRY=https://github.com/roundcube/larry.git
+ARG GIT_REF_SKIN_LARRY=master
 ARG SKINS=kolab
 
 RUN /opt/app-root/src/build.sh && \

@@ -20,7 +20,7 @@ pushd /opt/app-root/src/
 
 LESSC=/usr/local/bin/lessc
 if [ "$SKINS" == "" ]; then 
-    SKINS=(kolab plesk)
+    SKINS="kolab plesk"
 fi
 
 pushd roundcubemail
@@ -42,17 +42,35 @@ bin/updatecss.sh --dir skins/elastic
 popd
 
 # Install skins
-for skin in "${SKINS[@]}"; do
+for skin in $SKINS; do
     if [ -d "roundcubemail-skin-elastic/$skin" ]; then
         cp -r "roundcubemail-skin-elastic/$skin" roundcubemail/skins/
-    else
-        echo "Skin $skin is not available"
+    fi
+    # E.g. now-larry
+    if [ -d "roundcubemail-skin-chameleon-assets/skins/$skin" ]; then
+        if [ ! -d "roundcubemail/skins/larry" ]; then
+            mkdir -p roundcubemail/skins/larry
+            cp -r larry/* "roundcubemail/skins/larry/"
+        fi
+        cp -r "roundcubemail-skin-chameleon/skins/chameleon" "roundcubemail/skins/$skin"
+        cp -r "roundcubemail-skin-chameleon-assets/skins/$skin/." "roundcubemail/skins/$skin"
     fi
 done
 
 pushd roundcubemail
 
-for skin in $(ls -1d skins/* | grep -vE '(classic|elastic|larry)'); do
+# This is for chameleon skins (just now-larry atm)
+for skin in $(ls -1d skins/* | grep -E '(now-larry)'); do
+    skin=$(basename $skin)
+
+    pushd skins/$skin
+    $LESSC -x styles.less > styles.css
+    $LESSC -x colors.less > colors.css
+    popd
+    bin/updatecss.sh --dir skins/$skin
+done
+
+for skin in $(ls -1d skins/* | grep -vE '(classic|elastic|larry|now-larry)'); do
     skin=$(basename $skin)
 
     # Copy elastic skin over $skin (but don't overwrite what already existis)

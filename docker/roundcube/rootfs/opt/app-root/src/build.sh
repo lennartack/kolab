@@ -46,6 +46,13 @@ checkout freebusy $GIT_REMOTE_FREEBUSY $GIT_REF_FREEBUSY
 if [[ "$GIT_REMOTE_SKIN_ELASTIC" != ""  ]]; then 
     checkout roundcubemail-skin-elastic $GIT_REMOTE_SKIN_ELASTIC $GIT_REF_SKIN_ELASTIC
 fi
+if [[ "$GIT_REMOTE_SKIN_CHAMELEON" != ""  ]]; then 
+    checkout larry $GIT_REMOTE_SKIN_LARRY $GIT_REF_SKIN_LARRY
+    checkout roundcubemail-skin-chameleon $GIT_REMOTE_SKIN_CHAMELEON $GIT_REF_SKIN_CHAMELEON
+fi
+if [[ "$GIT_REMOTE_SKIN_CHAMELEON_ASSETS" != ""  ]]; then 
+    checkout roundcubemail-skin-chameleon-assets $GIT_REMOTE_SKIN_CHAMELEON_ASSETS $GIT_REF_SKIN_CHAMELEON_ASSETS
+fi
 
 pushd roundcubemail
 cp /opt/app-root/src/composer.json composer.json
