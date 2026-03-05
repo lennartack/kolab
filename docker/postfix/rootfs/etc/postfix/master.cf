@@ -49,7 +49,6 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o syslog_name=postfix/smtps
     -o smtpd_upstream_proxy_protocol=
     -o cleanup_service_name=cleanup_submission
-    -o rewrite_service_name=rewrite_submission
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13026
     -o mydestination=
     -o local_recipient_maps=
