@@ -144,7 +144,7 @@ if __name__ == "__main__":
             print("action=DUNNO\n")
             logging.debug("DUNNO before state data.")
             sys.stdout.flush()
-            sys.exit(0)
+            continue
 
         response = policy_requests[instance].check_policy()
         logging.debug(response)
