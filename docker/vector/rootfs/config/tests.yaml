@@ -240,6 +240,33 @@ tests:
       source: |
         assert_eq!(.log, "2024/08/19 10:57:25 [info] 11#11: *18701 client closed connection while SSL handshaking, client: 10.42.0.1, server: 0.0.0.0:6443")
         assert!(is_timestamp(.timestamp))
+- name: "Proxy logfmt"
+  inputs:
+  - insert_at: "apps"
+    type: "log"
+    log_fields:
+      file: /var/log/pods/kolab_proxy-84bb89799b-rflm6_f0c38b2a-56ab-4417-8bde-d1729ce07ad3/proxy/0.log
+      container_id: containerd://da6f4f7f22a70f2a21042d642ad40564a41f5731e145de4ee6dffc35de6a543a
+      container_image: localhost:5000/proxy:latest
+      container_image_id: localhost:5000/proxy@sha256:4ff5c6c5da8b5e73ecc4f17cba99e00c6dd58e07cce54f04aefd4f0b6063da68
+      container_name: proxy
+      pod_name: proxy-84bb89799b-rflm6
+      pod_namespace: kolab
+      pod_node_name: dws07.kolabsys.com
+      pod_owner: ReplicaSet/proxy-84bb89799b
+      pod_uid: f0c38b2a-56ab-4417-8bde-d1729ce07ad3
+      log: 'remote=10.1.0.37 user=kolab.monitor-01@kolab.org time="10/Mar/2026:09:01:24 +0000" method=POST url=/Microsoft-Server-ActiveSync query-string="Cmd=Sync&User=kolab.monitor-01@kolab.org&DeviceId=client3-1&DeviceType=iphone" status=200 body-bytes=725 user-agent="-" x-forwarded-for="10.17.14.2" host=kolabnow.com request-time=0.223 upstream-connect-time=0.001 upstream-response-time=0.223'
+      source_type: kubernetes_logs
+      stream: stderr
+      timestamp: "2024-08-19T10:57:25.026161935Z"
+  outputs:
+  - extract_from: "parse_proxy"
+    conditions:
+    - type: "vrl"
+      source: |
+        assert_eq!(.log, "remote=10.1.0.37 user=kolab.monitor-01@kolab.org time=\"10/Mar/2026:09:01:24 +0000\" method=POST url=/Microsoft-Server-ActiveSync query-string=\"Cmd=Sync&User=kolab.monitor-01@kolab.org&DeviceId=client3-1&DeviceType=iphone\" status=200 body-bytes=725 user-agent=\"-\" x-forwarded-for=\"10.17.14.2\" host=kolabnow.com request-time=0.223 upstream-connect-time=0.001 upstream-response-time=0.223")
+        assert!(is_timestamp(.timestamp))
+        assert_eq!(.method, "POST")
 - name: "Postfix"
   inputs:
   - insert_at: "apps"

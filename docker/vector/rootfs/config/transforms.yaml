@@ -61,9 +61,9 @@ transforms:
     inputs:
       - apps.proxy
     source: |
-      structured = parse_regex(.log, pattern: r'^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")') ?? {}
+      structured = parse_regex(.log, pattern: r'^(?<time>[^ ]+ [^ ]+) (?<connection>[^ ]+) \[(?<level>[^\]]+)\] .*$') ?? parse_logfmt(.log) ?? {}
       . = merge(., structured)
-      .timestamp = parse_timestamp(.timestamp, "%Y/%m/%d %H:%M:%S %z") ?? now()
+      .timestamp = parse_timestamp(.time, "%Y-%m-%dT%H:%M:%S%z") ?? now()
   parse_postfix:
     type: remap
     inputs:
@@ -85,4 +85,3 @@ transforms:
       - apps._unmatched
     source: |
       .timestamp = parse_timestamp(.timestamp, "%Y/%m/%d %H:%M:%S %z") ?? now()
-

@@ -15,11 +15,16 @@ events {
 }
 
 http {
+    log_format logfmt 'remote=$remote_addr user=$remote_user time="$time_local" method=$request_method url="$uri" query-string="$query_string" '
+                      'status=$status body-bytes=$bytes_sent '
+                      'user-agent="$http_user_agent" x-forwarded-for="$http_x_forwarded_for" '
+                      'host=$host request-time=$request_time upstream-connect-time=$upstream_connect_time upstream-response-time=$upstream_response_time';
+
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for"';
 
-    access_log  /dev/stdout  main;
+    access_log  /dev/stdout logfmt;
 
     sendfile            on;
     tcp_nopush          on;
