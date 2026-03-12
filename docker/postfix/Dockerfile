@@ -5,6 +5,7 @@ RUN dnf -y install \
     python3-requests \
     postfix \
     postfix-mysql \
+    perl \
     cyrus-sasl \
     cyrus-sasl-plain && \
     dnf clean all
