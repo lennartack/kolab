@@ -30,3 +30,16 @@ bayes_auto_expire  1
 # This replaces sa-learn's sql/file based expire routines.
 bayes_token_ttl 30d
 bayes_seen_ttl  14d
+
+#######
+
+uridnsbl_skip_domain googleapis.com goo.gl googlegroups.com docs.google.com
+uridnsbl_skip_domain youtu.be linkedin.com fbcdn.net licdn.com twimg.com redbox.com
+uridnsbl_skip_domain amazon.ca amazonses.com amazonaws.com ssl-images-amazon.com images-amazon.com media-amazon.com
+uridnsbl_skip_domain instagram.com pinterest.com pinimg.com facebookmail.com yahoodns.net tumblr.com
+uridnsbl_skip_domain groupon.com grouponcdn.com office365.com booking.com
+uridnsbl_skip_domain privaterelay.appleid.com
+uridnsbl_skip_domain kolabnow.com
+
+#######
+
