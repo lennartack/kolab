@@ -125,7 +125,7 @@ class InitCommand extends Command
         }
 
         // Inject extra passport clients
-        $clients = array_merge($clients, \config('auth.extra_passport_clients'));
+        $clients = array_merge($clients, \config('auth.extra_passport_clients') ?? []);
 
         foreach ($clients as $clientConfig) {
             $client = Passport::client()->where('id', $clientConfig['id'])->first();
@@ -142,7 +142,9 @@ class InitCommand extends Command
             }
 
             $client->revoked = $clientConfig['revoked'];
-            $client->allowed_scopes = $clientConfig['allowed_scopes'];
+            if (isset($clientConfig['allowed_scopes'])) {
+                $client->allowed_scopes = $clientConfig['allowed_scopes'];
+            }
             $client->redirect = $clientConfig['redirect'];
             $client->secret = $clientConfig['secret'];
             $client->name = $clientConfig['name'];
