@@ -422,6 +422,10 @@ class SendTest:
             print(f"Email with uuid {self.uuid} sent")
 
     def send_mail(self, starttls, smtp):
+        if not self.sender_host:
+            print("--sender-host is required")
+            exit(1)
+
         if smtp:
             with smtplib.SMTP(host=self.sender_host, port=self.sender_port or 25) as smtp:
                 if self.verbose:

@@ -112,14 +112,25 @@ class ImapCli < Thor
     p imap.select(folder)
   end
 
+  desc "status", "Status."
+  def status(folder)
+    p imap.status(folder, ["MESSAGES", "RECENT", "UNSEEN"])
+  end
+
   desc "create", "Create."
   def create(folder)
     p imap.create(folder)
   end
 
   desc "delete", "Delete."
-  def delete(folder)
-    p imap.delete(folder)
+  def delete(folder, entry="")
+    if entry != ""
+      imap.select(folder)
+      p imap.store(entry, "+FLAGS", [:Deleted])
+    else
+      p "deleting folder"
+      # p imap.delete(folder)
+    end
   end
 
   desc "subscribe", "Subscribe."
