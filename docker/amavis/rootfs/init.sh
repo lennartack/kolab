@@ -34,6 +34,8 @@ sed -i -r \
     -e "s|REDIS_PASSWORD|$REDIS_PASSWORD|g" \
     /etc/mail/spamassassin/local.cf
 
+echo "$SA_EXTRA_CONFIG" >> /etc/mail/spamassassin/local.cf
+
 # We use these to check if the process has started, so ensure we aren't dealing wiht leftover files
 rm -f /var/run/amavisd/amavisd.pid
 rm -f /var/run/amavisd/clamd.pid
