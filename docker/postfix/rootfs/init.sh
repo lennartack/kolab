@@ -82,6 +82,10 @@ if [ "$RESTRICTED_USER_RELAY_HOST" != "" ]; then
     sed -i -r \
         -e "s|#sender_dependent_relayhost_maps=|sender_dependent_relayhost_maps=|g" \
         /etc/postfix/main.cf
+
+    sed -i -r \
+        -e "s|RESTRICTED_USER_RELAY_HOST|${RESTRICTED_USER_RELAY_HOST}|g" \
+        /etc/postfix/sql/*
 fi
 
 sed -i -r \
