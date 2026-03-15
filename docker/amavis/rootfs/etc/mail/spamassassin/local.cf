@@ -13,7 +13,7 @@ rewrite_header Subject [SPAM]
 # Tell SA to use Bayes/Redis backend
 bayes_store_module  Mail::SpamAssassin::BayesStore::Redis
 
-bayes_sql_dsn  server=REDIS_HOST:6379;database=4;password=REDIS_PASSWORD
+bayes_sql_dsn  server=REDIS_HOST:6379;database=REDIS_DATABASE;password=REDIS_PASSWORD
 use_bayes 1
 use_bayes_rules 1
 
