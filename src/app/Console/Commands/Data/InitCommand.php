@@ -74,6 +74,7 @@ class InitCommand extends Command
     private function createPassportClients()
     {
         $domain = \config('app.website_domain');
+        $clients = [];
 
         // Create a password grant client for the webapp
         if (!empty(\config('auth.proxy.client_secret'))) {
