@@ -837,7 +837,7 @@ class DAV
         $doc = new \DOMDocument('1.0', 'UTF-8');
 
         if (str_starts_with($xml, '<?xml')) {
-            if (!$doc->loadXML($xml, LIBXML_PARSEHUGE)) {
+            if (!$doc->loadXML($xml, \LIBXML_PARSEHUGE)) {
                 throw new \Exception("Failed to parse XML");
             }
 
@@ -874,12 +874,12 @@ class DAV
 
             libxml_use_internal_errors(true);
 
-            if (!$doc->loadXML($body, LIBXML_PARSEHUGE)) {
+            if (!$doc->loadXML($body, \LIBXML_PARSEHUGE)) {
                 throw new \Exception("Failed to parse XML");
             }
 
             foreach (libxml_get_errors() as $error) {
-                \Log::error(trim($error->message) . " on line " . $error->line . PHP_EOL);
+                \Log::error(trim($error->message) . " on line " . $error->line . \PHP_EOL);
             }
             libxml_clear_errors();
 

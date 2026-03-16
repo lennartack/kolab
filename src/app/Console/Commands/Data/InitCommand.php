@@ -78,7 +78,7 @@ class InitCommand extends Command
 
         // Create a password grant client for the webapp
         if (!empty(\config('auth.proxy.client_secret'))) {
-            array_push($clients, [
+            $clients[] = [
                 'id' => \config('auth.proxy.client_id'),
                 'user_id' => null,
                 'name' => "Kolab Password Grant Client",
@@ -88,12 +88,12 @@ class InitCommand extends Command
                 'personal_access_client' => 0,
                 'password_client' => 1,
                 'revoked' => false,
-            ]);
+            ];
         }
 
         // Create a client for Webmail SSO
         if (!empty(\config('auth.sso.client_secret'))) {
-            array_push($clients, [
+            $clients[] = [
                 'id' => \config('auth.sso.client_id'),
                 'user_id' => null,
                 'name' => 'Webmail SSO client',
@@ -105,12 +105,12 @@ class InitCommand extends Command
                 'password_client' => 0,
                 'revoked' => false,
                 'allowed_scopes' => ['email', 'auth.token'],
-            ]);
+            ];
         }
 
         // Create a client for synapse oauth
         if (!empty(\config('auth.synapse.client_secret'))) {
-            array_push($clients, [
+            $clients[] = [
                 'id' => \config('auth.sso.client_id'),
                 'user_id' => null,
                 'name' => "Synapse oauth client",
@@ -121,7 +121,7 @@ class InitCommand extends Command
                 'password_client' => 0,
                 'revoked' => false,
                 'allowed_scopes' => ['email'],
-            ]);
+            ];
         }
 
         // Inject extra passport clients
