@@ -22,11 +22,18 @@ class ConfigController extends Controller
             return $this->errorResponse(404);
         }
 
+        $apis = [
+            'delegation' => 'app.with_delegation',
+            'user-search' => 'app.with_user_search',
+        ];
+
         $config = [
             // @var array<string> Webmail configuration overlays
             'kolab-configuration-overlays' => [],
             // @var string|null Debug mode
             'debug' => null,
+            // @var array<string> List of disabled APIs
+            'kolab-disabled-apis' => array_keys(array_filter($apis, fn ($v) => !\config($v))),
         ];
 
         $skus = $user->skuTitles();
