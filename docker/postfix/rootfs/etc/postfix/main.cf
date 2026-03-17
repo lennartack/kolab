@@ -571,27 +571,22 @@ smtpd_recipient_restrictions =
     permit
 smtpd_data_restrictions = reject_unauth_pipelining
 
-# Outbound
-submission_data_restrictions = 
-    # Final hook for rate-limit request and decision
-    # to allow/deny sender access.
-    # We use this in place of reject_sender_login_mismatch to support e.g. delegation.
-    check_policy_service unix:private/policy_submission
+# Outbound (restrictions in order of execution)
 submission_client_restrictions = 
     #reject_unknown_reverse_client_hostname,
     #reject_rbl_client zen.spamhaus.org,
     #reject_rhsbl_reverse_client dbl.spamhaus.org
+submission_helo_restrictions =
+    #permit_mynetworks,
+    reject_invalid_helo_hostname,
+    reject_non_fqdn_helo_hostname,
+    #reject_rhsbl_helo dbl.spamhaus.org
 submission_sender_restrictions =
     reject_non_fqdn_sender, 
     # We used to also block spammers via sender_access
     check_sender_access hash:/etc/postfix/sender_access,
     permit_sasl_authenticated,
     reject
-submission_helo_restrictions =
-    #permit_mynetworks,
-    reject_invalid_helo_hostname,
-    reject_non_fqdn_helo_hostname,
-    #reject_rhsbl_helo dbl.spamhaus.org
 submission_relay_restrictions =
     permit_mynetworks,
     permit_sasl_authenticated,
@@ -606,3 +601,8 @@ submission_recipient_restrictions =
     permit_sasl_authenticated,
     # permit_mynetworks,
     reject
+submission_data_restrictions = 
+    # Final hook for rate-limit request and decision
+    # to allow/deny sender access.
+    # We use this in place of reject_sender_login_mismatch to support e.g. delegation.
+    check_policy_service unix:private/policy_submission
