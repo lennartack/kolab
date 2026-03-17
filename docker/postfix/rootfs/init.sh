@@ -72,6 +72,14 @@ if [ "$HOLD_INCOMING_EMAILS" == "true" ]; then
         /etc/postfix/main.cf
 fi
 
+if [ "$WITH_SPAMHAUS_CHECKS" == "true" ]; then
+    sed -i -r \
+        -e "s|#reject_rbl|reject_rbl|g" \
+        -e "s|#reject_rhsbl|reject_rhsbl|g" \
+        -e "s|#warn_if_reject reject_rbl|warn_if_reject reject_rbl|g" \
+        /etc/postfix/main.cf
+fi
+
 if [ "$RELAY_HOST" != "" ]; then
     sed -i -r \
         -e "s|#relayhost=|relayhost=$RELAY_HOST|g" \
