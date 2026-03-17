@@ -56,7 +56,12 @@ RUN dnf -y --setopt=install_weak_deps=False --setopt tsflags= install \
         wget && \
     dnf clean all
 
-RUN npm install -g less less-plugin-clean-css
+# Install and validate lessc
+# The mv and symlink is required with recent nodejs because it get's confused about lessc being a nodejs module or not
+RUN npm install -g less less-plugin-clean-css \
+    && mv /usr/local/lib/node_modules/less/bin/lessc /usr/local/lib/node_modules/less/bin/lessc.js \
+    && ln -sf /usr/local/lib/node_modules/less/bin/lessc.js /usr/local/bin/lessc \
+    && /usr/local/bin/lessc -v
 
 WORKDIR ${HOME}
 
