@@ -192,12 +192,12 @@ RED='\033[31m'
 GREEN='\033[32m'
 RESET='\033[39m'
 
-def print_error(msg):
-    print(RED + f"=> ERROR: {msg}")
+def print_error(msg, *args, **kwargs):
+    print(RED + f"=> ERROR: {msg}", *args, **kwargs)
     print(RESET)  # and reset to default color
 
-def print_success(msg):
-    print(GREEN + f"=> {msg}")
+def print_success(msg, *args, **kwargs):
+    print(GREEN + f"=> {msg}", *args, **kwargs)
     print(RESET)  # and reset to default color
 
 class SendTest:
