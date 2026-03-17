@@ -12,6 +12,10 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o smtpd_upstream_proxy_protocol=
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13024
     -o cleanup_service_name=cleanup_inbound
+    -o smtpd_client_connection_count_limit=5
+    -o smtpd_client_connection_rate_limit=30
+    -o smtpd_client_message_rate_limit=30
+    -o smtpd_client_recipient_rate_limit=30
 
 # Internal Submission, no tls, no starttls
 10587          inet        n       -       -       -       -       smtpd
