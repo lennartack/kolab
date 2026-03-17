@@ -99,11 +99,6 @@ class RateLimit extends Model
             return new Response(Response::ACTION_DUNNO);
         }
 
-        // user nor domain whitelisted, continue scrutinizing the request
-        sort($recipients);
-        $recipientCount = count($recipients);
-        $recipientHash = hash('sha256', implode(',', $recipients));
-
         // Retrieve the wallet to get to the owner
         $wallet = $user->wallet();
 
@@ -113,6 +108,11 @@ class RateLimit extends Model
         }
 
         $owner = $wallet->owner;
+
+        // user nor domain whitelisted, continue scrutinizing the request
+        sort($recipients);
+        $recipientCount = count($recipients);
+        $recipientHash = hash('sha256', implode(',', $recipients));
 
         // find or create the request
         $request = self::where('recipient_hash', $recipientHash)
@@ -149,40 +149,42 @@ class RateLimit extends Model
                 ->exists();
 
             if ($isPayer) {
-                return new Response();
+                return new Response(Response::ACTION_DUNNO);
             }
         }
+
+        $max_messages = config('app.ratelimit_max_messages');
+        $max_recipients = config('app.ratelimit_max_recipients');
+        $suspend_factor = config('app.ratelimit_suspend_factor');
+
+        $ageThreshold = Carbon::now()->subMonthsWithoutOverflow(2);
 
         // Examine the rates at which the owner (or its users) is sending
         $ownerRates = self::where('owner_id', $owner->id)
             ->where('updated_at', '>=', Carbon::now()->subHour());
 
-        if (($count = $ownerRates->count()) >= 10) {
-            // automatically suspend (recursively) if 2.5 times over the original limit and younger than two months
-            $ageThreshold = Carbon::now()->subMonthsWithoutOverflow(2);
-
-            if ($count >= 25 && $owner->created_at > $ageThreshold) {
+        if (($count = $ownerRates->count()) >= $max_messages) {
+            // automatically suspend (recursively) if X times over the original limit and younger than two months
+            if ($count >= $max_messages * $suspend_factor && $owner->created_at > $ageThreshold) {
                 $owner->suspendAccount();
             }
 
             return new Response(
                 Response::ACTION_DEFER_IF_PERMIT,
-                'The account is at 10 messages per hour, cool down.',
+                "The account is at {$max_messages} messages per hour, cool down.",
                 403
             );
         }
 
-        if (($recipientCount = $ownerRates->sum('recipient_count')) >= 100) {
-            // automatically suspend if 2.5 times over the original limit and younger than two months
-            $ageThreshold = Carbon::now()->subMonthsWithoutOverflow(2);
-
-            if ($recipientCount >= 250 && $owner->created_at > $ageThreshold) {
+        if (($recipientCount = $ownerRates->sum('recipient_count')) >= $max_recipients) {
+            // automatically suspend if X times over the original limit and younger than two months
+            if ($recipientCount >= $max_recipients * $suspend_factor && $owner->created_at > $ageThreshold) {
                 $owner->suspendAccount();
             }
 
             return new Response(
                 Response::ACTION_DEFER_IF_PERMIT,
-                'The account is at 100 recipients per hour, cool down.',
+                "The account is at {$max_recipients} recipients per hour, cool down.",
                 403
             );
         }
@@ -192,32 +194,28 @@ class RateLimit extends Model
             $userRates = self::where('user_id', $user->id)
                 ->where('updated_at', '>=', Carbon::now()->subHour());
 
-            if (($count = $userRates->count()) >= 10) {
-                // automatically suspend if 2.5 times over the original limit and younger than two months
-                $ageThreshold = Carbon::now()->subMonthsWithoutOverflow(2);
-
-                if ($count >= 25 && $user->created_at > $ageThreshold) {
+            if (($count = $userRates->count()) >= $max_messages) {
+                // automatically suspend if X times over the original limit and younger than two months
+                if ($count >= $max_messages * $suspend_factor && $user->created_at > $ageThreshold) {
                     $user->suspend();
                 }
 
                 return new Response(
                     Response::ACTION_DEFER_IF_PERMIT,
-                    'User is at 10 messages per hour, cool down.',
+                    "User is at {$max_messages} messages per hour, cool down.",
                     403
                 );
             }
 
-            if (($recipientCount = $userRates->sum('recipient_count')) >= 100) {
-                // automatically suspend if 2.5 times over the original limit
-                $ageThreshold = Carbon::now()->subMonthsWithoutOverflow(2);
-
-                if ($recipientCount >= 250 && $user->created_at > $ageThreshold) {
+            if (($recipientCount = $userRates->sum('recipient_count')) >= $max_recipients) {
+                // automatically suspend if X times over the original limit
+                if ($recipientCount >= $max_recipients * $suspend_factor && $user->created_at > $ageThreshold) {
                     $user->suspend();
                 }
 
                 return new Response(
                     Response::ACTION_DEFER_IF_PERMIT,
-                    'The account is at 100 recipients per hour, cool down.',
+                    "The account is at {$max_recipients} recipients per hour, cool down.",
                     403
                 );
             }
