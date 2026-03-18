@@ -153,6 +153,7 @@
         "spomky-labs/otphp": "~10.0.3",
         "enygma/yubikey": "~3.2",
         "guzzlehttp/guzzle": "^7.4.1",
+        "mlocati/ip-lib": "^1.22.0",
         "kolab/calendar": "~3.6.0",
         "kolab/kolab": "~3.6.0",
         "kolab/kolab_activesync": "~3.6.0",
