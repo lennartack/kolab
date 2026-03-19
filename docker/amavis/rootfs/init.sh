@@ -27,6 +27,7 @@ sed -i -r \
     -e "s|SPAM_KILL_LEVEL|$SPAM_KILL_LEVEL|g" \
     -e "s|SPAM_KILL_ACTION|$SPAM_KILL_ACTION|g" \
     -e "s|VIRUS_KILL_ACTION|$VIRUS_KILL_ACTION|g" \
+    -e "s|MAX_SERVERS|$MAX_SERVERS|g" \
     $CONFIG
 
 sed -i -r \
