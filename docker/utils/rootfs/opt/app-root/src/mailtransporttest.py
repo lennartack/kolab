@@ -316,7 +316,9 @@ class SendTest:
         if self.verbose:
             imap.debug = 4
         imap.login(self.recipient_username, self.recipient_password)
-        imap.select("INBOX")
+        if not imap.select("INBOX"):
+            print_error(f"Failed to select INBOX on {self.recipient_username}")
+            sys.exit(1)
         typ, data = imap.search(None, 'SUBJECT', self.uuid)
 
 
