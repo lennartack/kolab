@@ -116,4 +116,12 @@ sed -i -r \
 postmap /etc/postfix/sender_access
 
 /usr/sbin/postfix check
+
+# If we start before amavis is ready, all mail in the active queue is moved to deferred.
+echo "Waiting for Amavis to start on $AMAVIS_HOST:13024..."
+until (echo > /dev/tcp/$AMAVIS_HOST/13024) >/dev/null 2>&1; do
+  echo "Amavis is unavailable - sleeping 2 seconds"
+  sleep 2
+done
+
 exec /usr/sbin/postfix -c /etc/postfix start-fg
