@@ -33,6 +33,7 @@ sed -i -r \
 sed -i -r \
     -e "s|REDIS_HOST|$REDIS_HOST|g" \
     -e "s|REDIS_PASSWORD|$REDIS_PASSWORD|g" \
+    -e "s|REDIS_DATABASE|$REDIS_DATABASE|g" \
     /etc/mail/spamassassin/local.cf
 
 echo "$SA_EXTRA_CONFIG" >> /etc/mail/spamassassin/local.cf
