@@ -32,6 +32,10 @@ fi
 echo "$EXTRA_CONFIG" >> roundcubemail/config/config.inc.php
 printf "\n?>" >> roundcubemail/config/config.inc.php
 
+if [[ "$DISABLE_DAV_PREFIX" == "true" ]]; then
+    sed -i 's/RewriteBase/#RewriteBase/' /etc/httpd/conf.d/iRony.conf
+fi
+
 if [[ "$RUN_MIGRATIONS" == "true" ]]; then
     # Initialize the db
     if [[ "$DB_ROOT_PASSWORD" == "" ]]; then

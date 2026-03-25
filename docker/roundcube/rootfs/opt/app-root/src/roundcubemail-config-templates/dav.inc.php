@@ -26,7 +26,11 @@ $config = array();
 
 // The HTTP path to the iRony root directory.
 // Set to / if the service is registered as document root for a virtual host
-$config['base_uri'] = '/dav/';
+if (getenv('DISABLE_DAV_PREFIX') == "true") {
+    $config['base_uri'] = '/';
+} else {
+    $config['base_uri'] = '/dav/';
+}
 
 // User agent string written to kolab storage MIME messages
 $config['useragent'] = 'Kolab DAV Server libkolab/' . RCUBE_VERSION;
