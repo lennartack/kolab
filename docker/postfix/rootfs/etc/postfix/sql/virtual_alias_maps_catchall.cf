@@ -1,0 +1,12 @@
+hosts = DB_HOST
+user = DB_USERNAME
+password = DB_PASSWORD
+dbname = DB_DATABASE
+# We concatenate 'catchall@' with the domain (%d) to find the fallback alias
+query = SELECT u.email FROM users u 
+    LEFT JOIN user_aliases a ON u.id = a.user_id 
+    WHERE a.alias = CONCAT('catchall@', '%d') 
+    AND u.status & 2 
+    AND NOT u.status & 4 
+    AND u.deleted_at IS NULL 
+    LIMIT 1

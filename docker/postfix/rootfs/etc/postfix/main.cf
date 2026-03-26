@@ -528,7 +528,8 @@ virtual_alias_maps =
     $alias_maps,
     mysql:/etc/postfix/sql/virtual_alias_maps.cf,
     mysql:/etc/postfix/sql/virtual_alias_maps_groups.cf,
-    mysql:/etc/postfix/sql/virtual_alias_maps_shared_folders.cf
+    mysql:/etc/postfix/sql/virtual_alias_maps_shared_folders.cf,
+    mysql:/etc/postfix/sql/virtual_alias_maps_catchall.cf
 
 # Inbound (restrictions in order of execution)
 smtpd_client_restrictions =
