@@ -15,6 +15,7 @@ class NGINXTest extends TestCase
     {
         parent::setUp();
 
+        $this->deleteTestUser('nginx-test@kolabnow.com');
         $john = $this->getTestUser('john@kolab.org');
         CompanionApp::where('user_id', $john->id)->delete();
         AuthAttempt::where('user_id', $john->id)->delete();
@@ -29,6 +30,7 @@ class NGINXTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->deleteTestUser('nginx-test@kolabnow.com');
         $john = $this->getTestUser('john@kolab.org');
         CompanionApp::where('user_id', $john->id)->delete();
         AuthAttempt::where('user_id', $john->id)->delete();
@@ -331,5 +333,13 @@ class NGINXTest extends TestCase
         // unknown user fail
         $response = $this->postWithBody("api/webhooks/cyrus-sasl", "missing@kolab.org  {$pass}");
         $response->assertStatus(403);
+
+        // Password with spaces
+        $user = $this->getTestUser('nginx-test@kolabnow.com');
+        $user->password = 'test test test';
+        $user->save();
+
+        $response = $this->postWithBody("api/webhooks/cyrus-sasl", "{$user->email}  test test test");
+        $response->assertStatus(200);
     }
 }
