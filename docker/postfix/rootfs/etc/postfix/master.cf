@@ -47,6 +47,7 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o smtpd_sender_restrictions=$submission_sender_restrictions
     -o smtpd_recipient_restrictions=$submission_recipient_restrictions
     -o smtpd_relay_restrictions=$submission_relay_restrictions
+    -o smtpd_helo_restrictions=$submission_helo_restrictions
 
 # External submission, ssl
 0.0.0.0:11465     inet        n       -       n       -       -       smtpd
@@ -67,6 +68,7 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o smtpd_recipient_restrictions=$submission_recipient_restrictions
     -o smtpd_relay_restrictions=$submission_relay_restrictions
     -o smtpd_data_restrictions=$submission_data_restrictions
+    -o smtpd_helo_restrictions=$submission_helo_restrictions
 
 pickup              fifo        n       -       n       60      1       pickup
     # This avoids that we have an endless loop after our script content filter

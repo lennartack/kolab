@@ -576,6 +576,7 @@ smtpd_data_restrictions = reject_unauth_pipelining
 submission_client_restrictions = 
 submission_helo_restrictions =
     #permit_mynetworks,
+    permit_sasl_authenticated,
     reject_invalid_helo_hostname,
     reject_non_fqdn_helo_hostname,
 submission_sender_restrictions =
