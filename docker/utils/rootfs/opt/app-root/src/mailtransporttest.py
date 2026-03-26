@@ -224,6 +224,8 @@ class SendTest:
         self.testmessage = options.testmessage
         self.spam = options.spamtest
         self.virus = options.virustest
+        self.broken_helo = options.broken_helo
+        self.nologin = options.nologin
 
         self.uuid = None
         self.subject = None
@@ -432,7 +434,10 @@ class SendTest:
             with smtplib.SMTP(host=self.sender_host, port=self.sender_port or 25) as smtp:
                 if self.verbose:
                     smtp.set_debuglevel(2)
-                smtp.ehlo()
+                if self.broken_helo:
+                    smtp.ehlo("brokenehlo")
+                else:
+                    smtp.ehlo()
                 smtp.noop()
                 self.send_mail_loop(smtp)
 
@@ -441,15 +446,21 @@ class SendTest:
                 if self.verbose:
                     smtp.set_debuglevel(2)
                 smtp.starttls()
-                smtp.ehlo()
-                smtp.login(self.sender_username, self.sender_password)
+                if self.broken_helo:
+                    smtp.ehlo("brokenehlo")
+                else:
+                    smtp.ehlo()
+                if not self.nologin:
+                    smtp.login(self.sender_username, self.sender_password)
                 smtp.noop()
                 self.send_mail_loop(smtp)
         else:
             with smtplib.SMTP_SSL(host=self.sender_host, port=self.sender_port or 465) as smtp:
                 if self.verbose:
                     smtp.set_debuglevel(2)
-                smtp.login(self.sender_username, self.sender_password)
+
+                if not self.nologin:
+                    smtp.login(self.sender_username, self.sender_password)
                 smtp.noop()
                 self.send_mail_loop(smtp)
 
@@ -477,6 +488,8 @@ parser.add_argument('--spamtest', action='store_true', help='Send a spam test me
 parser.add_argument('--virustest', action='store_true', help='Send a virus test message')
 parser.add_argument('--testmessage', action='store_true', help='Send a kolab4 testmessage')
 parser.add_argument('--attachmentSize', help='in MB', type=int, default=0)
+parser.add_argument('--broken-helo', action='store_true', help='Send broken helo')
+parser.add_argument('--nologin', action='store_true', help='Do not login')
 
 args = parser.parse_args()
 
