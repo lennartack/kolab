@@ -28,8 +28,8 @@ bayes_auto_expire  1
 
 # You  will need to changes this according to your need
 # This replaces sa-learn's sql/file based expire routines.
-bayes_token_ttl 30d
-bayes_seen_ttl  14d
+bayes_token_ttl 14d
+bayes_seen_ttl  3d
 
 #######
 
