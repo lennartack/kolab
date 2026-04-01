@@ -222,7 +222,11 @@ if (!function_exists("getenvlist")) {
             'ssl_verify_peer' => false,
         );
 
-    $config['oauth_provider'] = 'generic';
+    if (getenv('DISABLE_SSO') == "true") {
+        $config['oauth_provider'] = null;
+    } else {
+        $config['oauth_provider'] = 'generic';
+    }
     $config['oauth_provider_name'] = 'Kolab SSO';
     $config['oauth_client_id'] = getenv('PASSPORT_WEBMAIL_SSO_CLIENT_ID');
     $config['oauth_client_secret'] = getenv('PASSPORT_WEBMAIL_SSO_CLIENT_SECRET');
