@@ -223,7 +223,7 @@ if (!function_exists("getenvlist")) {
         );
 
     $config['oauth_provider'] = 'generic';
-    $config['oauth_provider_name'] = 'Kolab';
+    $config['oauth_provider_name'] = 'Kolab SSO';
     $config['oauth_client_id'] = getenv('PASSPORT_WEBMAIL_SSO_CLIENT_ID');
     $config['oauth_client_secret'] = getenv('PASSPORT_WEBMAIL_SSO_CLIENT_SECRET');
     $config['oauth_auth_uri'] = getenv('OAUTH_AUTH_URI') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? null) . '/oauth/authorize';
@@ -232,7 +232,7 @@ if (!function_exists("getenvlist")) {
 
     $config['oauth_scope'] = 'email openid auth.token';
     $config['oauth_password_claim'] = 'auth.token';
-    $config['oauth_login_redirect'] = true;
+    $config['oauth_login_redirect'] = (getenv('OAUTH_LOGIN_REDIRECT') == "true");
 
     @include('kolab_syncroton.inc.php');
     @include('chwala.inc.php');
