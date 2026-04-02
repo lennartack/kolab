@@ -91,7 +91,8 @@
                         }
                     })
                     .catch(error => {
-                        if (!(redirect = error.response.data)) {
+                        redirect = error.response.data
+                        if (!redirect || !redirect.redirectUrl) {
                             this.$root.errorHandler(error)
                         }
                     })

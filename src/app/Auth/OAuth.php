@@ -57,8 +57,13 @@ class OAuth
             if ($clientId && $use_cache && $request->ifSeen) {
                 $client = PassportClient::find($clientId);
 
-                if ($client && !Cache::has($cacheKey)) {
-                    throw new \Exception('Not seen yet');
+                if ($client) {
+                    // System clients are trusted, don't need approval
+                    if (!$client->user_id) {
+                        $use_cache = false;
+                    } elseif (!Cache::has($cacheKey)) {
+                        throw new \Exception('Not seen yet');
+                    }
                 }
             }
 

@@ -12,6 +12,7 @@ use Tests\TestCase;
 class AuthTest extends TestCase
 {
     private $expectedExpiry;
+    private $client;
 
     /**
      * Reset all authentication guards to clear any cache users
@@ -51,6 +52,10 @@ class AuthTest extends TestCase
             'limit_geo' => null,
             'password_expired' => null,
         ]);
+
+        if ($this->client) {
+            $this->client->delete();
+        }
 
         parent::tearDown();
     }
@@ -497,6 +502,7 @@ class AuthTest extends TestCase
         $host = parse_url(Utils::serviceUrl('/'), \PHP_URL_HOST);
         $_SERVER['HTTP_HOST'] = $host;
 
+        // Test trusted client
         $user = $this->getTestUser('UsersControllerTest1@userscontroller.com');
         $client = PassportClient::find(\config('auth.sso.client_id'));
 
@@ -514,14 +520,42 @@ class AuthTest extends TestCase
 
         $json = $response->json();
 
+        $this->assertSame('success', $json['status']);
+        $this->assertTrue(!empty($json['redirectUrl']));
+
+        // Test non-trusted client
+        $this->client = PassportClient::firstOrCreate(
+            ['id' => 'test' . base64_encode(random_bytes(4))],
+            [
+                'user_id' => $user->id,
+                'name' => 'Test',
+                'secret' => '123',
+                'provider' => 'users',
+                'redirect' => Utils::serviceUrl('support'),
+                'personal_access_client' => 0,
+                'password_client' => 0,
+                'revoked' => false,
+                'allowed_scopes' => ['email', 'auth.token', 'openid'],
+            ]
+        );
+
+        $post['client_id'] = $this->client->id;
+        $post['scope'] = 'openid email auth.token';
+
+        $response = $this->actingAs($user)->post("api/oauth/approve", $post);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+
         $claims = [
+            'openid' => 'See your email/id via a standard authorization token (OIDC)',
             'email' => 'See your email address',
             'auth.token' => 'Have read and write access to all your data',
         ];
 
         $this->assertSame('prompt', $json['status']);
-        $this->assertSame($client->name, $json['client']['name']);
-        $this->assertSame($client->redirect, $json['client']['url']);
+        $this->assertSame($this->client->name, $json['client']['name']);
+        $this->assertSame($this->client->redirect, $json['client']['url']);
         $this->assertSame($claims, $json['client']['claims']);
 
         // Approve the request

@@ -18,10 +18,11 @@ class AuthorizeTest extends TestCaseDusk
         parent::setUp();
 
         // Create a client for tests
+        $user = $this->getTestUser('john@kolab.org');
         $this->client = PassportClient::firstOrCreate(
-            ['id' => 'test'],
+            ['id' => 'test' . base64_encode(random_bytes(4))],
             [
-                'user_id' => null,
+                'user_id' => $user->id,
                 'name' => 'Test',
                 'secret' => '123',
                 'provider' => 'users',
