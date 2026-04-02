@@ -111,7 +111,7 @@ class InitCommand extends Command
         // Create a client for synapse oauth
         if (!empty(\config('auth.synapse.client_secret'))) {
             $clients[] = [
-                'id' => \config('auth.sso.client_id'),
+                'id' => \config('auth.synapse.client_id'),
                 'user_id' => null,
                 'name' => "Synapse oauth client",
                 'secret' => \config('auth.synapse.client_secret'),
