@@ -138,10 +138,6 @@ policy_reception    unix        -       n       n       -       -       spawn
     user=nobody argv=/usr/libexec/postfix/kolab_policy reception /api/webhooks/policy/reception
 
 # Inbound
-#policy_greylist     unix        -       n       n       -       -       spawn
-#    user=nobody argv=/usr/libexec/postfix/kolab_policy greylist /api/webhooks/policy/greylist
-
-# Inbound
 policy_spf          unix        -       n       n       -       -       spawn
     user=nobody argv=/usr/libexec/postfix/kolab_policy spf /api/webhooks/policy/spf
 
