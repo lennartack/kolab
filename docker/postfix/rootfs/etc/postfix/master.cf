@@ -16,6 +16,7 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o smtpd_client_connection_rate_limit=30
     -o smtpd_client_message_rate_limit=30
     -o smtpd_client_recipient_rate_limit=30
+    -o smtpd_sasl_auth_enable=no
 
 # Internal Submission, no tls, no starttls
 10587          inet        n       -       -       -       -       smtpd
