@@ -100,6 +100,7 @@ if (!function_exists("getenvlist")) {
         'enigma',
         // contextmenu must be after kolab_addressbook (#444)
         'contextmenu',
+        'zipdownload',
     ];
 
     if ($disabledPlugins = getenvlist('DISABLED_PLUGINS')) {
@@ -133,6 +134,7 @@ if (!function_exists("getenvlist")) {
 
     $config['message_sort_col'] = 'date';
 
+    $config['enable_spellcheck'] = true;
     $config['spellcheck_engine'] = 'pspell';
     $config['spellcheck_dictionary'] = true;
     $config['spellcheck_ignore_caps'] = true;
