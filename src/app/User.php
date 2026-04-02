@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Passport\HasApiTokens;
 use League\OAuth2\Server\Exception\OAuthServerException;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 /**
  * The eloquent definition of a User.
@@ -933,6 +934,12 @@ class User extends Authenticatable
                     $error = $vresult;
                 }
             }
+        }
+
+        if ($withChecks) {
+            $is_trusted = IpUtils::checkIp($clientIP, \config('app.trusted_client_hosts'));
+            $withChecks = !$is_trusted;
+            \Log::debug("Authentication from {$clientIP}: " . ($is_trusted ? 'trusted' : 'not trusted'));
         }
 
         if ($withChecks) {

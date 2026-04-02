@@ -299,4 +299,5 @@ return [
     'test_verification_code' => (string) env('TEST_VERIFICATION_CODE', ''),
 
     'kolabobjects_storage' => (string) env('KOLABOBJECTS_STORAGE', false),
+    'trusted_client_hosts' => explode(',', env('TRUSTED_CLIENT_HOSTS', '')),
 ];
