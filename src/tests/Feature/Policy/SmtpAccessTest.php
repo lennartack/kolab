@@ -44,14 +44,14 @@ class SmtpAccessTest extends TestCase
     {
         $group = $this->getTestGroup('group-test@kolab.org');
 
-        // invalid sender address
-        $this->assertFalse(SmtpAccess::verifyRecipient('invalid', 'none@unknown.tld'));
-
         // non-existing recipient
         $this->assertTrue(SmtpAccess::verifyRecipient('ext@gmail.com', 'none@unknown.tld'));
 
         // no policy for a group
         $this->assertTrue(SmtpAccess::verifyRecipient('ext@gmail.com', $group->email));
+
+        // empty sender
+        $this->assertTrue(SmtpAccess::verifyRecipient('', $group->email));
 
         $group->setConfig(['sender_policy' => ['.gmail.com', 'allowed.tld', 'allowed@kolab.org']]);
 
@@ -66,6 +66,17 @@ class SmtpAccessTest extends TestCase
 
         // no match
         $this->assertFalse(SmtpAccess::verifyRecipient('test@kolab.ch', $group->email));
+
+        // empty sender
+        $this->assertFalse(SmtpAccess::verifyRecipient('', $group->email));
+
+        // User recipient
+        $this->assertTrue(SmtpAccess::verifyRecipient('anyone@gmail.com', 'john@kolab.org'));
+        $this->assertTrue(SmtpAccess::verifyRecipient('', 'john@kolab.org'));
+
+        // Non-existing recipient (?)
+        $this->assertTrue(SmtpAccess::verifyRecipient('anyone@gmail.com', 'unknown@unknown.org'));
+        $this->assertTrue(SmtpAccess::verifyRecipient('', 'unknown@unknown.org'));
     }
 
     /**

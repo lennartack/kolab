@@ -17,7 +17,7 @@ class SmtpAccess
     public static function reception($data): Response
     {
         // Check access policy
-        if (!self::verifyRecipient($data['sender'], $data['recipient'])) {
+        if (!self::verifyRecipient($data['sender'] ?? '', $data['recipient'])) {
             return new Response(Response::ACTION_REJECT, 'Invalid recipient', 403);
         }
 
@@ -143,10 +143,6 @@ class SmtpAccess
     {
         $sender = \strtolower($sender);
 
-        if (!str_contains($sender, '@')) {
-            return false;
-        }
-
         $group = Group::where('email', $recipient)->first();
 
         // Check distribution list sender access list
@@ -155,6 +151,10 @@ class SmtpAccess
 
             if (!empty($policy)) {
                 foreach ($policy as $entry) {
+                    // $sender can be empty in case of an empty SMTP FROM
+                    if (!str_contains($sender, '@')) {
+                        break;
+                    }
                     // Full email address match
                     if (str_contains($entry, '@')) {
                         if ($sender === $entry) {
