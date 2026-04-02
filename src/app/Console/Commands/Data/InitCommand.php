@@ -125,7 +125,7 @@ class InitCommand extends Command
         }
 
         // Inject extra passport clients
-        $clients = array_merge($clients, \config('auth.extra_passport_clients') ?? []);
+        $clients = array_merge($clients, \config('auth.extra_passport_clients') ?: []);
 
         foreach ($clients as $clientConfig) {
             $client = Passport::client()->where('id', $clientConfig['id'])->first();
