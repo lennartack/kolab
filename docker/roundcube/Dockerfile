@@ -45,6 +45,8 @@ RUN sed -i -e '/^ssl/d' /etc/yum.repos.d/kolab*.repo && \
         php-fpm \
         php-pear \
         php-redis \
+        php-pspell \
+        php-zip \
         ImageMagick \
         re2c \
         npm \
