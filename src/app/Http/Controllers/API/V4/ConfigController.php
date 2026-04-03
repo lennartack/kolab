@@ -36,9 +36,12 @@ class ConfigController extends Controller
             'kolab-disabled-apis' => array_keys(array_filter($apis, fn ($v) => !\config($v))),
         ];
 
+        /** @var array<string, UserSetting> $settings */
+        $settings = $user->settings()->whereIn('key', ['kolabobjects_storage', 'debug'])->get()->keyBy('key')->all();
+
         $skus = $user->skuTitles();
 
-        if ((bool) $user->getSetting('kolabobjects_storage') || \config('app.kolabobjects_storage')) {
+        if (isset($settings['kolabobjects_storage']) || \config('app.kolabobjects_storage')) {
             $config['kolab-configuration-overlays'][] = 'kolabobjects';
         } else {
             $config['kolab-configuration-overlays'][] = 'kolab4';
@@ -53,7 +56,7 @@ class ConfigController extends Controller
         }
 
         if (in_array('groupware', $skus)) {
-            if ((bool) $user->getSetting('kolabobjects_storage') || \config('app.kolabobjects_storage')) {
+            if (isset($settings['kolabobjects_storage']) || \config('app.kolabobjects_storage')) {
                 $config['kolab-configuration-overlays'][] = 'groupware-kolabobjects';
             } else {
                 $config['kolab-configuration-overlays'][] = 'groupware';
@@ -65,13 +68,12 @@ class ConfigController extends Controller
         // $config['skin_logo'] = 'data:image/svg+xml;base64,'
         //    . base64_encode(file_get_contents(storage_path('logo.svg')));
 
-        if ($debug_setting = $user->settings()->where('key', 'debug')->first()) {
-            /** @var UserSetting $debug_setting */
-            // Make sure the setting didn't expire
-            if ($debug_setting->updated_at->isBefore(now()->subHours(self::DEBUG_TTL))) {
-                $debug_setting->delete();
+        if (!empty($settings['debug'])) {
+            // Delete expired debug setting
+            if ($settings['debug']->updated_at->isBefore(now()->subHours(self::DEBUG_TTL))) {
+                $settings['debug']->delete();
             } else {
-                $config['debug'] = $debug_setting->value;
+                $config['debug'] = $settings['debug']->value;
             }
         }
 
