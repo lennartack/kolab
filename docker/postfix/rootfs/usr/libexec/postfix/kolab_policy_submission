@@ -74,6 +74,7 @@ class PolicyRequest:
 
         # pylint: disable=broad-except
         except Exception:
+            logging.warning("Exception on policy request.")
             print("action=DEFER_IF_PERMIT Temporary error, try again later.\n")
             sys.stdout.flush()
             sys.exit(0)
@@ -93,6 +94,7 @@ def read_request_input():
 
     while not end_of_request:
         if (time.time() - start_time) >= 10:
+            logging.warning("took too long reading the request.")
             print("action=DEFER_IF_PERMIT Temporary error, try again later.\n")
             sys.stdout.flush()
             sys.exit(0)
