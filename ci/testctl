@@ -536,7 +536,9 @@ kolab__mailtransporttest() {
     # FIXME we currently bypass this because we short-circuit checks via mynetworks
     # _green "Don't accept email on port 25 from local users"
     # $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
-    _green "Don't accept email to non-local users"
+    _green "Don't accept authentication on port 25"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.org --recipient-password simple123 --recipient-host localhost --recipient-port 6993 && exit 1
+    _green "Don't accept email on port 25 to non-local users"
     $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.org --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
 
     _green "Accept empty sender on port 25"
