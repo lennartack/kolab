@@ -18,14 +18,15 @@ class PolicyRequest:
     """
         A holder of policy request instances.
     """
-    recipients = []
-    sender = None
-    user = None
 
     def __init__(self, request):
         """
             Initialize a policy request, usually in RCPT protocol state.
         """
+        self.recipients = []
+        self.sender = None
+        self.user = None
+
         logging.debug("Initializing request.")
         if 'sender' in request:
             self.sender = request['sender']
