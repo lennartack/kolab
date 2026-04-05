@@ -24,12 +24,11 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o cleanup_service_name=cleanup_submission
     -o content_filter=smtp-amavis:[AMAVIS_HOST]:13026
     -o smtpd_sasl_auth_enable=yes
-    -o smtpd_client_restrictions=permit_sasl_authenticated,reject
-    -o smtpd_data_restrictions=$submission_data_restrictions
     -o smtpd_client_restrictions=$submission_client_restrictions
     -o smtpd_sender_restrictions=$submission_sender_restrictions
     -o smtpd_recipient_restrictions=$submission_recipient_restrictions
     -o smtpd_relay_restrictions=$submission_relay_restrictions
+    -o smtpd_data_restrictions=$submission_data_restrictions
     -o smtpd_helo_restrictions=$submission_helo_restrictions
     -o smtpd_helo_required=yes
     -o smtpd_peername_lookup=no
@@ -43,11 +42,11 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     #-o smtpd_tls_security_level=encrypt
     -o smtpd_sasl_auth_enable=yes
     -o smtpd_sasl_authenticated_header=yes
-    -o smtpd_client_restrictions=permit_sasl_authenticated,reject
-    -o smtpd_data_restrictions=$submission_data_restrictions
+    -o smtpd_client_restrictions=$submission_client_restrictions
     -o smtpd_sender_restrictions=$submission_sender_restrictions
     -o smtpd_recipient_restrictions=$submission_recipient_restrictions
     -o smtpd_relay_restrictions=$submission_relay_restrictions
+    -o smtpd_data_restrictions=$submission_data_restrictions
     -o smtpd_helo_restrictions=$submission_helo_restrictions
 
 # External submission, ssl
@@ -64,7 +63,7 @@ postlog             unix-dgram  n       -       n       -       1       postlogd
     -o smtpd_tls_wrappermode=yes
     -o smtpd_sasl_auth_enable=yes
     -o smtpd_sasl_authenticated_header=yes
-    -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+    -o smtpd_client_restrictions=$submission_client_restrictions
     -o smtpd_sender_restrictions=$submission_sender_restrictions
     -o smtpd_recipient_restrictions=$submission_recipient_restrictions
     -o smtpd_relay_restrictions=$submission_relay_restrictions
