@@ -484,6 +484,8 @@ kolab__prepare_mailtransporttest() {
 
     # Create an alias for admin@kolab.local
     kolab__artisan user:add-alias admin@kolab.local alias@kolab.local
+    # Create a special catchall alias for admin@kolab.local
+    kolab__artisan user:add-alias admin@kolab.local catchall@kolab.local
 
     # Create a user in a secondary domain
     kolab__artisan domain:create kolab-secondary.local
@@ -515,6 +517,8 @@ kolab__mailtransporttest() {
 
     _green "Receive on alias"
     $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --target-address alias@kolab.local|| exit 1
+    _green "Receive on catchall"
+    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-password simple123 --sender-host localhost --sender-port 6465 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --validate --target-address doesntexist@kolab.local|| exit 1
 
     # Expected failures
     _green "Can't send with empty sender on external submission"
