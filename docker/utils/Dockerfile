@@ -35,6 +35,7 @@ RUN dnf module -y enable ruby:3.1 && \
         python3-pip \
         python3-pytz \
         strace \
+        swaks \
         telnet \
         traceroute \
         vim-enhanced \
