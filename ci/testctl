@@ -510,6 +510,10 @@ _mailtransporttest_smtp() {
     $MAILTRANSPORTTEST --timeout 1 --sender-host localhost --sender-port 10025 --recipient-host localhost --recipient-port 6993 "$@"
 }
 
+_swaks() {
+    $PODMAN run --rm -ti --network=host --pod=$POD kolab-utils:latest swaks "$@"
+}
+
 kolab__mailtransporttest() {
     POD=${POD:-dev}
     MAILTRANSPORTTEST="$PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py"
@@ -545,7 +549,12 @@ kolab__mailtransporttest() {
     # _green "Don't accept email on port 25 from local users"
     # $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.local --recipient-password simple123 --recipient-host localhost --recipient-port 6993 --smtp && exit 1
     _green "Don't accept authentication on port 25"
-    $MAILTRANSPORTTEST --timeout 1 --sender-username admin@kolab.local --sender-host localhost --sender-port 10025 --recipient-username admin@kolab.org --recipient-password simple123 --recipient-host localhost --recipient-port 6993 && exit 1
+    _swaks --to recipient@domain.com \
+        --server localhost --port 10025 \
+        --auth LOGIN \
+        --auth-user admin@kolab.local \
+        --auth-password simple123 || [ $? -eq 28 ] || exit 1
+
     _green "Don't accept email on port 25 to non-local users"
     _mailtransporttest_smtp --sender-username admin@kolab.local --recipient-username admin@kolab.org --recipient-password simple123 --smtp && exit 1
 
