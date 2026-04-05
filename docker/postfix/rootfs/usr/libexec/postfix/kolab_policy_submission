@@ -115,6 +115,12 @@ def read_request_input():
                 end_of_request = True
         else:
             request_line = request_line.strip()
+
+            # This is a new request (happens if the previous request dropped the connection)
+            if request_line == 'request=smtpd_access_policy':
+                policy_request = {}
+                start_time = time.time()
+
             request_key = request_line.split('=')[0]
             request_value = '='.join(request_line.split('=')[1:])
 
