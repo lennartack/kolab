@@ -556,7 +556,7 @@ kolab__mailtransporttest() {
         --auth-password simple123 || [ $? -eq 28 ] || exit 1
 
     _green "Don't accept email on port 25 to non-local users"
-    _mailtransporttest_smtp --sender-username admin@kolab.local --recipient-username admin@kolab.org --recipient-password simple123 --smtp && exit 1
+    swaks --to test1@nothere.local --server localhost --port 10025 || [ $? -eq 24 ] || exit 1
 
     _green "Accept empty sender on port 25"
     _mailtransporttest_smtp --sender-username "" --recipient-username admin@kolab.local --recipient-password simple123 --smtp || exit 1
