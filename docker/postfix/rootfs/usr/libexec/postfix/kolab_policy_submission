@@ -26,6 +26,7 @@ class PolicyRequest:
         self.recipients = []
         self.sender = None
         self.user = None
+        self.recipient_count = None
 
         logging.debug("Initializing request.")
         if 'sender' in request:
@@ -56,10 +57,16 @@ class PolicyRequest:
                 self.recipients.append(request['recipient'])
             logging.debug(f"  {self.recipients}")
 
+        if 'recipient_count' in request:
+                self.recipient_count = request['recipient_count']
+
     def check_policy(self):
         """
             Pass the request to Kolab API
         """
+        if self.recipient_count:
+            if int(self.recipient_count) != len(self.recipients):
+                logging.warning(f"  Expecting {self.recipient_count} recipients, but found {len(self.recipients)} ")
         try:
             logging.debug(f"  Checking policy for {self.sender}")
             response = requests.post(
