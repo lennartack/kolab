@@ -480,7 +480,7 @@ kolab__prepare_mailtransporttest() {
 
     # Setup a user that delegates to admin@kolab.local
     kolab__artisan user:create "delegator@kolab.local" --password="simple123" --package=kolab
-    kolab__artisan user:create-delegation delegator@kolab.local admin@kolab.local
+    kolab__artisan user:delegate delegator@kolab.local admin@kolab.local
 
     # Create an alias for admin@kolab.local
     kolab__artisan user:add-alias admin@kolab.local alias@kolab.local
