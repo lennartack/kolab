@@ -138,6 +138,11 @@ class ImapCli < Thor
     p imap.subscribe(folder)
   end
 
+  desc "unsubscribe", "Unsubscribe."
+  def unsubscribe(folder)
+    p imap.unsubscribe(folder)
+  end
+
   desc "getmetadata", "Getmetadata."
   def getmetadata(folder, *entries)
     # p imap.select(folder)
