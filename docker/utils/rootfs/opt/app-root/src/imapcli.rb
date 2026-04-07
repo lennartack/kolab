@@ -74,6 +74,16 @@ class ImapCli < Thor
       end
       @imap
     end
+
+    def printfolders(folders)
+      folders.each do |folder|
+        if not folder.attr.empty?
+          puts "#{folder.name} #{folder.attr}"
+        else
+          puts "#{folder.name}"
+        end
+      end
+    end
   }
 
   desc "login", "Login."
@@ -83,7 +93,7 @@ class ImapCli < Thor
 
   desc "list", "List."
   def list(folder = "**")
-    p imap.list("", folder)
+    printfolders imap.list("", folder)
   end
 
   desc "search", "Search."
@@ -94,7 +104,7 @@ class ImapCli < Thor
 
   desc "lsub", "List subscriptions."
   def lsub(folder = "**")
-    p imap.lsub("", folder)
+    printfolders imap.lsub("", folder)
   end
 
   desc "namespace", "Namespace."
