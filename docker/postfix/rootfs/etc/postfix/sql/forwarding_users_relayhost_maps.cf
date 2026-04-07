@@ -1,0 +1,8 @@
+hosts = DB_HOST
+user = DB_USERNAME
+password = DB_PASSWORD
+dbname = DB_DATABASE
+# If domain is not in our db, then use RESTRICTED_USER_RELAY_HOST
+query = SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM domains WHERE status & 2 AND status & 16 AND status & 32 AND deleted_at IS NULL AND namespace = '%d');
+expansion_limit = 1
+result_format = RESTRICTED_USER_RELAY_HOST
