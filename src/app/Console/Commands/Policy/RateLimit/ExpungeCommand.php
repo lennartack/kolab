@@ -29,6 +29,7 @@ class ExpungeCommand extends Command
      */
     public function handle()
     {
-        RateLimit::where('updated_at', '<', Carbon::now()->subMonthsWithoutOverflow(6))->delete();
+        $months = config('policy.ratelimit.retention_months');
+        RateLimit::where('updated_at', '<', Carbon::now()->subMonthsWithoutOverflow($months))->delete();
     }
 }

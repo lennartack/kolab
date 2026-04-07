@@ -10,20 +10,25 @@ Here's the rules applied to a submission (in order):
 
 1. Mail from soft-deleted or suspended senders is put on HOLD.
 2. Whitelisted senders are NOT rate limited (see the Whitelists section below).
-3. Accounts with 100% discount are NOT rate limited.
-4. Accounts with positive balance and any payments are NOT rate limited.
-5. If a sender or all users in an account, in last 60 minutes:
-    a) sent at least `RATELIMIT_MAX_MESSAGES` (default: 10) messages or
-    b) sent messages to at least `RATELIMIT_MAX_RECIPIENTS` (default: 250) recipients,
-    sumbission if DEFER-ed.
+3. If a sender or all users in an account, in last 60 minutes sent messages to
+   at least `RATELIMIT_MAX_RECIPIENTS` (default: 100) recipients, sumbission is DEFER-ed.
+   The limit for restricted (new) accounts is different (`RATELIMIT_MAX_RECIPIENTS_RESTRICTED`),
+   and defaults to 1/4th of the limit for non-restricted accounts.
+4. If a sender or all users in an account, in last 24 hours sent messages to
+   at least `RATELIMIT_MAX_RECIPIENTS_DAILY` (default: 1000) recipients, sumbission is DEFER-ed.
+   The limit for restricted accounts is different (`RATELIMIT_MAX_RECIPIENTS_RESTRICTED_DAILY`),
+   and defaults to 1/4th of the limit for non-restricted accounts.
 
 ## Automatic suspending
 
-A sender (or the whole account) created in last two months gets suspended if the submission rate
-is exceeded too much. Limits are:
+A sender (or the whole account) gets suspended if the submission rate is exceeded too much.
 
-- count of messages in last 60 minutes: (`RATELIMIT_MAX_MESSAGES * RATELIMIT_SUSPEND_FACTOR`)
-- count of recipients in last 60 minutes: (`RATELIMIT_MAX_RECIPIENTS * RATELIMIT_SUSPEND_FACTOR`)
+1. Limit to number of recipients in last 60 minutes is:
+    - for all accounts: `RATELIMIT_SUSPEND_MAX_RECIPIENTS`
+    - for restricted accounts: `RATELIMIT_SUSPEND_MAX_RECIPIENTS_RESTRICTED`
+2. Limit to number of recipients in last 24 hours is:
+    - for all accounts: `RATELIMIT_SUSPEND_MAX_RECIPIENTS_DAILY`
+    - for restricted accounts: `RATELIMIT_SUSPEND_MAX_RECIPIENTS_RESTRICTED_DAILY`
 
 ## Whitelists
 

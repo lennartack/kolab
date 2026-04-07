@@ -2,11 +2,8 @@
 
 namespace Tests\Feature\Policy;
 
-use App\Discount;
-use App\Domain;
 use App\Policy\RateLimit;
 use App\Policy\Response;
-use App\Transaction;
 use App\User;
 use Tests\TestCase;
 
@@ -22,36 +19,34 @@ class RateLimitTest extends TestCase
         $this->setUpTest();
 
         RateLimit::query()->delete();
-        Transaction::query()->delete();
+
+        // Set some low limits for tests
+        \config([
+            'policy.ratelimit.whitelist' => [],
+            'policy.ratelimit.max_recipients' => 10,
+            'policy.ratelimit.max_recipients_restricted' => 5,
+            'policy.ratelimit.suspend_max_recipients' => 20,
+            'policy.ratelimit.suspend_max_recipients_restricted' => 10,
+            'policy.ratelimit.max_recipients_daily' => 20,
+            'policy.ratelimit.max_recipients_restricted_daily' => 10,
+            'policy.ratelimit.suspend_max_recipients_daily' => 30,
+            'policy.ratelimit.suspend_max_recipients_restricted_daily' => 20,
+        ]);
     }
 
     protected function tearDown(): void
     {
         RateLimit::query()->delete();
-        Transaction::query()->delete();
 
         parent::tearDown();
     }
 
     /**
-     * Test verifyRequest() method for an individual account cases
+     * Test verifyRequest() method for an individual account
      */
     public function testVerifyRequestIndividualAccount()
     {
-        // Verify an individual can send an email unrestricted, so long as the account is active.
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['someone@test.domain']);
-
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // Verify a whitelisted individual account is in fact whitelisted
-        RateLimit::truncate();
-        RateLimit\Whitelist::create([
-            'whitelistable_id' => $this->publicDomainUser->id,
-            'whitelistable_type' => User::class,
-        ]);
-
+        // Verify an individual can send an email unrestricted
         // first 9 requests
         for ($i = 1; $i <= 9; $i++) {
             $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
@@ -60,181 +55,238 @@ class RateLimitTest extends TestCase
             $this->assertSame('', $result->reason);
         }
 
-        // normally, request #10 would get blocked
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0010@test.domain']);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // requests 11 through 26
-        for ($i = 11; $i <= 26; $i++) {
-            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // Verify an individual trial user is automatically suspended.
-        RateLimit::truncate();
-        RateLimit\Whitelist::truncate();
-
-        // first 9 requests
-        for ($i = 1; $i <= 9; $i++) {
-            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // the next 16 requests for 25 total
-        for ($i = 10; $i <= 25; $i++) {
+        // requests 10 through 19 get DEFERed
+        for ($i = 10; $i <= 19; $i++) {
             $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
             $this->assertSame(403, $result->code);
             $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-            $this->assertSame('The account is at 10 messages per hour, cool down.', $result->reason);
+            $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
         }
+
+        // not suspended yet
+        $this->publicDomainUser->refresh();
+        $this->assertFalse($this->publicDomainUser->isSuspended());
+
+        // Test that message to the same recipient is not being counted as new
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0019@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
+
+        // not suspended yet
+        $this->publicDomainUser->refresh();
+        $this->assertFalse($this->publicDomainUser->isSuspended());
+
+        // request #20 (with a new recipient) should suspend
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0020@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
 
         $this->publicDomainUser->refresh();
         $this->assertTrue($this->publicDomainUser->isSuspended());
 
-        // Verify a suspended individual can not send an email
-        RateLimit::truncate();
-
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['someone@test.domain']);
+        // next request is on HOLD
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0030@test.domain']);
         $this->assertSame(403, $result->code);
         $this->assertSame(Response::ACTION_HOLD, $result->action);
         $this->assertSame('Sender deleted or suspended', $result->reason);
 
-        // Verify an individual can run out of messages per hour
-        RateLimit::truncate();
         $this->publicDomainUser->unsuspend();
 
-        // first 9 requests
-        for ($i = 1; $i <= 9; $i++) {
+        // Test whitelisted user
+        $whitelist = RateLimit\Whitelist::create([
+            'whitelistable_id' => $this->publicDomainUser->id,
+            'whitelistable_type' => User::class,
+        ]);
+
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0040@test.domain']);
+        $this->assertSame(200, $result->code);
+        $this->assertSame(Response::ACTION_DUNNO, $result->action);
+        $this->assertSame('', $result->reason);
+
+        // Test whitelisted but suspended user
+        $this->publicDomainUser->suspend();
+
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0050@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_HOLD, $result->action);
+        $this->assertSame('Sender deleted or suspended', $result->reason);
+
+        // Test deleted user
+        $this->publicDomainUser->unsuspend();
+        $this->publicDomainUser->delete();
+
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0060@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_HOLD, $result->action);
+        $this->assertSame('Sender deleted or suspended', $result->reason);
+    }
+
+    /**
+     * Test verifyRequest() method for an individual account regarding daily limits
+     */
+    public function testVerifyRequestIndividualAccountDailyLimits()
+    {
+        // Create first 15 requests
+        for ($i = 1; $i <= 15; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+        }
+
+        // and move them 2h back
+        RateLimit::query()->update(['updated_at' => now()->subHours(3)]);
+
+        // next 4 messages should be unlimited again
+        for ($i = 16; $i <= 19; $i++) {
             $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
             $this->assertSame(200, $result->code);
             $this->assertSame(Response::ACTION_DUNNO, $result->action);
             $this->assertSame('', $result->reason);
         }
 
-        // the tenth request should be blocked
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0010@test.domain']);
+        // next 5 should not suspend the user yet, but block mail delivery
+        for ($i = 20; $i <= 24; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 20 recipients per day, cool down.', $result->reason);
+        }
+
+        // not suspended yet
+        $this->publicDomainUser->refresh();
+        $this->assertFalse($this->publicDomainUser->isSuspended());
+
+        RateLimit::query()->where('updated_at', '>=', now()->subHour())->update(['updated_at' => now()->subHours(2)]);
+
+        // next hour
+        for ($i = 25; $i <= 29; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 20 recipients per day, cool down.', $result->reason);
+        }
+
+        // not suspended yet
+        $this->publicDomainUser->refresh();
+        $this->assertFalse($this->publicDomainUser->isSuspended());
+
+        // message #30, auto-suspend limit reached
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0030@test.domain']);
         $this->assertSame(403, $result->code);
         $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 10 messages per hour, cool down.', $result->reason);
+        $this->assertSame('The account is at 20 recipients per day, cool down.', $result->reason);
 
-        // Verify a paid for individual account does not simply run out of messages
-        RateLimit::truncate();
+        $this->publicDomainUser->refresh();
+        $this->assertTrue($this->publicDomainUser->isSuspended());
+    }
 
-        // first 9 requests
-        for ($i = 1; $i <= 9; $i++) {
+    /**
+     * Test verifyRequest() method for a restricted account
+     */
+    public function testVerifyRequestRestrictedAccount()
+    {
+        $this->publicDomainUser->status |= User::STATUS_RESTRICTED;
+        $this->publicDomainUser->save();
+
+        // Verify an individual can send an email unrestricted
+        // first 4 requests
+        for ($i = 1; $i <= 4; $i++) {
             $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
             $this->assertSame(200, $result->code);
             $this->assertSame(Response::ACTION_DUNNO, $result->action);
             $this->assertSame('', $result->reason);
         }
 
-        // the tenth request should be blocked
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0010@test.domain']);
-        $this->assertSame(403, $result->code);
-        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 10 messages per hour, cool down.', $result->reason);
-
-        // create a credit transaction
-        $this->publicDomainUser->wallets()->first()->credit(1111);
-
-        // the next request should now be allowed
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0010@test.domain']);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // Verify a 100% discount for individual account does not simply run out of messages
-        RateLimit::truncate();
-        $wallet = $this->publicDomainUser->wallets()->first();
-        $wallet->discount()->associate(Discount::where('description', 'Free Account')->first());
-        $wallet->save();
-
-        // first 9 requests
-        for ($i = 1; $i <= 9; $i++) {
+        // requests 5 through 10 get DEFERed
+        for ($i = 5; $i <= 9; $i++) {
             $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 5 recipients per hour, cool down.', $result->reason);
         }
 
-        // the tenth request should now be allowed
-        $result = RateLimit::verifyRequest($this->publicDomainUser, ['someone@test.domain']);
+        // not suspended yet
+        $this->publicDomainUser->refresh();
+        $this->assertFalse($this->publicDomainUser->isSuspended());
+
+        // request #10 should suspend
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0020@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        $this->assertSame('The account is at 5 recipients per hour, cool down.', $result->reason);
+
+        $this->publicDomainUser->refresh();
+        $this->assertTrue($this->publicDomainUser->isSuspended());
+
+        // next request is on HOLD
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0030@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_HOLD, $result->action);
+        $this->assertSame('Sender deleted or suspended', $result->reason);
+    }
+
+    /**
+     * Test verifyRequest() method for a restricted account regarding daily limits
+     */
+    public function testVerifyRequestRestrictedAccountDailyLimits()
+    {
+        $this->publicDomainUser->status |= User::STATUS_RESTRICTED;
+        $this->publicDomainUser->save();
+
+        // Create first 8 requests
+        for ($i = 1; $i <= 8; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+        }
+
+        // and move them 2h back
+        RateLimit::query()->update(['updated_at' => now()->subHours(4)]);
+
+        // new hour, next request should be unlimited
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0009@test.domain']);
         $this->assertSame(200, $result->code);
         $this->assertSame(Response::ACTION_DUNNO, $result->action);
         $this->assertSame('', $result->reason);
 
-        // Verify that an individual user in its trial can run out of recipients.
-        RateLimit::truncate();
-        $wallet->discount_id = null;
-        $wallet->balance = 0;
-        $wallet->save();
-
-        // first 2 requests (34 recipients each)
-        for ($x = 1; $x <= 2; $x++) {
-            $recipients = [];
-            for ($y = 1; $y <= 34; $y++) {
-                $recipients[] = sprintf('%04d@test.domain', $x * $y);
-            }
-
-            $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
+        // next 3 messages should reach daily limit
+        for ($i = 10; $i <= 12; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 10 recipients per day, cool down.', $result->reason);
         }
 
-        // on to the third request, resulting in 102 recipients total
-        $recipients = [];
-        for ($y = 1; $y <= 34; $y++) {
-            $recipients[] = sprintf('%04d@test.domain', 3 * $y);
+        RateLimit::query()->where('updated_at', '>=', now()->subHour())->update(['updated_at' => now()->subHours(3)]);
+
+        // new hour, 4 requests pass unlimited
+        for ($i = 13; $i <= 16; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 10 recipients per day, cool down.', $result->reason);
         }
 
-        $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
+        RateLimit::query()->where('updated_at', '>=', now()->subHour())->update(['updated_at' => now()->subHours(2)]);
+
+        // new hour, 3 requests pass unlimited
+        for ($i = 17; $i <= 19; $i++) {
+            $result = RateLimit::verifyRequest($this->publicDomainUser, [sprintf("%04d@test.domain", $i)]);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 10 recipients per day, cool down.', $result->reason);
+        }
+
+        // not suspended yet
+        $this->publicDomainUser->refresh();
+        $this->assertFalse($this->publicDomainUser->isSuspended());
+
+        // request #20 should suspend the user
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0020@test.domain']);
         $this->assertSame(403, $result->code);
         $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 100 recipients per hour, cool down.', $result->reason);
+        $this->assertSame('The account is at 10 recipients per day, cool down.', $result->reason);
 
-        // Verify that an individual user that has paid for its account doesn't run out of recipients.
-        RateLimit::truncate();
-        $wallet->balance = 0;
-        $wallet->save();
-
-        // first 2 requests (34 recipients each)
-        for ($x = 0; $x < 2; $x++) {
-            $recipients = [];
-            for ($y = 0; $y < 34; $y++) {
-                $recipients[] = sprintf("%04d@test.domain", $x * $y);
-            }
-
-            $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // on to the third request, resulting in 102 recipients total
-        $recipients = [];
-        for ($y = 0; $y < 34; $y++) {
-            $recipients[] = sprintf("%04d@test.domain", 2 * $y);
-        }
-
-        $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
-        $this->assertSame(403, $result->code);
-        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 100 recipients per hour, cool down.', $result->reason);
-
-        $wallet->award(11111);
-
-        // the tenth request should now be allowed
-        $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
+        $this->publicDomainUser->refresh();
+        $this->assertTrue($this->publicDomainUser->isSuspended());
     }
 
     /**
@@ -242,190 +294,36 @@ class RateLimitTest extends TestCase
      */
     public function testVerifyRequestGroupAccount()
     {
-        // Verify that a group owner can send email
-        $result = RateLimit::verifyRequest($this->domainOwner, ['someone@test.domain']);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // Verify that a domain owner can run out of messages
-        RateLimit::truncate();
-
-        // first 9 requests
-        for ($i = 0; $i < 9; $i++) {
+        // send some mail as one user
+        for ($i = 1; $i <= 9; $i++) {
             $result = RateLimit::verifyRequest($this->domainOwner, [sprintf("%04d@test.domain", $i)]);
             $this->assertSame(200, $result->code);
             $this->assertSame(Response::ACTION_DUNNO, $result->action);
             $this->assertSame('', $result->reason);
         }
 
-        // the tenth request should be blocked
-        $result = RateLimit::verifyRequest($this->domainOwner, ['0010@test.domain']);
-        $this->assertSame(403, $result->code);
-        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 10 messages per hour, cool down.', $result->reason);
+        // the tenth request should be blocked even if done by another user in that account
+        for ($i = 10; $i <= 19; $i++) {
+            $result = RateLimit::verifyRequest($this->jack, [sprintf("%04d@test.domain", $i)]);
+            $this->assertSame(403, $result->code);
+            $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+            $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
+        }
 
         $this->domainOwner->refresh();
         $this->assertFalse($this->domainOwner->isSuspended());
 
-        // Verify that a domain owner can run out of recipients
-        RateLimit::truncate();
-        $this->domainOwner->unsuspend();
-
-        // first 2 requests (34 recipients each)
-        for ($x = 0; $x < 2; $x++) {
-            $recipients = [];
-            for ($y = 0; $y < 34; $y++) {
-                $recipients[] = sprintf("%04d@test.domain", $x * $y);
-            }
-
-            $result = RateLimit::verifyRequest($this->domainOwner, $recipients);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // on to the third request, resulting in 102 recipients total
-        $recipients = [];
-        for ($y = 0; $y < 34; $y++) {
-            $recipients[] = sprintf("%04d@test.domain", 2 * $y);
-        }
-
-        $result = RateLimit::verifyRequest($this->domainOwner, $recipients);
+        // Finally another user can suspend the whole account
+        $result = RateLimit::verifyRequest($this->joe, ['0202@test.domain']);
         $this->assertSame(403, $result->code);
         $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 100 recipients per hour, cool down.', $result->reason);
+        $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
 
         $this->domainOwner->refresh();
-        $this->assertFalse($this->domainOwner->isSuspended());
-
-        // Verify that a paid for group account can send messages.
-        RateLimit::truncate();
-
-        // first 2 requests (34 recipients each)
-        for ($x = 0; $x < 2; $x++) {
-            $recipients = [];
-            for ($y = 0; $y < 34; $y++) {
-                $recipients[] = sprintf("%04d@test.domain", $x * $y);
-            }
-
-            $result = RateLimit::verifyRequest($this->domainOwner, $recipients);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // on to the third request, resulting in 102 recipients total
-        $recipients = [];
-        for ($y = 0; $y < 34; $y++) {
-            $recipients[] = sprintf("%04d@test.domain", 2 * $y);
-        }
-
-        $result = RateLimit::verifyRequest($this->domainOwner, $recipients);
-        $this->assertSame(403, $result->code);
-        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 100 recipients per hour, cool down.', $result->reason);
-
-        $wallet = $this->domainOwner->wallets()->first();
-        $wallet->credit(1111);
-
-        $result = RateLimit::verifyRequest($this->domainOwner, $recipients);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // Verify that a user for a domain owner can send email.
-        RateLimit::truncate();
-
-        $result = RateLimit::verifyRequest($this->domainUsers[0], ['someone@test.domain']);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // Verify that the users in a group account can be limited.
-        RateLimit::truncate();
-        $wallet->balance = 0;
-        $wallet->save();
-
-        // the first eight requests should be accepted
-        for ($i = 0; $i < 8; $i++) {
-            $result = RateLimit::verifyRequest($this->domainUsers[0], [sprintf("%04d@test.domain", $i)]);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // the ninth request from another group user should also be accepted
-        $result = RateLimit::verifyRequest($this->domainUsers[1], ['0009@test.domain']);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // the tenth request from another group user should be rejected
-        $result = RateLimit::verifyRequest($this->domainUsers[1], ['0010@test.domain']);
-        $this->assertSame(403, $result->code);
-        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 10 messages per hour, cool down.', $result->reason);
-
-        // Test a trial user
-        RateLimit::truncate();
-
-        // first 2 requests (34 recipients each)
-        for ($x = 0; $x < 2; $x++) {
-            $recipients = [];
-            for ($y = 0; $y < 34; $y++) {
-                $recipients[] = sprintf("%04d@test.domain", $x * $y);
-            }
-
-            $result = RateLimit::verifyRequest($this->domainUsers[0], $recipients);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // on to the third request, resulting in 102 recipients total
-        $recipients = [];
-        for ($y = 0; $y < 34; $y++) {
-            $recipients[] = sprintf("%04d@test.domain", 2 * $y);
-        }
-
-        $result = RateLimit::verifyRequest($this->domainUsers[0], $recipients);
-        $this->assertSame(403, $result->code);
-        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
-        $this->assertSame('The account is at 100 recipients per hour, cool down.', $result->reason);
-
-        // Verify a whitelisted group domain is in fact whitelisted
-        RateLimit::truncate();
-        RateLimit\Whitelist::create([
-            'whitelistable_id' => $this->domainHosted->id,
-            'whitelistable_type' => Domain::class,
-        ]);
-
-        $request = [
-            'sender' => $this->domainUsers[0]->email,
-            'recipients' => [],
-        ];
-
-        // first 9 requests
-        for ($i = 1; $i <= 9; $i++) {
-            $result = RateLimit::verifyRequest($this->domainUsers[0], [sprintf("%04d@test.domain", $i)]);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
-
-        // normally, request #10 would get blocked
-        $result = RateLimit::verifyRequest($this->domainUsers[0], ['0010@test.domain']);
-        $this->assertSame(200, $result->code);
-        $this->assertSame(Response::ACTION_DUNNO, $result->action);
-        $this->assertSame('', $result->reason);
-
-        // requests 11 through 26
-        for ($i = 11; $i <= 26; $i++) {
-            $result = RateLimit::verifyRequest($this->domainUsers[0], [sprintf("%04d@test.domain", $i)]);
-            $this->assertSame(200, $result->code);
-            $this->assertSame(Response::ACTION_DUNNO, $result->action);
-            $this->assertSame('', $result->reason);
-        }
+        $this->assertTrue($this->domainOwner->isSuspended());
+        $this->joe->refresh();
+        $this->assertTrue($this->joe->isSuspended());
+        $this->jack->refresh();
+        $this->assertTrue($this->jack->isSuspended());
     }
 }

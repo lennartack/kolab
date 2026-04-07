@@ -468,8 +468,8 @@ class PolicyTest extends TestCase
         $this->assertSame('HOLD', $json['response']);
         $this->assertSame('Sender deleted or suspended', $json['reason']);
 
-        // Test app.ratelimit_whitelist
-        \config(['app.ratelimit_whitelist' => ['alias@test.domain']]);
+        // Test whitelist configuration
+        \config(['policy.ratelimit.whitelist' => ['alias@test.domain']]);
         $response = $this->post('/api/webhooks/policy/ratelimit', $post);
         $response->assertStatus(200);
 

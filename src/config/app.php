@@ -274,10 +274,6 @@ return [
     'woat_ns1' => env('WOAT_NS1', 'ns01.' . env('APP_DOMAIN')),
     'woat_ns2' => env('WOAT_NS2', 'ns02.' . env('APP_DOMAIN')),
 
-    'ratelimit_whitelist' => explode(',', env('RATELIMIT_WHITELIST', '')),
-    'ratelimit_max_messages' => (int) env('RATELIMIT_MAX_MESSAGES', 10),
-    'ratelimit_max_recipients' => (int) env('RATELIMIT_MAX_RECIPIENTS', 100),
-    'ratelimit_suspend_factor' => (float) env('RATELIMIT_SUSPEND_FACTOR', 2.5),
     'companion_download_link' => env(
         'COMPANION_DOWNLOAD_LINK',
         "https://mirror.apheleia-it.ch/pub/companion-app-beta.apk"

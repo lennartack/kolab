@@ -2,8 +2,8 @@
 
 namespace App\Policy;
 
+use App\EventLog;
 use App\Traits\BelongsToUserTrait;
-use App\Transaction;
 use App\User;
 use App\UserAlias;
 use App\Utils;
@@ -42,7 +42,7 @@ class RateLimit extends Model
 
         $sender = $local . '@' . $domain;
 
-        if (in_array($sender, \config('app.ratelimit_whitelist', []), true)) {
+        if (in_array($sender, \config('policy.ratelimit.whitelist', []), true)) {
             return new Response(Response::ACTION_DUNNO);
         }
 
@@ -110,6 +110,7 @@ class RateLimit extends Model
         $owner = $wallet->owner;
 
         // user nor domain whitelisted, continue scrutinizing the request
+        // TODO: Exclude local users from the count? Could be expensive, but at least exclude the same domain as the sender?
         sort($recipients);
         $recipientCount = count($recipients);
         $recipientHash = hash('sha256', implode(',', $recipients));
@@ -133,94 +134,80 @@ class RateLimit extends Model
             $request->save();
         }
 
-        // exempt owners that have 100% discount.
-        if ($wallet->discount && $wallet->discount->discount == 100) {
-            return new Response(Response::ACTION_DUNNO);
+        // Examine the hourly rates at which the account is sending
+        if ($error = self::checkLimits($user, $owner, false)) {
+            return new Response(Response::ACTION_DEFER_IF_PERMIT, $error, 403);
         }
 
-        // exempt owners that currently maintain a positive balance and made any payments.
-        // Because there might be users that pay via external methods (and don't have Payment records)
-        // we can't check only the Payments table. Instead we assume that a credit/award transaction
-        // is enough to consider the user a "paying user" for purpose of the rate limit.
-        if ($wallet->balance > 0) {
-            $isPayer = $wallet->transactions()
-                ->whereIn('type', [Transaction::WALLET_AWARD, Transaction::WALLET_CREDIT])
-                ->where('amount', '>', 0)
-                ->exists();
-
-            if ($isPayer) {
-                return new Response(Response::ACTION_DUNNO);
-            }
-        }
-
-        $max_messages = config('app.ratelimit_max_messages');
-        $max_recipients = config('app.ratelimit_max_recipients');
-        $suspend_factor = config('app.ratelimit_suspend_factor');
-
-        $ageThreshold = Carbon::now()->subMonthsWithoutOverflow(2);
-
-        // Examine the rates at which the owner (or its users) is sending
-        $ownerRates = self::where('owner_id', $owner->id)
-            ->where('updated_at', '>=', Carbon::now()->subHour());
-
-        if (($count = $ownerRates->count()) >= $max_messages) {
-            // automatically suspend (recursively) if X times over the original limit and younger than two months
-            if ($count >= $max_messages * $suspend_factor && $owner->created_at > $ageThreshold) {
-                $owner->suspendAccount();
-            }
-
-            return new Response(
-                Response::ACTION_DEFER_IF_PERMIT,
-                "The account is at {$max_messages} messages per hour, cool down.",
-                403
-            );
-        }
-
-        if (($recipientCount = $ownerRates->sum('recipient_count')) >= $max_recipients) {
-            // automatically suspend if X times over the original limit and younger than two months
-            if ($recipientCount >= $max_recipients * $suspend_factor && $owner->created_at > $ageThreshold) {
-                $owner->suspendAccount();
-            }
-
-            return new Response(
-                Response::ACTION_DEFER_IF_PERMIT,
-                "The account is at {$max_recipients} recipients per hour, cool down.",
-                403
-            );
-        }
-
-        // Examine the rates at which the user is sending (if not also the owner)
-        if ($user->id != $owner->id) {
-            $userRates = self::where('user_id', $user->id)
-                ->where('updated_at', '>=', Carbon::now()->subHour());
-
-            if (($count = $userRates->count()) >= $max_messages) {
-                // automatically suspend if X times over the original limit and younger than two months
-                if ($count >= $max_messages * $suspend_factor && $user->created_at > $ageThreshold) {
-                    $user->suspend();
-                }
-
-                return new Response(
-                    Response::ACTION_DEFER_IF_PERMIT,
-                    "User is at {$max_messages} messages per hour, cool down.",
-                    403
-                );
-            }
-
-            if (($recipientCount = $userRates->sum('recipient_count')) >= $max_recipients) {
-                // automatically suspend if X times over the original limit
-                if ($recipientCount >= $max_recipients * $suspend_factor && $user->created_at > $ageThreshold) {
-                    $user->suspend();
-                }
-
-                return new Response(
-                    Response::ACTION_DEFER_IF_PERMIT,
-                    "The account is at {$max_recipients} recipients per hour, cool down.",
-                    403
-                );
-            }
+        // Examine the daily rates at which the account is sending
+        if ($error = self::checkLimits($user, $owner, true)) {
+            return new Response(Response::ACTION_DEFER_IF_PERMIT, $error, 403);
         }
 
         return new Response(Response::ACTION_DUNNO);
+    }
+
+    /**
+     * Check number of recipients limit (per hour or per day)
+     */
+    private static function checkLimits($user, $owner, bool $daily = false): ?string
+    {
+        $suffix = $daily ? '_daily' : '';
+
+        $max_recipients = config('policy.ratelimit.max_recipients' . $suffix);
+        $max_recipients_restricted = config('policy.ratelimit.max_recipients_restricted' . $suffix);
+        $suspend_max_recipients = config('policy.ratelimit.suspend_max_recipients' . $suffix);
+        $suspend_max_recipients_restricted = config('policy.ratelimit.suspend_max_recipients_restricted' . $suffix);
+
+        // New users should get a lower limit
+        if ($owner->isRestricted()) {
+            if (!$max_recipients_restricted) {
+                $max_recipients_restricted = (int) ($max_recipients / 4);
+            }
+
+            $max_recipients = $max_recipients_restricted;
+        }
+
+        if (!$max_recipients) {
+            return null;
+        }
+
+        $start = Carbon::now()->subHours($daily ? 24 : 1);
+
+        $count = self::where('owner_id', $owner->id)->where('updated_at', '>=', $start)->sum('recipient_count');
+
+        if ($count >= $max_recipients) {
+            $type = $daily ? 'daily' : 'hourly';
+            \Log::info("[Rate-Limit] {$owner->email} {$type} recipients count: {$count}"
+                . ($owner->id != $user->id ? ". Sender: {$user->email}" : ''));
+
+            // New users should get a lower limit for suspension
+            if ($owner->isRestricted()) {
+                if (!$suspend_max_recipients_restricted) {
+                    $suspend_max_recipients_restricted = (int) ($suspend_max_recipients / 4);
+                }
+
+                $suspend_max_recipients = $suspend_max_recipients_restricted;
+            }
+
+            // automatically suspend if too much over the original limit
+            if ($suspend_max_recipients && $count >= $suspend_max_recipients) {
+                $owner->suspendAccount();
+
+                // TODO: We could include in the message who sent how many messages
+                $msg = "Exceeded {$type} rate limit ({$suspend_max_recipients})";
+                EventLog::createFor($owner, EventLog::TYPE_SUSPENDED, $msg);
+
+                \Log::warning("[Rate-Limit] Suspended spammer {$owner->email}"
+                    . ($owner->id != $user->id ? ". Sender: {$user->email}" : ''));
+
+                // TODO: Send a notification email to the account owner?
+            }
+
+            $type = $daily ? 'per day' : 'per hour';
+            return "The account is at {$max_recipients} recipients {$type}, cool down.";
+        }
+
+        return null;
     }
 }
