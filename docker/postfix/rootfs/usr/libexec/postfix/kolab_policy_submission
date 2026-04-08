@@ -67,13 +67,17 @@ class PolicyRequest:
         try:
             logging.debug(f"  Checking policy for {self.sender}")
             if self.recipient_count:
+                # If there is only one recipient we end up with it duplicated.
+                if int(self.recipient_count) == 1 and len(self.recipients) == 2:
+                    self.recipients = [self.recipients[0]]
                 if int(self.recipient_count) != len(self.recipients):
                     logging.warning(f"  Expecting {self.recipient_count} recipients, but found {len(self.recipients)} ")
             response = requests.post(
                 URL,
                 data={
                     'sender': self.sender,
-                    'recipients': self.recipients,
+                    'recipients': ','.join(self.recipients),
+                    'recipient_count': int(self.recipient_count),
                     'user': self.user
                 },
                 # Skip certificate verification for this internal request

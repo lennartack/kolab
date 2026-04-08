@@ -65,7 +65,11 @@ class SmtpAccess
         }
 
         // TODO: should we be using the $user or the $sender?
-        $response = RateLimit::verifyRequest($user, (array) $data['recipients']);
+        $recipients = $data['recipients'];
+        if (is_string($recipients) && str_contains($recipients, ',')) {
+            $recipients = explode(',', $recipients);
+        }
+        $response = RateLimit::verifyRequest($user, (array)$recipients);
         if ($response->action != Response::ACTION_DUNNO) {
             return $response;
         }

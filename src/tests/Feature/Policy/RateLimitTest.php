@@ -326,4 +326,60 @@ class RateLimitTest extends TestCase
         $this->jack->refresh();
         $this->assertTrue($this->jack->isSuspended());
     }
+
+    /**
+     * Test verifyRequest() method for an individual account
+     */
+    public function testVerifyMultiRecipientRequestLarge()
+    {
+        # Immediately block an email that exceeds the limit
+        $recipients = [];
+        for ($i = 1; $i <= 19; $i++) {
+            $recipients[] = sprintf("%04d@test.domain", $i);
+        }
+        $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
+
+        // We remember the limit
+        $result = RateLimit::verifyRequest($this->publicDomainUser, ['0202@test.domain']);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
+    }
+
+    /**
+     * Test verifyRequest() method for an individual account
+     */
+    public function testVerifyMultiRecipientRequest()
+    {
+        // Verify an individual can send an email unrestricted
+        // first 9 requests
+        $recipients = [];
+        for ($i = 1; $i <= 9; $i++) {
+            $recipients[] = sprintf("%04d@test.domain", $i);
+        }
+        $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
+        $this->assertSame(200, $result->code);
+        $this->assertSame(Response::ACTION_DUNNO, $result->action);
+        $this->assertSame('', $result->reason);
+
+        // requests 10 through 19 get DEFERed
+        $recipients2 = [];
+        for ($i = 10; $i <= 19; $i++) {
+            $recipients2[] = sprintf("%04d@test.domain", $i);
+        }
+        $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients2);
+        $this->assertSame(403, $result->code);
+        $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
+
+        // FIXME
+        // $result = RateLimit::verifyRequest($this->publicDomainUser, $recipients);
+        // $this->assertSame(200, $result->code);
+        // $this->assertSame(Response::ACTION_DEFER_IF_PERMIT, $result->action);
+        // $this->assertSame('', $result->reason);
+        // $this->assertSame('The account is at 10 recipients per hour, cool down.', $result->reason);
+    }
 }
