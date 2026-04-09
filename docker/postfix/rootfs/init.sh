@@ -19,7 +19,6 @@ sed -i -r \
 
 mkdir /var/log/kolab
 touch /var/log/kolab/postfix-content-filter.log
-#touch /var/log/kolab/postfix-policy-greylist.log
 touch /var/log/kolab/postfix-policy-submission.log
 touch /var/log/kolab/postfix-policy-reception.log
 touch /var/log/kolab/postfix-policy-spf.log
