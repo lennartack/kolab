@@ -601,6 +601,142 @@ kolab__mailtransporttest_submission_policy_service() {
     _green "Success"
 }
 
+__dbquery() {
+    POD=${POD:-dev}
+    $PODMAN exec -i $POD-mariadb /bin/bash -c "mysql -h 127.0.0.1 -u kolabdev --password=simple123 --auto-rehash kolabdev"
+}
+
+kolab__mailtransporttest_rate_limit() {
+    POD=${POD:-dev}
+    MAILTRANSPORTTEST="$PODMAN run --rm -ti --pod=$POD kolab-utils:latest ./mailtransporttest.py"
+
+    # Reset rate limits
+    echo "truncate policy_ratelimit;" | __dbquery
+
+    _mailtransporttest_smtps \
+        --target-address test1@kolab.local \
+        --target-address test2@kolab.local \
+        --target-address test3@kolab.local \
+        --target-address test4@kolab.local \
+        --target-address test5@kolab.local \
+        --target-address test6@kolab.local \
+        --target-address test7@kolab.local \
+        --target-address test8@kolab.local \
+        --target-address test9@kolab.local \
+        --target-address test10@kolab.local \
+        --target-address test11@kolab.local \
+        --target-address test12@kolab.local \
+        --target-address test13@kolab.local \
+        --target-address test14@kolab.local \
+        --target-address test15@kolab.local \
+        --target-address test16@kolab.local \
+        --target-address test17@kolab.local \
+        --target-address test18@kolab.local \
+        --target-address test19@kolab.local \
+        --target-address test20@kolab.local \
+        --target-address test21@kolab.local \
+        --target-address test22@kolab.local \
+        --target-address test23@kolab.local \
+        --target-address test24@kolab.local \
+        --target-address test25@kolab.local \
+        --target-address test26@kolab.local \
+        --target-address test27@kolab.local \
+        --target-address test28@kolab.local \
+        --target-address test29@kolab.local \
+        || exit 1
+
+    _mailtransporttest_smtps \
+        --target-address test30@kolab.local \
+        --target-address test31@kolab.local \
+        --target-address test32@kolab.local \
+        --target-address test33@kolab.local \
+        --target-address test34@kolab.local \
+        --target-address test35@kolab.local \
+        --target-address test36@kolab.local \
+        --target-address test37@kolab.local \
+        --target-address test38@kolab.local \
+        --target-address test39@kolab.local \
+        --target-address test40@kolab.local \
+        --target-address test41@kolab.local \
+        --target-address test42@kolab.local \
+        --target-address test43@kolab.local \
+        --target-address test44@kolab.local \
+        --target-address test45@kolab.local \
+        --target-address test46@kolab.local \
+        --target-address test47@kolab.local \
+        --target-address test48@kolab.local \
+        --target-address test49@kolab.local \
+        || exit 1
+
+    _mailtransporttest_smtps \
+        --target-address test50@kolab.local \
+        --target-address test51@kolab.local \
+        --target-address test52@kolab.local \
+        --target-address test53@kolab.local \
+        --target-address test54@kolab.local \
+        --target-address test55@kolab.local \
+        --target-address test56@kolab.local \
+        --target-address test57@kolab.local \
+        --target-address test58@kolab.local \
+        --target-address test59@kolab.local \
+        --target-address test60@kolab.local \
+        --target-address test61@kolab.local \
+        --target-address test62@kolab.local \
+        --target-address test63@kolab.local \
+        --target-address test64@kolab.local \
+        --target-address test65@kolab.local \
+        --target-address test66@kolab.local \
+        --target-address test67@kolab.local \
+        --target-address test68@kolab.local \
+        --target-address test69@kolab.local \
+        || exit 1
+
+    _mailtransporttest_smtps \
+        --target-address test70@kolab.local \
+        --target-address test71@kolab.local \
+        --target-address test72@kolab.local \
+        --target-address test73@kolab.local \
+        --target-address test74@kolab.local \
+        --target-address test75@kolab.local \
+        --target-address test76@kolab.local \
+        --target-address test77@kolab.local \
+        --target-address test78@kolab.local \
+        --target-address test79@kolab.local \
+        --target-address test80@kolab.local \
+        --target-address test81@kolab.local \
+        --target-address test82@kolab.local \
+        --target-address test83@kolab.local \
+        --target-address test84@kolab.local \
+        --target-address test85@kolab.local \
+        --target-address test86@kolab.local \
+        --target-address test87@kolab.local \
+        --target-address test88@kolab.local \
+        --target-address test89@kolab.local \
+        || exit 1
+
+    # This last one is expected to hit the rate limit
+    _mailtransporttest_smtps \
+        --target-address test90@kolab.local \
+        --target-address test91@kolab.local \
+        --target-address test92@kolab.local \
+        --target-address test93@kolab.local \
+        --target-address test94@kolab.local \
+        --target-address test95@kolab.local \
+        --target-address test96@kolab.local \
+        --target-address test97@kolab.local \
+        --target-address test98@kolab.local \
+        --target-address test99@kolab.local \
+        --target-address test100@kolab.local \
+        && exit 1
+
+    # Keep hitting the rate-limit
+    _mailtransporttest_smtps \
+        --target-address test101@kolab.local \
+        && exit 1
+
+    _green "Success"
+}
+
 # Deploy a test deployment in the "dev" pod
 kolab__deploy() {
     export POD=dev
