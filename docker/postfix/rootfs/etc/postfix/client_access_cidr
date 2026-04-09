@@ -1,0 +1,1 @@
+# Rule order matters. Put more specific allowlist entries before more general denylist entries.

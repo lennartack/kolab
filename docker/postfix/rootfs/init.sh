@@ -72,11 +72,16 @@ if [ "$HOLD_INCOMING_EMAILS" == "true" ]; then
         /etc/postfix/main.cf
 fi
 
-if [ "$WITH_SPAMHAUS_CHECKS" == "true" ]; then
+if [ "$RBL_RESTRICTIONS" != "" ]; then
+    # RBL_RESTRICTIONS is a multi-line string
+    # We first indent it to 4 spaces, then use perl to do a multi-line replace
+    export INDENT_RBL="$(echo "$RBL_RESTRICTIONS" | sed "s/^/    /")"
+    perl -0777 -pi -e '
+        s/^([ \t]*)RBL_RESTRICTIONS/$ENV{INDENT_RBL}/gme
+    ' /etc/postfix/main.cf
+else
     sed -i -r \
-        -e "s|#reject_rbl|reject_rbl|g" \
-        -e "s|#reject_rhsbl|reject_rhsbl|g" \
-        -e "s|#warn_if_reject reject_rbl|warn_if_reject reject_rbl|g" \
+        -e "/RBL_RESTRICTIONS/d" \
         /etc/postfix/main.cf
 fi
 
@@ -96,6 +101,11 @@ if [ "$RESTRICTED_USER_RELAY_HOST" != "" ]; then
         /etc/postfix/sql/*
 fi
 
+echo "$RBL_REPLY_MAP" > /etc/postfix/rbl_reply_map
+echo "$VIRTUAL_ALIAS_MAPS" > /etc/postfix/virtual
+echo "$CLIENT_ACCESS_CIDR" > /etc/postfix/client_access_cidr
+echo "$SENDER_ACCESS" > /etc/postfix/sender_access
+
 sed -i -r \
     -e "s|SERVICES_HOST|http://$APP_SERVICES_DOMAIN:$SERVICES_PORT|g" \
     /usr/libexec/postfix/kolab_policy*
@@ -114,6 +124,7 @@ sed -i -r \
 # echo "/$APP_DOMAIN/              lmtp:$LMTP_DESTINATION" >> /etc/postfix/transport
 # postmap /etc/postfix/transport
 postmap /etc/postfix/sender_access
+postmap /etc/postfix/virtual
 
 /usr/sbin/postfix check
 

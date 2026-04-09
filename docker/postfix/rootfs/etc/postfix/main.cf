@@ -527,6 +527,7 @@ local_recipient_maps =
 
 virtual_alias_maps =
     $alias_maps,
+    hash:/etc/postfix/virtual,
     mysql:/etc/postfix/sql/virtual_alias_maps.cf,
     mysql:/etc/postfix/sql/virtual_alias_maps_groups.cf,
     mysql:/etc/postfix/sql/virtual_alias_maps_shared_folders.cf,
@@ -535,6 +536,7 @@ virtual_alias_maps =
 # Inbound (restrictions in order of execution)
 smtpd_client_restrictions =
     permit_mynetworks,
+    check_client_access cidr:/etc/postfix/client_access_cidr,
     reject_unknown_reverse_client_hostname
 smtpd_helo_restrictions =
     permit_mynetworks,
@@ -544,7 +546,7 @@ smtpd_sender_restrictions =
     permit_mynetworks,
     reject_unknown_sender_domain,
     #check_client_access hash:/etc/postfix/client_access,
-    #check_client_access cidr:/etc/postfix/client_access_cidr,
+    check_client_access cidr:/etc/postfix/client_access_cidr,
     reject_unlisted_sender,
     # Uses smtpd_sender_login_maps
     reject_unauthenticated_sender_login_mismatch,
@@ -565,11 +567,7 @@ smtpd_recipient_restrictions =
     # External email delivery kill switch (activated by init script)
     #check_recipient_access static:HOLD,
     check_recipient_access texthash:/etc/postfix/recipient_access,
-    #reject_rbl_client zen.spamhaus.org=127.0.0.[2..11],
-    #reject_rhsbl_sender dbl.spamhaus.org=127.0.1.[2..99],
-    #reject_rhsbl_helo dbl.spamhaus.org=127.0.1.[2..99],
-    #reject_rhsbl_reverse_client dbl.spamhaus.org=127.0.1.[2..99],
-    #warn_if_reject reject_rbl_client zen.spamhaus.org=127.255.255.[1..255],
+    RBL_RESTRICTIONS
     check_policy_service unix:private/policy_reception,
     permit
 smtpd_data_restrictions = reject_unauth_pipelining
@@ -608,3 +606,5 @@ submission_data_restrictions =
     # to allow/deny sender access.
     # We use this in place of reject_sender_login_mismatch to support e.g. delegation.
     check_policy_service unix:private/policy_submission
+
+rbl_reply_maps = texthash:/etc/postfix/rbl_reply_map
