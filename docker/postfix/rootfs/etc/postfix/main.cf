@@ -548,8 +548,6 @@ smtpd_sender_restrictions =
     #check_client_access hash:/etc/postfix/client_access,
     check_client_access cidr:/etc/postfix/client_access_cidr,
     reject_unlisted_sender,
-    # Uses smtpd_sender_login_maps
-    reject_unauthenticated_sender_login_mismatch,
     reject_unauth_destination,
     check_policy_service unix:private/policy_spf,
     permit
