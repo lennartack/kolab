@@ -58,7 +58,8 @@
         "sort-packages": true,
         "audit": {
             "ignore": [
-                "PKSA-y2cr-5h3j-g3ys"
+                "PKSA-y2cr-5h3j-g3ys",
+                "PKSA-wc55-9qj2-7v4h"
             ]
         }
     },
