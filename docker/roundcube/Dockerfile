@@ -2,14 +2,19 @@ FROM apheleia/almalinux9
 
 ENV HOME=/opt/app-root/src
 
-# Add kolab
-RUN rpm --import https://mirror.apheleia-it.ch/repos/Kolab:/16/key.asc && \
-    rpm -Uvh https://mirror.apheleia-it.ch/repos/Kolab:/16/kolab-16-for-el9.rpm
+# Add kolab repo and install native Kolab PHP extensions (x86_64 only —
+# php-kolab / php-kolabformat have no aarch64 builds).
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        rpm --import https://mirror.apheleia-it.ch/repos/Kolab:/16/key.asc && \
+        rpm -Uvh https://mirror.apheleia-it.ch/repos/Kolab:/16/kolab-16-for-el9.rpm && \
+        sed -i -e '/^ssl/d' /etc/yum.repos.d/kolab*.repo && \
+        dnf config-manager --enable kolab-16 && \
+        dnf -y --setopt=install_weak_deps=False --setopt tsflags= install php-kolab php-kolabformat && \
+        dnf clean all; \
+    fi
 
-# Install php modules
-RUN sed -i -e '/^ssl/d' /etc/yum.repos.d/kolab*.repo && \
-    dnf config-manager --enable kolab-16 &&\
-    dnf -y --setopt=install_weak_deps=False --setopt tsflags= install php-kolab php-kolabformat \
+# Install common packages (available on all arches)
+RUN dnf -y --setopt=install_weak_deps=False --setopt tsflags= install \
         aspell \
         aspell-de \
         aspell-en \
