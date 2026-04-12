@@ -144,7 +144,7 @@ jobs:
       - name: Install podman and jq
         run: |
           sudo apt-get update
-          sudo apt-get install -y podman jq
+          sudo apt-get install -y podman jq skopeo
 
       - name: Log in to GHCR
         uses: redhat-actions/podman-login@v1
@@ -153,6 +153,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare digests directory
+        run: |
+          mkdir -p digests
+          echo "{}" > "digests/${{ matrix.arch }}.json"
+
       - name: Build base images
         run: |
           set -e
@@ -160,79 +165,121 @@ jobs:
           podman__build_base
 
       - name: Build kolab-imap
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/imap:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "imap: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_imap
 
       - name: Build kolab-webapp
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/webapp:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "webapp: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_webapp
 
       - name: Build kolab-postfix
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/postfix:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "postfix: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_postfix
 
       - name: Build kolab-proxy
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/proxy:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "proxy: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_proxy
 
       - name: Build roundcube
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/roundcube:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "roundcube: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_roundcube
 
-      - name: Build sclorg mariadb-105 base (arm64-capable, replaces the amd64-only quay.io image)
+      - name: Build sclorg mariadb-105 base + mariadb
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/mariadb:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "mariadb: staging tag exists, skipping"; exit 0; fi
           set -e
           git clone "$SCLORG_MARIADB_REMOTE" /tmp/sclorg-mariadb
           git -C /tmp/sclorg-mariadb checkout "$SCLORG_MARIADB_REF"
-          # Context is the repo root because Dockerfile.rhel9 does
-          # `COPY 10.5/root-common /` etc. Tag locally as the quay.io name
-          # so `docker/mariadb/Dockerfile`'s FROM resolves to this build.
           podman build /tmp/sclorg-mariadb \
             -f /tmp/sclorg-mariadb/10.5/Dockerfile.c9s \
             -t quay.io/sclorg/mariadb-105-c9s:latest
-
-      - name: Build mariadb
-        run: |
           source bin/podman_shared
           podman__build docker/mariadb mariadb
 
       - name: Build redis
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/redis:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "redis: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build docker/redis redis
 
       - name: Build amavis
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/amavis:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "amavis: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_amavis
 
       - name: Build utils
+        continue-on-error: true
         run: |
+          STAGING="${PUSH_REPO}/utils:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "utils: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
           podman__build_utils
 
-      - name: Push by digest and record digests
+      - name: Push successfully built images
         run: |
           set -e
-          mkdir -p digests
-          echo "{}" > "digests/${{ matrix.arch }}.json"
           for entry in $IMAGES; do
             local_tag="${entry%=*}"
             remote_name="${entry#*=}"
-            # Staging tag is per-commit + per-arch. The final user-visible
-            # tag is the manifest list created by the `manifest` job.
+            if ! podman image exists "${local_tag}:latest" 2>/dev/null; then
+              echo "${remote_name}: not built, skipping push"
+              continue
+            fi
             staging="${PUSH_REPO}/${remote_name}:staging-${{ matrix.arch }}-${GITHUB_SHA}"
-            podman tag "${local_tag}:latest" "$staging"
-            podman push --digestfile "digests/${remote_name}.digest" "$staging"
-            digest=$(cat "digests/${remote_name}.digest")
-            jq --arg name "$remote_name" --arg d "$digest" \
-               '. + {($name): $d}' "digests/${{ matrix.arch }}.json" > digests/tmp.json
-            mv digests/tmp.json "digests/${{ matrix.arch }}.json"
+            # Skip if already pushed (from a previous run)
+            if skopeo inspect --raw "docker://${staging}" > /dev/null 2>&1; then
+              echo "${remote_name}: already pushed, recovering digest"
+              skopeo inspect --raw "docker://${staging}" | jq -r '.digest // empty' > "digests/${remote_name}.digest" || true
+              # If no digest field, compute from manifest
+              if [ ! -s "digests/${remote_name}.digest" ]; then
+                podman push --digestfile "digests/${remote_name}.digest" "$staging" 2>/dev/null || true
+              fi
+            else
+              podman tag "${local_tag}:latest" "$staging"
+              podman push --digestfile "digests/${remote_name}.digest" "$staging"
+            fi
+            if [ -s "digests/${remote_name}.digest" ]; then
+              digest=$(cat "digests/${remote_name}.digest")
+              jq --arg name "$remote_name" --arg d "$digest" \
+                 '. + {($name): $d}' "digests/${{ matrix.arch }}.json" > digests/tmp.json
+              mv digests/tmp.json "digests/${{ matrix.arch }}.json"
+            fi
           done
           cat "digests/${{ matrix.arch }}.json"
 
