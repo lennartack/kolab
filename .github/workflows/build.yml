@@ -71,7 +71,7 @@ jobs:
       - id: vars
         run: |
           echo "image_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          echo "push_repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+          echo "push_repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kolab" >> "$GITHUB_OUTPUT"
 
       - id: pin
         name: Pin git refs (once, shared across arches)
