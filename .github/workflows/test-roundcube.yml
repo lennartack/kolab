@@ -1,0 +1,48 @@
+name: Test roundcube build
+
+on:
+  workflow_dispatch:
+
+env:
+  GIT_REF_ROUNDCUBEMAIL: 27ec6cc9cb25e1ef8b4d4ef39ce76d619caa6870
+  GIT_REF_ROUNDCUBEMAIL_PLUGINS: 8192820bcdc633219d77c13096066e41388ba4d6
+  GIT_REF_CHWALA: 419cae109ea2543a4d18d212c2b63aabd67799ff
+  GIT_REF_SYNCROTON: b6e8451711f41439315c3d560eee2f989f63a80f
+  GIT_REF_IRONY: 4b67b8c6ba441c8005b58cd094069e6458a4d930
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
+      - name: Pin git refs
+        run: |
+          set -e
+          source bin/podman_shared
+          pin_git_refs
+
+      - name: Build base images
+        run: |
+          set -e
+          source bin/podman_shared
+          podman__build_base
+
+      - name: Build roundcube
+        run: |
+          source bin/podman_shared
+          podman__build_roundcube
