@@ -117,7 +117,7 @@ jobs:
 
     env:
       # <local podman tag>=<ghcr image name>
-      IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb
+      IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb redis=redis kolab-amavis=amavis kolab-utils=utils
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
       KOLAB_GIT_REMOTE: ${{ needs.setup.outputs.kolab_git_remote }}
       KOLAB_GIT_REF: ${{ needs.setup.outputs.kolab_git_ref }}
@@ -201,6 +201,21 @@ jobs:
           source bin/podman_shared
           podman__build docker/mariadb mariadb
 
+      - name: Build redis
+        run: |
+          source bin/podman_shared
+          podman__build docker/redis redis
+
+      - name: Build amavis
+        run: |
+          source bin/podman_shared
+          podman__build_amavis
+
+      - name: Build utils
+        run: |
+          source bin/podman_shared
+          podman__build_utils
+
       - name: Push by digest and record digests
         run: |
           set -e
@@ -235,7 +250,7 @@ jobs:
       packages: write
 
     env:
-      IMAGES: imap webapp postfix proxy roundcube mariadb
+      IMAGES: imap webapp postfix proxy roundcube mariadb redis amavis utils
       IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
 
