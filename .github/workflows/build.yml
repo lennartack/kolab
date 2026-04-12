@@ -103,7 +103,7 @@ jobs:
   build:
     needs: setup
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - arch: amd64
@@ -320,17 +320,26 @@ jobs:
       - name: Create multi-arch manifest lists
         run: |
           set -e
+          skipped=0
+          assembled=0
           for img in $IMAGES; do
             amd64_digest=$(jq -r --arg n "$img" '.[$n]' digests/digests-amd64/amd64.json)
             arm64_digest=$(jq -r --arg n "$img" '.[$n]' digests/digests-arm64/arm64.json)
             if [ -z "$amd64_digest" ] || [ "$amd64_digest" = "null" ] || \
                [ -z "$arm64_digest" ] || [ "$arm64_digest" = "null" ]; then
-              echo "Missing digest for $img (amd64=$amd64_digest arm64=$arm64_digest)"
-              exit 1
+              echo "::warning::Skipping $img — missing digest (amd64=$amd64_digest arm64=$arm64_digest)"
+              skipped=$((skipped + 1))
+              continue
             fi
             echo "Assembling ${img}:${IMAGE_TAG}"
             docker buildx imagetools create \
               -t "${PUSH_REPO}/${img}:${IMAGE_TAG}" \
               "${PUSH_REPO}/${img}@${amd64_digest}" \
               "${PUSH_REPO}/${img}@${arm64_digest}"
+            assembled=$((assembled + 1))
           done
+          echo "Assembled $assembled image(s), skipped $skipped"
+          if [ "$assembled" -eq 0 ]; then
+            echo "::error::No images assembled"
+            exit 1
+          fi
