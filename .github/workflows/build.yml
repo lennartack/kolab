@@ -119,6 +119,7 @@ jobs:
     env:
       # <local podman tag>=<ghcr image name>
       IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb redis=redis kolab-amavis=amavis kolab-utils=utils
+      IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
       KOLAB_GIT_REMOTE: ${{ needs.setup.outputs.kolab_git_remote }}
       KOLAB_GIT_REF: ${{ needs.setup.outputs.kolab_git_ref }}
@@ -168,7 +169,7 @@ jobs:
       - name: Build kolab-imap
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/imap:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/imap:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "imap: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -177,7 +178,7 @@ jobs:
       - name: Build kolab-webapp
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/webapp:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/webapp:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "webapp: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -186,7 +187,7 @@ jobs:
       - name: Build kolab-postfix
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/postfix:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/postfix:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "postfix: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -195,7 +196,7 @@ jobs:
       - name: Build kolab-proxy
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/proxy:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/proxy:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "proxy: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -204,7 +205,7 @@ jobs:
       - name: Build roundcube
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/roundcube:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/roundcube:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "roundcube: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -213,7 +214,7 @@ jobs:
       - name: Build sclorg mariadb-105 base + mariadb
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/mariadb:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/mariadb:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "mariadb: staging tag exists, skipping"; exit 0; fi
           set -e
@@ -228,7 +229,7 @@ jobs:
       - name: Build redis
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/redis:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/redis:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "redis: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -237,7 +238,7 @@ jobs:
       - name: Build amavis
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/amavis:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/amavis:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "amavis: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -246,7 +247,7 @@ jobs:
       - name: Build utils
         continue-on-error: true
         run: |
-          STAGING="${PUSH_REPO}/utils:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+          STAGING="${PUSH_REPO}/utils:staging-${{ matrix.arch }}-${IMAGE_TAG}"
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "utils: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
@@ -262,7 +263,7 @@ jobs:
               echo "${remote_name}: not built, skipping push"
               continue
             fi
-            staging="${PUSH_REPO}/${remote_name}:staging-${{ matrix.arch }}-${GITHUB_SHA}"
+            staging="${PUSH_REPO}/${remote_name}:staging-${{ matrix.arch }}-${IMAGE_TAG}"
             # Skip if already pushed (from a previous run)
             if skopeo inspect --raw "docker://${staging}" > /dev/null 2>&1; then
               echo "${remote_name}: already pushed, recovering digest"
