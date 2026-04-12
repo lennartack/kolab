@@ -9,6 +9,9 @@
         },
         "allow-plugins": {
             "roundcube/plugin-installer": true
+        },
+        "audit": {
+            "block-insecure": false
         }
     },
     "repositories": [

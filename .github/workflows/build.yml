@@ -16,6 +16,13 @@ env:
   # this to take upstream changes.
   SCLORG_MARIADB_REMOTE: https://github.com/sclorg/mariadb-container
   SCLORG_MARIADB_REF: 777b28b25fb9862cd88096490bfc5bc5f422f6c6
+  # Pinned roundcube component refs for 4.0.17. These pre-empt pin_git_refs
+  # (which resolves branch HEADs) so builds use known-compatible commits.
+  GIT_REF_ROUNDCUBEMAIL: 27ec6cc9cb25e1ef8b4d4ef39ce76d619caa6870
+  GIT_REF_ROUNDCUBEMAIL_PLUGINS: 8192820bcdc633219d77c13096066e41388ba4d6
+  GIT_REF_CHWALA: 419cae109ea2543a4d18d212c2b63aabd67799ff
+  GIT_REF_SYNCROTON: b6e8451711f41439315c3d560eee2f989f63a80f
+  GIT_REF_IRONY: 4b67b8c6ba441c8005b58cd094069e6458a4d930
 
 jobs:
   setup:
