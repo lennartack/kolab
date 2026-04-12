@@ -23,7 +23,6 @@ jobs:
     outputs:
       image_tag: ${{ steps.vars.outputs.image_tag }}
       push_repo: ${{ steps.vars.outputs.push_repo }}
-      cache_registry: ${{ steps.vars.outputs.cache_registry }}
       kolab_git_remote: ${{ steps.pin.outputs.kolab_git_remote }}
       kolab_git_ref: ${{ steps.pin.outputs.kolab_git_ref }}
       imap_git_remote: ${{ steps.pin.outputs.imap_git_remote }}
@@ -64,7 +63,6 @@ jobs:
         run: |
           echo "image_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           echo "push_repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
-          echo "cache_registry=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kolab-cache" >> "$GITHUB_OUTPUT"
 
       - id: pin
         name: Pin git refs (once, shared across arches)
@@ -112,7 +110,6 @@ jobs:
       # <local podman tag>=<ghcr image name>
       IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
-      CACHE_REGISTRY: ${{ needs.setup.outputs.cache_registry }}
       KOLAB_GIT_REMOTE: ${{ needs.setup.outputs.kolab_git_remote }}
       KOLAB_GIT_REF: ${{ needs.setup.outputs.kolab_git_ref }}
       IMAP_GIT_REMOTE: ${{ needs.setup.outputs.imap_git_remote }}
