@@ -23,8 +23,9 @@ env:
   GIT_REF_CHWALA: 4bdc587ba9f3d335dfcdeb064fa7ba176e7775ee
   GIT_REF_SYNCROTON: 9e991d6c7be3d765007a6024621b2af33a681394
   GIT_REF_IRONY: 4b67b8c6ba441c8005b58cd094069e6458a4d930
-  # Pinned webapp ref for 4.0.17.
-  KOLAB_GIT_REF: 73a42e36a691b3cf6f5e21d5f3e1f8057cf827f1
+  # Pinned webapp ref for 4.0.17 (from github.com/lennartack/kolab).
+  KOLAB_GIT_REMOTE: https://github.com/lennartack/kolab.git
+  KOLAB_GIT_REF: edf6795c32a1d635a5a8d0421e7b1aaec5130d04
 
 jobs:
   setup:
