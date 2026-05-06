@@ -18,7 +18,7 @@ env:
   SCLORG_MARIADB_REF: 777b28b25fb9862cd88096490bfc5bc5f422f6c6
   # Pinned roundcube component refs for 4.0.17. These pre-empt pin_git_refs
   # (which resolves branch HEADs) so builds use known-compatible commits.
-  GIT_REF_ROUNDCUBEMAIL: 27ec6cc9cb25e1ef8b4d4ef39ce76d619caa6870
+  GIT_REF_ROUNDCUBEMAIL: 87b6388217df6eb7bcb06e928a340f0543205816
   GIT_REF_ROUNDCUBEMAIL_PLUGINS: 8192820bcdc633219d77c13096066e41388ba4d6
   GIT_REF_CHWALA: 4bdc587ba9f3d335dfcdeb064fa7ba176e7775ee
   GIT_REF_SYNCROTON: 9e991d6c7be3d765007a6024621b2af33a681394
