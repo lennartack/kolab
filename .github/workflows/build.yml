@@ -118,7 +118,7 @@ jobs:
 
     env:
       # <local podman tag>=<ghcr image name>
-      IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb redis=redis kolab-amavis=amavis kolab-utils=utils
+      IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb redis=redis kolab-amavis=amavis kolab-utils=utils kolab-vector=vector
       IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
       KOLAB_GIT_REMOTE: ${{ needs.setup.outputs.kolab_git_remote }}
@@ -253,6 +253,15 @@ jobs:
           source bin/podman_shared
           podman__build_utils
 
+      - name: Build kolab-vector
+        continue-on-error: true
+        run: |
+          STAGING="${PUSH_REPO}/vector:staging-${{ matrix.arch }}-${IMAGE_TAG}"
+          if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
+            echo "vector: staging tag exists, skipping"; exit 0; fi
+          source bin/podman_shared
+          podman__build_vector
+
       - name: Push successfully built images
         run: |
           set -e
@@ -299,7 +308,7 @@ jobs:
       packages: write
 
     env:
-      IMAGES: imap webapp postfix proxy roundcube mariadb redis amavis utils
+      IMAGES: imap webapp postfix proxy roundcube mariadb redis amavis utils vector
       IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
 
