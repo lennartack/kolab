@@ -23,7 +23,7 @@ env:
   SCLORG_MARIADB_REF: 777b28b25fb9862cd88096490bfc5bc5f422f6c6
   # Pinned roundcube component refs for 4.0.17. These pre-empt pin_git_refs
   # (which resolves branch HEADs) so builds use known-compatible commits.
-  GIT_REF_ROUNDCUBEMAIL: 87b6388217df6eb7bcb06e928a340f0543205816
+  GIT_REF_ROUNDCUBEMAIL: f4dba9e6821bb8f536c8bb50b61f71cbcbe94463
   GIT_REF_ROUNDCUBEMAIL_PLUGINS: 8192820bcdc633219d77c13096066e41388ba4d6
   GIT_REF_CHWALA: 4bdc587ba9f3d335dfcdeb064fa7ba176e7775ee
   GIT_REF_SYNCROTON: 9e991d6c7be3d765007a6024621b2af33a681394
@@ -125,7 +125,7 @@ jobs:
 
     env:
       # <local podman tag>=<ghcr image name>
-      IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb redis=redis kolab-amavis=amavis kolab-utils=utils kolab-vector=vector
+      IMAGES: kolab-imap=imap kolab-webapp=webapp kolab-postfix=postfix kolab-proxy=proxy roundcube=roundcube mariadb=mariadb redis=redis kolab-amavis=amavis kolab-utils=utils vector=vector
       IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
       PUSH_REPO: ${{ needs.setup.outputs.push_repo }}
       KOLAB_GIT_REMOTE: ${{ needs.setup.outputs.kolab_git_remote }}
