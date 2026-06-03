@@ -267,7 +267,7 @@ jobs:
           if skopeo inspect --raw "docker://${STAGING}" > /dev/null 2>&1; then
             echo "vector: staging tag exists, skipping"; exit 0; fi
           source bin/podman_shared
-          podman__build_vector
+          podman build docker/vector -t vector
 
       - name: Push successfully built images
         run: |
