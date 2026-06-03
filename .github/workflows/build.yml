@@ -2,6 +2,11 @@ name: Build multi-arch images
 
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to push (defaults to the triggering ref name)'
+        required: false
+        type: string
   push:
     tags:
       - '*'
@@ -70,8 +75,10 @@ jobs:
           fi
 
       - id: vars
+        env:
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
-          echo "image_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${INPUT_IMAGE_TAG:-${GITHUB_REF_NAME}}" >> "$GITHUB_OUTPUT"
           echo "push_repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kolab" >> "$GITHUB_OUTPUT"
 
       - id: pin
