@@ -275,22 +275,21 @@ jobs:
           for entry in $IMAGES; do
             local_tag="${entry%=*}"
             remote_name="${entry#*=}"
-            if ! podman image exists "${local_tag}:latest" 2>/dev/null; then
-              echo "${remote_name}: not built, skipping push"
-              continue
-            fi
             staging="${PUSH_REPO}/${remote_name}:staging-${{ matrix.arch }}-${IMAGE_TAG}"
-            # Skip if already pushed (from a previous run)
+            # An image already in the registry was pushed by this or a previous
+            # run (same tag). Recover its manifest digest so the manifest job can
+            # assemble it, even when the build was skipped and no local image
+            # exists this run. Check staging before the local image: on a resume
+            # run the build step skips and never produces "${local_tag}:latest".
             if skopeo inspect --raw "docker://${staging}" > /dev/null 2>&1; then
               echo "${remote_name}: already pushed, recovering digest"
-              skopeo inspect --raw "docker://${staging}" | jq -r '.digest // empty' > "digests/${remote_name}.digest" || true
-              # If no digest field, compute from manifest
-              if [ ! -s "digests/${remote_name}.digest" ]; then
-                podman push --digestfile "digests/${remote_name}.digest" "$staging" 2>/dev/null || true
-              fi
-            else
+              skopeo inspect "docker://${staging}" --format '{{.Digest}}' > "digests/${remote_name}.digest"
+            elif podman image exists "${local_tag}:latest" 2>/dev/null; then
               podman tag "${local_tag}:latest" "$staging"
               podman push --digestfile "digests/${remote_name}.digest" "$staging"
+            else
+              echo "${remote_name}: not built, skipping push"
+              continue
             fi
             if [ -s "digests/${remote_name}.digest" ]; then
               digest=$(cat "digests/${remote_name}.digest")
@@ -340,7 +339,14 @@ jobs:
           set -e
           skipped=0
           assembled=0
+          already=0
           for img in $IMAGES; do
+            # Already assembled by a previous run with this tag: leave it alone.
+            if docker buildx imagetools inspect "${PUSH_REPO}/${img}:${IMAGE_TAG}" > /dev/null 2>&1; then
+              echo "${img}: already assembled, skipping"
+              already=$((already + 1))
+              continue
+            fi
             amd64_digest=$(jq -r --arg n "$img" '.[$n]' digests/digests-amd64/amd64.json)
             arm64_digest=$(jq -r --arg n "$img" '.[$n]' digests/digests-arm64/arm64.json)
             if [ -z "$amd64_digest" ] || [ "$amd64_digest" = "null" ] || \
@@ -356,8 +362,8 @@ jobs:
               "${PUSH_REPO}/${img}@${arm64_digest}"
             assembled=$((assembled + 1))
           done
-          echo "Assembled $assembled image(s), skipped $skipped"
-          if [ "$assembled" -eq 0 ]; then
+          echo "Assembled $assembled image(s), already present $already, skipped $skipped"
+          if [ "$assembled" -eq 0 ] && [ "$already" -eq 0 ]; then
             echo "::error::No images assembled"
             exit 1
           fi
